@@ -42,12 +42,12 @@ const ChatMessages = ({
         role="system"
         content={`Hello, I am ${character.name}, ${character.description}`}
       />
-      {messages.map((message) => (
+      {messages.map((message, i) => (
         <ChatMessage
-          key={message.content}
+          key={`${message.content}-${i}`}
           role={message.role}
           content={message.content}
-          src={message.src}
+          src={character.src}
         />
       ))}
       {isLoading && <ChatMessage role="system" src={character.src} isLoading />}

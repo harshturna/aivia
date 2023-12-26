@@ -28,7 +28,7 @@ const ChatClient = ({ character, currentUserId }: ChatClientProps) => {
 
   const { input, isLoading, handleInputChange, handleSubmit, setInput } =
     useCompletion({
-      api: `/api/chat${character.id}`,
+      api: `/api/chat/${character.id}`,
       onFinish(_, completion) {
         const systemMesage: ChatMessageProps = {
           role: "system",
