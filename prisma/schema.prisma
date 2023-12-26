@@ -6,6 +6,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 
@@ -29,4 +30,49 @@ model UserSubscription {
 model Category {
   id String @id @default(uuid())
   name String 
+  compnaions Character[]
+}
+
+model Character {
+  id String @id @default(uuid())
+  userId String
+  userName String
+  src String
+  name String @db.Text
+  description String
+  instructions String @db.Text
+  seed String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  messages  Message[]
+
+  @@index([categoryId])
+  @@fulltext([name])
+
+}
+
+enum Role {
+  user
+  system
+}
+
+model Message {
+  id String @id @default(uuid())
+  role Role
+  content String @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  characterId String
+  userId String
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+
 }

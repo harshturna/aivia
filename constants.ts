@@ -2,7 +2,10 @@ import { Code, Image, MessageSquare, Music, Video } from "lucide-react";
 
 export const MAX_FREE_COUNTS = 5;
 
-export type ContextType = "ROUTE_HANDLER" | "SERVER_COMPONENT";
+export type ContextType =
+  | "ROUTE_HANDLER"
+  | "SERVER_COMPONENT"
+  | "CLIENT_COMPONENT";
 
 export const tools = [
   {

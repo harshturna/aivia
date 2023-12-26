@@ -1,7 +1,13 @@
 import { Avatar, AvatarImage } from "./ui/avatar";
 
-export const BotAvatar = () => (
+// TODO: Update the avatar image to be a bot avatar
+
+interface BotAvatarProps {
+  src?: string;
+}
+
+export const BotAvatar = ({ src }: BotAvatarProps) => (
   <Avatar className="h-8 w-8">
-    <AvatarImage className="p-1" src="/logo.png" />
+    <AvatarImage className="p-1" src={src ? src : "/logo.png"} />
   </Avatar>
 );

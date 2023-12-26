@@ -16,4 +16,10 @@ export async function getUser(context: ContextType) {
     const { data } = await supabase.auth.getSession();
     return data.session?.user;
   }
+
+  if (context === "CLIENT_COMPONENT") {
+    const supabase = createClientComponentClient();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user;
+  }
 }
