@@ -4,6 +4,7 @@ import Replicate from "replicate";
 
 import { increaseApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
+import { checkHardLimit, increaseHardLimit } from "@/lib/hard-limit";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -25,9 +26,14 @@ export async function POST(req: Request) {
 
     const freeTrial = await checkApiLimit("ROUTE_HANDLER");
     const isPro = await checkSubscription("ROUTE_HANDLER");
+    const hardLimitNotReached = await checkHardLimit("ROUTE_HANDLER");
 
     if (!freeTrial && !isPro) {
       return new NextResponse("Free trial has expired", { status: 403 });
+    }
+
+    if (!hardLimitNotReached) {
+      return new NextResponse("Limit reached", { status: 500 });
     }
 
     const response = await replicate.run(
@@ -42,6 +48,8 @@ export async function POST(req: Request) {
     if (!isPro) {
       await increaseApiLimit("ROUTE_HANDLER");
     }
+
+    await increaseHardLimit("ROUTE_HANDLER");
 
     return NextResponse.json(response);
   } catch (error) {

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
 import prismadb from "@/lib/prismadb";
+import { checkSubscription } from "@/lib/subscription";
+import { isGuestUser } from "@/lib/guest-user";
 
 export async function POST(req: Request) {
   try {
@@ -10,6 +12,14 @@ export async function POST(req: Request) {
 
     if (!user || !user.id) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const isGuest = await isGuestUser("ROUTE_HANDLER");
+
+    if (isGuest) {
+      return new NextResponse("Guest cannot create new characters", {
+        status: 401,
+      });
     }
 
     if (

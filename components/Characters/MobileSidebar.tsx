@@ -24,7 +24,7 @@ const MobileSidebar = ({}) => {
   return (
     <Sheet>
       <SheetTrigger>
-        <MenuIcon className="md:hidden hover:bg-gray-100 w-8 h-8 p-1 rounded">
+        <MenuIcon className="lg:hidden hover:bg-gray-100 w-8 h-8 p-1 rounded">
           <Menu />
         </MenuIcon>
       </SheetTrigger>

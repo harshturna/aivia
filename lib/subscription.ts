@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs";
 import { getUser } from "./getUser";
 import prismadb from "./prismadb";
 import { ContextType } from "@/constants";

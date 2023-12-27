@@ -1,42 +1,39 @@
-import { StreamingTextResponse } from "ai";
 import { getUser } from "@/lib/getUser";
 import { NextResponse } from "next/server";
 import { OpenAI } from "langchain/llms/openai";
-import { MemoryManager } from "@/lib/memory";
-import { rateLimit } from "@/lib/rate-limit";
 import prismadb from "@/lib/prismadb";
+import { checkHardLimit, increaseHardLimit } from "@/lib/hard-limit";
+
+interface Message {
+  role: "system" | "user";
+  content: string;
+}
 
 export async function POST(
   request: Request,
   { params }: { params: { chatId: string } }
 ) {
   try {
-    const { prompt } = await request.json();
+    const { messages } = await request.json();
     const user = await getUser("ROUTE_HANDLER");
 
     if (!user || !user.id) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const identifier = request.url + "-" + user?.id;
-    const { success } = await rateLimit(identifier);
-
-    if (!success) {
-      return new NextResponse("Rate limit exceeded", { status: 429 });
+    if (!messages) {
+      return new NextResponse("Input is required", { status: 400 });
     }
 
-    const character = await prismadb.character.update({
+    const hardLimitNotReached = await checkHardLimit("ROUTE_HANDLER");
+
+    if (!hardLimitNotReached) {
+      return new NextResponse("Limit reached", { status: 500 });
+    }
+
+    const character = await prismadb.character.findUnique({
       where: {
         id: params.chatId,
-      },
-      data: {
-        messages: {
-          create: {
-            content: prompt,
-            role: "user",
-            userId: user.id,
-          },
-        },
       },
     });
 
@@ -52,77 +49,34 @@ export async function POST(
       modelName: "llama2-13b",
     };
 
-    const memoryManager = MemoryManager.getInstance();
-
-    const records = await memoryManager.readLatestHistory(characterKey);
-
-    if (records.length === 0) {
-      await memoryManager.seedChatHistory(character.seed, "\n\n", characterKey);
-    }
-
-    await memoryManager.writeToHistory("User: " + prompt + "\n", characterKey);
-    const recentChatHistory = await memoryManager.readLatestHistory(
-      characterKey
-    );
-    const similarDocs = await memoryManager.vectorSearch(
-      recentChatHistory,
-      character_file_name
-    );
-
-    let relevantHistory = "";
-
-    if (!!similarDocs && similarDocs.length !== 0) {
-      relevantHistory = similarDocs.map((doc) => doc.pageContent).join("\n");
-    }
-
     const model = new OpenAI({
-      modelName: "gpt-3.5-turbo-instruct",
+      modelName: "gpt-4",
       temperature: 0.9,
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
 
+    const formattedMessages = messages
+      .map((message: Message) => `${message.role}: ${message.content}`)
+      .join("\n");
+
     const resp = await model
       .call(
-        `ONLY generate sentences in the first person, speaking as the character directly. DO NOT use any prefixes like "${character.name}:" or other identifiers before the response. Respond in at least one complete sentence.\nBelow is the background about you as the character:\n${character.instructions}.\n\nBelow are the relevant details about your past and the current conversation:\n${relevantHistory}\n${recentChatHistory}\n\nFor example, instead of saying "Albert: I think...", simply start with "I think...".`
+        `ONLY generate sentences in the first person, speaking as the character directly. DO NOT use any prefixes like "${character.name}:" or other identifiers before the response. Respond in at least one complete sentence.\nBelow is the background about you as the character:\n${character.instructions}.\n\nBelow are the relevant details about your past and the current conversation:\n${character.seed}\n${formattedMessages}\n\nFor example, instead of saying "${character.name}: I think...", simply start with "I think...".`
       )
       .catch(console.error);
 
     if (!resp) {
-      return new NextResponse("Error generating response", { status: 500 });
+      return new NextResponse(`Error generating response`, { status: 500 });
     }
 
-    const response = resp.trim();
+    const response = {
+      role: "system",
+      content: resp.trim(),
+    };
 
-    await memoryManager.writeToHistory("" + response.trim(), characterKey);
-    var Readable = require("stream").Readable;
+    await increaseHardLimit("ROUTE_HANDLER");
 
-    let s = new Readable();
-    s.push(response);
-    s.push(null);
-
-    if (response !== undefined && response.length > 1) {
-      memoryManager.writeToHistory(
-        `${character.name}: ` + response.trim(),
-        characterKey
-      );
-
-      await prismadb.character.update({
-        where: {
-          id: params.chatId,
-        },
-        data: {
-          messages: {
-            create: {
-              content: response.trim(),
-              role: "system",
-              userId: user.id,
-            },
-          },
-        },
-      });
-    }
-
-    return new StreamingTextResponse(s);
+    return NextResponse.json(response);
   } catch (error) {
     console.log("[CHAT_POST]", error);
     return new NextResponse("Internal Error", { status: 500 });

@@ -40,7 +40,7 @@ const Categories = ({ data }: CategoriesProps) => {
           categoryId ? "bg-slate-200/50" : "bg-slate-300/80"
         )}
       >
-        Newest
+        All
       </button>
       {data.map((item) => (
         <button

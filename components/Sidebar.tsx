@@ -10,22 +10,18 @@ import {
   MusicIcon,
   Settings,
   VideoIcon,
+  Wand2,
 } from "lucide-react";
 import { Montserrat } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FreeCounter } from "./FreeCounter";
+import { Button } from "./ui/button";
 
 const montserrat = Montserrat({ weight: "600", subsets: ["latin"] });
 
 const routes = [
-  {
-    label: "Home",
-    icon: Home,
-    href: "/",
-    color: "text-purple-700",
-  },
   {
     label: "Dashboard",
     icon: LayoutDashboard,
@@ -107,6 +103,12 @@ const Sidebar = ({ apiLimitCount = 0, isPro = false }: SidebarProps) => {
               </div>
             </Link>
           ))}
+        </div>
+        <div className="mt-[50px] border-t border-slate-200/10">
+          <Button className="w-full mt-5 bg-slate-100/10 hover:bg-slate-100/10">
+            Discover more tools
+            <Wand2 className="w-4 h-4 ml-1" />
+          </Button>
         </div>
       </div>
       <FreeCounter apiLimitCount={apiLimitCount} isPro={isPro} />

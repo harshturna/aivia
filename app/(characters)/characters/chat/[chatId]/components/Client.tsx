@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, ChangeEvent } from "react";
 import { Character, Message } from "@prisma/client";
 import ChatHeader from "./ChatHeader";
 import { useRouter } from "next/navigation";
-import { useCompletion } from "ai/react";
+import { useChat } from "ai/react";
 import ChatForm from "@/components/Characters/ChatForm";
 import ChatMessages from "@/components/Characters/ChatMessages";
 import { ChatMessageProps } from "@/components/Characters/ChatMessage";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 // TODO: remove the _count props
 
@@ -24,32 +26,43 @@ interface ChatClientProps {
 const ChatClient = ({ character, currentUserId }: ChatClientProps) => {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const [messages, setMessages] = useState<any[]>(character.messages);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { input, isLoading, handleInputChange, handleSubmit, setInput } =
-    useCompletion({
-      api: `/api/chat/${character.id}`,
-      onFinish(_, completion) {
-        const systemMesage: ChatMessageProps = {
-          role: "system",
-          content: completion,
-        };
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+    setInput(target.value);
+  };
 
-        setMessages((current) => [...current, systemMesage]);
-        setInput("");
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // Prevents the default form submission behavior
 
-        router.refresh();
-      },
-    });
-
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    const userMessage: ChatMessageProps = {
+    if (!input) {
+      return;
+    }
+    const userMessage = {
       role: "user",
       content: input,
     };
 
+    // Update the messages state
     setMessages((current) => [...current, userMessage]);
-    handleSubmit(e);
+
+    try {
+      setIsLoading(true);
+      setInput("");
+      const { data } = await axios.post(`/api/chat/${character.id}`, {
+        messages: [...messages, userMessage],
+      });
+      setMessages((current) => [...current, data]);
+    } catch (error) {
+      toast.error("Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {

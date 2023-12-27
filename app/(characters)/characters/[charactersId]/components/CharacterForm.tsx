@@ -1,5 +1,7 @@
 "use client";
 
+// TODO: Test all three button conditions - pro, guest user and non pro
+
 import * as z from "zod";
 
 import { Category, Character } from "@prisma/client";
@@ -43,6 +45,7 @@ Albert Einstein: Imagination lets us explore beyond current knowledge. It's the 
 interface CharacterFormProps {
   initialData: Character | null;
   categories: Category[];
+  isGuest: boolean;
 }
 
 const formSchema = z.object({
@@ -66,7 +69,11 @@ const formSchema = z.object({
   }),
 });
 
-const CharacterForm = ({ categories, initialData }: CharacterFormProps) => {
+const CharacterForm = ({
+  categories,
+  initialData,
+  isGuest = true,
+}: CharacterFormProps) => {
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -259,10 +266,16 @@ const CharacterForm = ({ categories, initialData }: CharacterFormProps) => {
             )}
           />
           <div className="w-full flex justify-center">
-            <Button size="lg" disabled={isLoading}>
-              {initialData ? "Edit your character" : "Create your character"}
-              <Wand className="ml-2" />
-            </Button>
+            {isGuest ? (
+              <Button size="lg" type="button" variant="default" disabled={true}>
+                Guest cannot create new characters
+              </Button>
+            ) : (
+              <Button size="lg" disabled={isLoading}>
+                {initialData ? "Edit your character" : "Create your character"}
+                <Wand className="ml-2" />
+              </Button>
+            )}
           </div>
         </form>
       </Form>

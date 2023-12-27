@@ -1,4 +1,4 @@
-import { getUserInRoutes } from "@/lib/getUserInRoutes";
+import { getUser } from "@/lib/getUser";
 import { NextResponse } from "next/server";
 
 import prismadb from "@/lib/prismadb";
@@ -9,7 +9,7 @@ const settingsUrls = absoluteUrl("/settings");
 
 export async function GET() {
   try {
-    const user = await getUserInRoutes();
+    const user = await getUser("ROUTE_HANDLER");
 
     if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
