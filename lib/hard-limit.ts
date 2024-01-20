@@ -22,7 +22,7 @@ export const increaseHardLimit = async (context: ContextType) => {
     });
   } else {
     await prismadb.userApiLimit.create({
-      data: { hardLimitCount: 1, userId: userId },
+      data: { hardLimitCount: 1, userId: userId, count: 1 },
     });
   }
 };
@@ -43,10 +43,8 @@ export const checkHardLimit = async (context: ContextType) => {
   });
 
   if (userHardLimit === null) {
-    return false;
+    return true;
   }
-
-  console.log(userHardLimit.hardLimitCount);
 
   if (
     userHardLimit?.hardLimitCount === 0 ||

@@ -11,6 +11,10 @@ export const checkSubscription = async (context: ContextType) => {
   }
   const { id: userId } = user;
 
+  if (userId === process.env.GUEST_USER_ID) {
+    return true;
+  }
+
   const userSubscription = await prismadb.userSubscription.findUnique({
     where: {
       userId: userId,

@@ -105,10 +105,13 @@ const Sidebar = ({ apiLimitCount = 0, isPro = false }: SidebarProps) => {
           ))}
         </div>
         <div className="mt-[50px] border-t border-slate-200/10">
-          <Button className="w-full mt-5 bg-slate-100/10 hover:bg-slate-100/10">
+          <Link
+            className="flex items-center justify-center px-6 py-2 mt-5 bg-slate-100/10 hover:bg-slate-200/10 w-max mx-auto rounded-sm"
+            href="/dashboard"
+          >
             Discover more tools
             <Wand2 className="w-4 h-4 ml-1" />
-          </Button>
+          </Link>
         </div>
       </div>
       <FreeCounter apiLimitCount={apiLimitCount} isPro={isPro} />

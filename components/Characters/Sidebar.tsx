@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Home, LayoutDashboard, Plus, Settings } from "lucide-react";
+import { Home, LayoutDashboard, Plus, Settings, Wand2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -72,6 +72,15 @@ const Sidebar = () => {
               </div>
             </Link>
           ))}
+        </div>
+        <div className="mt-[50px] border-t border-slate-200/10">
+          <Link
+            className="flex items-center justify-center px-6 py-2 mt-5 bg-slate-100/10 hover:bg-slate-200/10 w-max mx-auto rounded-sm"
+            href="/dashboard"
+          >
+            Discover more tools
+            <Wand2 className="w-4 h-4 ml-1" />
+          </Link>
         </div>
       </div>
     </div>

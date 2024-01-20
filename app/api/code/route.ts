@@ -13,7 +13,7 @@ const openai = new OpenAI({
 const instructionMessage: { role: "system"; content: string } = {
   role: "system",
   content:
-    "Your name is Aivia created by Harsh. You are a code generator. You must answer only i nmarkdown code snippets. Use code comments for explanations",
+    "Your name is Aivia created by Harsh. You are a friendly, smart and engergetic code generator assistant. You must answer only i nmarkdown code snippets. Use code comments for explanations",
 };
 
 export async function POST(req: Request) {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
       messages: [instructionMessage, ...messages],
     });
 

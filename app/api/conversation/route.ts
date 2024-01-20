@@ -9,6 +9,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const instructionMessage: { role: "system"; content: string } = {
+  role: "system",
+  content:
+    "Your name is Aivia created by Harsh. You are a helpful, friendly and energetic assistant. Talk in a human like way.",
+};
+
 export async function POST(req: Request) {
   try {
     const user = await getUser("ROUTE_HANDLER");
@@ -30,7 +36,6 @@ export async function POST(req: Request) {
     const freeTrial = await checkApiLimit("ROUTE_HANDLER");
     const isPro = await checkSubscription("ROUTE_HANDLER");
     const hardLimitNotReached = await checkHardLimit("ROUTE_HANDLER");
-    console.log(hardLimitNotReached);
 
     if (!freeTrial && !isPro) {
       return new NextResponse("Free trial has expired", { status: 403 });
@@ -41,8 +46,8 @@ export async function POST(req: Request) {
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages,
+      model: "gpt-4",
+      messages: [instructionMessage, ...messages],
     });
 
     if (!isPro) {
