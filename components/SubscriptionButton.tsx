@@ -8,9 +8,13 @@ import toast from "react-hot-toast";
 
 interface SubscriptionButtonProps {
   isPro: boolean;
+  isGuest: boolean;
 }
 
-const SubscriptionButton = ({ isPro = false }: SubscriptionButtonProps) => {
+const SubscriptionButton = ({
+  isPro = false,
+  isGuest = true,
+}: SubscriptionButtonProps) => {
   const [loading, setLoading] = useState(false);
 
   const onClick = async () => {
@@ -28,7 +32,7 @@ const SubscriptionButton = ({ isPro = false }: SubscriptionButtonProps) => {
 
   return (
     <Button
-      disabled={loading}
+      disabled={loading || isGuest}
       variant={isPro ? "default" : "premium"}
       onClick={onClick}
     >

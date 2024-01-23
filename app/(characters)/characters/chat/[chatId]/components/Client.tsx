@@ -21,9 +21,14 @@ interface ChatClientProps {
     };
   };
   currentUserId: string;
+  isGuest: boolean;
 }
 
-const ChatClient = ({ character, currentUserId }: ChatClientProps) => {
+const ChatClient = ({
+  character,
+  currentUserId,
+  isGuest = true,
+}: ChatClientProps) => {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
@@ -75,7 +80,11 @@ const ChatClient = ({ character, currentUserId }: ChatClientProps) => {
 
   return (
     <div className="flex flex-col h-full p-4 space-y-2">
-      <ChatHeader character={character} currentUserId={currentUserId} />
+      <ChatHeader
+        character={character}
+        currentUserId={currentUserId}
+        isGuest={isGuest}
+      />
       <ChatMessages
         character={character}
         isLoading={isLoading}

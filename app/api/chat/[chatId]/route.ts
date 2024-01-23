@@ -42,12 +42,6 @@ export async function POST(
     }
 
     const name = character.id;
-    const character_file_name = name + ".txt";
-    const characterKey = {
-      characterName: name,
-      userId: user.id,
-      modelName: "llama2-13b",
-    };
 
     const model = new OpenAI({
       modelName: "gpt-4",

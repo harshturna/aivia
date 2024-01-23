@@ -68,7 +68,7 @@ const ImagePage = () => {
     <div>
       <Heading
         title="Image Generation"
-        description="Our image generation Ai"
+        description="Bring your inner Michelangelo out with our image generation AI"
         icon={ImageIcon}
         iconColor="text-pink-700"
         bgColor="bg-pink-700/10"
@@ -163,7 +163,7 @@ const ImagePage = () => {
         <div className="space-y-4 mt-4">
           {isLoading && (
             <div className="p-20">
-              <Loader />
+              <Loader description="hold tight, we're generating your images" />
             </div>
           )}
           {!images.length && !isLoading && (

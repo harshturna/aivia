@@ -65,8 +65,8 @@ const ConversationPage = () => {
   return (
     <div>
       <Heading
-        title="Convesration"
-        description="Our conversation Ai"
+        title="Convesrations"
+        description="Chat with Aivia, your friendly AI"
         icon={MessageSquare}
         iconColor="text-violet-500"
         bgColor="bg-violet-500/10"

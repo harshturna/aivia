@@ -67,7 +67,7 @@ const CodePage = () => {
     <div>
       <Heading
         title="Code Generation"
-        description="Our code generation Ai"
+        description="Conjure up some code and bring your ideas to life"
         icon={Code}
         iconColor="text-emerald-500"
         bgColor="bg-emerald-700/10"

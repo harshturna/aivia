@@ -54,7 +54,7 @@ const MusicGeneration = () => {
     <div>
       <Heading
         title="Music Generation"
-        description="Our Music AI"
+        description="Unleash Symphonies with Our Music Generation AI"
         icon={Music}
         iconColor="text-green-700"
         bgColor="bg-green-700/10"
@@ -93,7 +93,7 @@ const MusicGeneration = () => {
         <div className="space-y-4 mt-4">
           {isLoading && (
             <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
-              <Loader />
+              <Loader description="hold tight, we're generating your music" />
             </div>
           )}
           {!music && !isLoading && <Empty label="no music generated" />}

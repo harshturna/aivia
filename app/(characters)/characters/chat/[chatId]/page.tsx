@@ -2,6 +2,7 @@ import { getUser } from "@/lib/getUser";
 import prismadb from "@/lib/prismadb";
 import { redirect } from "next/navigation";
 import ChatClient from "./components/Client";
+import { isGuestUser } from "@/lib/guest-user";
 
 interface chatIdPageProps {
   params: {
@@ -11,6 +12,7 @@ interface chatIdPageProps {
 
 const ChatIdPage = async ({ params }: chatIdPageProps) => {
   const user = await getUser("SERVER_COMPONENT");
+  const isGuest = await isGuestUser("SERVER_COMPONENT");
 
   if (!user) {
     redirect("/login");
@@ -42,7 +44,13 @@ const ChatIdPage = async ({ params }: chatIdPageProps) => {
     return redirect("/characters");
   }
 
-  return <ChatClient character={character} currentUserId={user.id} />;
+  return (
+    <ChatClient
+      character={character}
+      currentUserId={user.id}
+      isGuest={isGuest}
+    />
+  );
 };
 
 export default ChatIdPage;

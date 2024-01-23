@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
 import prismadb from "@/lib/prismadb";
-import { checkSubscription } from "@/lib/subscription";
 import { isGuestUser } from "@/lib/guest-user";
 
 export async function POST(req: Request) {
@@ -32,8 +31,6 @@ export async function POST(req: Request) {
     ) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
-
-    // TODO: Check for sucscription
 
     const charcter = await prismadb.character.create({
       data: {

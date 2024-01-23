@@ -54,7 +54,7 @@ const VideoGeneration = () => {
     <div>
       <Heading
         title="Video Generation"
-        description="Our Video AI"
+        description="Transform Visions into Reality with Our Video Generation AI"
         icon={Video}
         iconColor="text-orange-700"
         bgColor="bg-orange-700/10"
@@ -93,7 +93,7 @@ const VideoGeneration = () => {
         <div className="space-y-4 mt-4">
           {isLoading && (
             <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
-              <Loader />
+              <Loader description="Hold tight, we're generating your video" />
             </div>
           )}
           {!video && !isLoading && <Empty label="no video generated" />}

@@ -30,8 +30,6 @@ export async function PATCH(
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
-    // TODO: Check for sucscription
-
     const charcter = await prismadb.character.update({
       where: {
         id: params.characterId,

@@ -11,13 +11,6 @@ const montserrat = Montserrat({ weight: "600", subsets: ["latin"] });
 
 const routes = [
   {
-    icon: Home,
-    label: "Home",
-    href: "/",
-    pro: false,
-    color: "text-purple-700",
-  },
-  {
     icon: LayoutDashboard,
     href: "/characters",
     label: "Dashboard",

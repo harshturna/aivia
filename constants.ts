@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 export const MAX_FREE_COUNTS = 5;
-export const HARD_LIMIT_COUNTS = 5;
+export const HARD_LIMIT_COUNTS = 50;
 
 export type ContextType =
   | "ROUTE_HANDLER"

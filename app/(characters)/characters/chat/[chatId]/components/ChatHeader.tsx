@@ -24,9 +24,14 @@ interface ChatHeaderProps {
     };
   };
   currentUserId: string;
+  isGuest: boolean;
 }
 
-const ChatHeader = ({ character, currentUserId }: ChatHeaderProps) => {
+const ChatHeader = ({
+  character,
+  currentUserId,
+  isGuest = true,
+}: ChatHeaderProps) => {
   const router = useRouter();
 
   const onDelete = async () => {
@@ -65,7 +70,7 @@ const ChatHeader = ({ character, currentUserId }: ChatHeaderProps) => {
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete}>
+            <DropdownMenuItem onClick={onDelete} disabled={isGuest}>
               <Trash className="w-4 h-4 mr-2" />
               Delete
             </DropdownMenuItem>
