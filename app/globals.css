@@ -56,6 +56,10 @@ body,
     background-clip: text;
     -webkit-text-fill-color: transparent; /* for WebKit browsers */
   }
+
+  .character-grid {
+    grid-template-columns: 30px 1fr;
+  }
 }
 
 @layer base {
