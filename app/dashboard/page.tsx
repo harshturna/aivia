@@ -8,10 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Link from "next/link";
-import { getUser } from "@/lib/getUser";
-const Dashboard = async () => {
-  const user = await getUser("SERVER_COMPONENT");
-
+const Dashboard = () => {
   return (
     <div className="flex justify-center flex-col h-[100%] xl:px-[10rem] lg:px-[5rem]">
       <div className="mb-8 flex-col">
