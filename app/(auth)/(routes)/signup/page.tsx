@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import Logo from "@/components/Logo";
 
 const Signup = () => {
   const router = useRouter();
@@ -70,10 +71,10 @@ const Signup = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full sm:justify-center sm:w-[400px] space-y-6 flex flex-col m-5 border px-10 py-4 rounded-lg border-slate-200 md:w-[600px]"
+        className="w-full sm:justify-center sm:w-[400px] space-y-6 flex flex-col m-5 border px-5 py-4 rounded-lg border-slate-200 md:w-[600px]"
       >
         <Link href="/" className="w-full flex -justify-left items-center">
-          {/* <Image src={NesterLogo} alt="Nester Logo" width={50} height={50} /> */}
+          <Logo />
           <span className="font-semibold text-4xl first-letter:ml-2">
             aivia.
           </span>

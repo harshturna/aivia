@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Aivia",
   description: "Your AI suite",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

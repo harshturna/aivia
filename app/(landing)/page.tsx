@@ -1,20 +1,17 @@
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import Hero from "@/components/landing/hero";
+import FeatureCards from "@/components/landing/feature-cards";
+import Features from "@/components/landing/features";
+import Navbar from "@/components/landing/navbar";
+import Footer from "@/components/landing/footer";
 
-const page = () => {
+export default function Home() {
   return (
-    <div>
-      <Link href="/login">
-        <Button>Login</Button>
-      </Link>
-      <Link href="/signup">
-        <Button>Register</Button>
-      </Link>
-      <Link href="/dashboard">
-        <Button>Dashboard</Button>
-      </Link>
-    </div>
+    <main>
+      <Navbar />
+      <Hero />
+      <FeatureCards />
+      <Features />
+      <Footer />
+    </main>
   );
-};
-
-export default page;
+}

@@ -1,8 +1,6 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import { offerings } from "@/constants";
 import { Card } from "../../components/ui/card";
+import { Sparkles } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -10,25 +8,24 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Link from "next/link";
-const ProModal = () => {
-  const [mounted, setMounted] = useState(false);
+import { getUser } from "@/lib/getUser";
+const Dashboard = async () => {
+  const user = await getUser("SERVER_COMPONENT");
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
-  // TODO: Add logo text to name
   return (
-    <div className="flex justify-center flex-col h-[100%] xl:px-[15rem] lg:px-[5rem]">
-      <div className="mb-8">
-        <h2 className="text-2xl md:text-4xl font-bold text-center">Aivia</h2>
-        <p className="text-muted-foreground text-sm md:text-lg text-center m-0">
-          Explore our AI tools
-        </p>
+    <div className="flex justify-center flex-col h-[100%] xl:px-[10rem] lg:px-[5rem]">
+      <div className="mb-8 flex-col">
+        <div className="flex items-center gap-2 justify-center">
+          <Sparkles
+            className="w-[40px] h-[40px]"
+            fill="#db75a8"
+            stroke="#8b5cf5"
+            strokeWidth={1}
+          />
+          <h2 className="text-2xl md:text-4xl font-bold text-center gradient-text">
+            Explore our tools
+          </h2>
+        </div>
       </div>
       <div className="px-4 md:px-20 lg:px-32 space-y-4">
         {offerings.map((tool) => {
@@ -87,4 +84,4 @@ const ProModal = () => {
   );
 };
 
-export default ProModal;
+export default Dashboard;
