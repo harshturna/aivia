@@ -18,7 +18,7 @@ export default function Features() {
           return (
             <div
               key={cards.text}
-              className="flex flex-col items-center gap-2 text-center md:flex-row md:gap-8 md:text-left"
+              className="flex flex-col items-center gap-2 md:flex-row md:gap-8 md:text-left"
             >
               <div className="flex">
                 <Icon className="h-[6rem] w-[6rem]" />
