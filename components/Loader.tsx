@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Logo from "./Logo";
 
 interface LoaderProps {
   description?: string;
@@ -7,7 +7,7 @@ interface LoaderProps {
 export const Loader = ({ description }: LoaderProps) => (
   <div className="h-full flex flex-col gap-y-4 items-center">
     <div className="w-10 h-10 animate-spin">
-      <Image alt="logo" fill src="/logo.png" />
+      <Logo />
     </div>
 
     <p className="text-sm text-muted-foreground">
