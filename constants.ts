@@ -51,7 +51,7 @@ export const tools = [
     icon: Code,
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",
-    href: "/green",
+    href: "/code",
   },
 ];
 
