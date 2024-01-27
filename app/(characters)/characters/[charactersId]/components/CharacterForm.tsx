@@ -265,18 +265,22 @@ const CharacterForm = ({
               </FormItem>
             )}
           />
-          <div className="w-full flex justify-center">
-            {isGuest ? (
-              <Button size="lg" type="button" variant="default" disabled={true}>
-                Guest cannot create new characters
-              </Button>
-            ) : (
-              <Button size="lg" disabled={isLoading}>
-                {initialData ? "Edit your character" : "Create your character"}
-                <Wand className="ml-2" />
-              </Button>
-            )}
-          </div>
+         <div className="w-full flex justify-center">
+          {isGuest && initialData ? (
+            <Button size="lg" type="button" variant="default" disabled={true}>
+              Guest cannot edit characters
+            </Button>
+          ) : isGuest ? (
+            <Button size="lg" type="button" variant="default" disabled={true}>
+              Guest cannot create new characters
+            </Button>
+          ) : (
+            <Button size="lg" disabled={isLoading}>
+              {initialData ? "Edit your character" : "Create your character"}
+              <Wand className="ml-2" />
+            </Button>
+          )}
+        </div>
         </form>
       </Form>
     </div>
