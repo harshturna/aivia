@@ -6,9 +6,5 @@ export const navLinks = [
   {
     route: "Get Started",
     path: "/login",
-  },
-  {
-    route: "Github",
-    path: "/github",
-  },
+  }
 ];
