@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Loader from "@/components/SubmitLoader";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
@@ -23,6 +23,10 @@ import toast from "react-hot-toast";
 import Logo from "@/components/Logo";
 
 const Login = () => {
+  useEffect(() => {
+    router.refresh();
+  }, []);
+
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const form = useForm<z.infer<typeof FormSchema>>({
