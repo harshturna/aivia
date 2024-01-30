@@ -25,7 +25,7 @@ export default function Footer() {
           © {new Date().getFullYear()}{" "}
           <a
             target="_blank"
-            href="http://localhost:3000"
+            href="https://aivia.byharsh.com"
             className="hover:underline"
           >
             Aivia
