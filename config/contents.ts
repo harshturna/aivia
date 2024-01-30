@@ -42,12 +42,12 @@ export const features = {
     },
     {
       text: `Chat with`,
-      subtext: `scientists, celebrities, and other personalities, or create your own`,
+      subtext: `scientists, celebrities, and create your own characters!`,
       icon: UserRound,
     },
     {
       text: `Upload and Chat with`,
-      subtext: `your PDFs, Resume, and other documents`,
+      subtext: `your PDFs, Resume, and other documents!`,
       icon: BookText,
     },
   ],
