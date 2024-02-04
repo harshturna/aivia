@@ -10,7 +10,7 @@ export default function Footer() {
           <Link href="/">
             <Logo />
           </Link>
-          <ul className="mb-6 flex flex-wrap items-center text-primary opacity-60 sm:mb-0">
+          <ul className="mb-6 hidden md:flex flex-wrap items-center text-primary opacity-60 sm:mb-0">
             {navLinks.map((link) => (
               <li key={link.route}>
                 <Link href={link.path} className="mr-4 hover:underline md:mr-6">
@@ -21,7 +21,7 @@ export default function Footer() {
           </ul>
         </div>
         <hr className="my-6 text-muted-foreground sm:mx-auto lg:my-8" />
-        <span className="block text-sm text-muted-foreground sm:text-center">
+        <span className="block text-sm text-muted-foreground text-center">
           © {new Date().getFullYear()}{" "}
           <a
             target="_blank"
