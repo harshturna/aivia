@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 const Dashboard = () => {
   return (
-    <div className="flex justify-center flex-col h-[100%] xl:px-[10rem] lg:px-[5rem]">
+    <div className="flex justify-center flex-col h-[100%] xl:px-[10rem] lg:px-[5rem] items-center">
       <div className="mb-8 flex-col">
         <div className="flex items-center gap-2 justify-center">
           <Sparkles
@@ -24,7 +24,7 @@ const Dashboard = () => {
           </h2>
         </div>
       </div>
-      <div className="px-4 md:px-20 lg:px-32 space-y-4">
+      <div className="px-4 space-y-4 md:w-[800px]">
         {offerings.map((tool) => {
           if (tool.label === "Documents AI") {
             return (
