@@ -34,7 +34,7 @@ const Dashboard = () => {
                     <Card className="p-3 border border-gray-200 rounded-md flex items-center justify-between transition-all hover:shadow-md gap-2">
                       <div className="grid grid-cols-[40px_1fr] grid-rows-2 gap-x-6 items-center">
                         <div
-                          className={`row-span-2 p-2 w-full h-full flex justify-center items-center rounded-md ${tool.bgColor}`}
+                          className={`row-span-2 p-2 w-[50px] h-[50px] flex justify-center items-center rounded-md ${tool.bgColor}`}
                         >
                           <tool.icon className={`w-6 h-6 ${tool.color}`} />
                         </div>
