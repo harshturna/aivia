@@ -1,11 +1,19 @@
-# [Aivia](https://aivia.byharsh.com/)
-## Transform your ideas into Reality with aivia's suite of AI tools
+# Aivia AI Tools Suite
 
-### Generate
-images, music, videos, and more!
+## Introduction
+Aivia is a suite of AI tools designed to empower creativity and productivity. 
+Built with Next.js, Supabase, and Cloudinary, and leveraging the OpenAI API, Aivia offers a range of generative AI functionalities, including image, text, code, music, and video generation. 
+Aivia also introduces a Companion AI feature, enabling users to interact with notable personalities or create their own characters. 
+The upcoming Documents AI feature will allow users to interact with submitted documents.
 
-### Chat with
-scientists, celebrities, and other personalities, or create your own
+## Features
+- **Generative AI:** Generate images, text, code, music, and videos with state-of-the-art AI.
+- **Companion AI:** Chat with famous/notable personalities or create and interact with custom characters.
+- **Documents AI (Coming Soon):** Submit documents and engage in interactive dialogues with them.
 
-### Upload and Chat with
-your PDFs, Resume, and other documents
+## Technology Stack
+- **Frontend:** Next.js
+- **Backend:** Supabase (Authentication, Realtime Database, Storage)
+- **Media Management:** Cloudinary
+- **AI Services:** OpenAI API
+
