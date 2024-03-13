@@ -49,8 +49,8 @@ export const tools = [
   {
     label: "Code",
     icon: Code,
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-500",
+    color: "text-orange-700",
+    bgColor: "bg-orange-700/10",
     href: "/code",
   },
 ];
