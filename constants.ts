@@ -50,7 +50,7 @@ export const tools = [
     label: "Code",
     icon: Code,
     color: "text-emerald-500",
-    bgColor: "bg-emerald-500/10",
+    bgColor: "bg-emerald-500",
     href: "/code",
   },
 ];
