@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 export default function FeatureCards() {
   return (
-    <section className="bg-slate-50 dark:bg-slate-900">
+    <section className="bg-white dark:bg-slate-900">
       <div className="container space-y-8 py-12 text-center lg:py-20">
         <HeadingText>{featureCards.header}</HeadingText>
         {/* className="grid grid-cols-1 gap-2 md:grid-cols-3" */}
