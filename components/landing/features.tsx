@@ -11,7 +11,7 @@ export default function Features() {
           {features.header}
         </HeadingText>
       ) : null}
-      <div className="grid grid-cols-1 gap-10 lg:mx-[20rem] md:mx-[10rem]">
+      <div className="grid grid-cols-1 gap-10 xl:mx-[26rem] lg:mx-[20rem]  md:mx-[10rem]">
         {features.content.map((cards: any) => {
           const Icon = cards.icon;
 

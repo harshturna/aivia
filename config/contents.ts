@@ -42,7 +42,7 @@ export const features = {
     },
     {
       text: `Chat with`,
-      subtext: `scientists, celebrities, and create your own characters!`,
+      subtext: `scientists, celebrities, or create your own characters!`,
       icon: UserRound,
     },
     {
