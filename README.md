@@ -1,6 +1,6 @@
 # Aivia AI Tools Suite
 
-## Introduction
+## About
 Aivia is a suite of AI tools designed to empower creativity and productivity. 
 Built with Next.js, Supabase, and Cloudinary, and leveraging the OpenAI API, Aivia offers a range of generative AI functionalities, including image, text, code, music, and video generation. 
 Aivia also introduces a Companion AI feature, enabling users to interact with notable personalities or create their own characters. 
@@ -13,7 +13,7 @@ The upcoming Documents AI feature will allow users to interact with submitted do
 
 ## Technology Stack
 - **Frontend:** Next.js
-- **Backend:** Supabase (Authentication, Realtime Database, Storage)
-- **Media Management:** Cloudinary
-- **AI Services:** OpenAI API
+- **Database:** PostgreSQL
+- **Media Storage:** Cloudinary
+- **AI Services:** OpenAI, Replicate
 
