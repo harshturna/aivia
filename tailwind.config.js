@@ -22,6 +22,19 @@ module.exports = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        purple: {
+          100: "#F4F7FE",
+          200: "#BCB6FF",
+          400: "#868CFF",
+          500: "#7857FF",
+          600: "#4318FF",
+        },
+        dark: {
+          400: "#7986AC",
+          500: "#606C80",
+          600: "#2B3674",
+          700: "#384262",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -50,6 +63,10 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+      },
+      backgroundImage: {
+        "purple-gradient": "url('/assets/images/gradient-bg.svg')",
+        banner: "url('/assets/images/banner-bg.png')",
       },
       borderRadius: {
         lg: "var(--radius)",

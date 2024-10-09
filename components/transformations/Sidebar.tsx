@@ -1,7 +1,15 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Plus, Settings, Wand2 } from "lucide-react";
+import {
+  BadgeMinus,
+  Brush,
+  GalleryHorizontalEnd,
+  PaintBucket,
+  Pipette,
+  Ratio,
+  Wand2,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Montserrat } from "next/font/google";
@@ -11,25 +19,39 @@ const montserrat = Montserrat({ weight: "600", subsets: ["latin"] });
 
 const routes = [
   {
-    icon: LayoutDashboard,
-    href: "/characters",
-    label: "Dashboard",
+    icon: Brush,
+    href: "/transformations/restore",
+    label: "Image Restore",
     pro: false,
     color: "text-cyan-700",
   },
   {
-    icon: Plus,
-    href: "/characters/new",
-    label: "Create",
+    icon: Ratio,
+    href: "/transformations/fill",
+    label: "Generative Fill",
     pro: true,
     color: "text-green-700",
   },
   {
-    icon: Settings,
-    href: "/characters/settings",
-    label: "Settings",
+    icon: BadgeMinus,
+    href: "/transformations/remove",
+    label: "Object Remove",
     pro: false,
-    color: "",
+    color: "text-pink-500",
+  },
+  {
+    icon: Pipette,
+    href: "/transformations/recolor",
+    label: "Object Recolor",
+    pro: false,
+    color: "text-red-500",
+  },
+  {
+    icon: GalleryHorizontalEnd,
+    href: "/transformations/removeBackground",
+    label: "Background Remove",
+    pro: false,
+    color: "text-purple-500",
   },
 ];
 

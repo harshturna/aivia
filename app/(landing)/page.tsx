@@ -4,7 +4,6 @@ import Features from "@/components/landing/features";
 import Navbar from "@/components/landing/navbar";
 import Footer from "@/components/landing/footer";
 import Pricing from "@/components/landing/pricing";
-import Test from "@/components/landing/test";
 
 export default function Home() {
   return (
@@ -14,7 +13,6 @@ export default function Home() {
       <FeatureCards />
       <Features />
       <Pricing />
-      {/* <Test /> */}
       <Footer />
     </main>
   );
