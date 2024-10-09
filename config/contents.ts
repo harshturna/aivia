@@ -42,7 +42,7 @@ export const features = {
     },
     {
       text: `Chat with`,
-      subtext: `any character you can imagine`,
+      subtext: `any character you can imagine!`,
       icon: UserRound,
     },
     {
