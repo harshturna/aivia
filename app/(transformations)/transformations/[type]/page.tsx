@@ -16,7 +16,7 @@ const AddTransformationPage = async ({
   }
 
   return (
-    <div className="py-2 max-w-[1100px] mx-auto px-8 xl:px-4">
+    <div className="pt-2 pb-8 max-w-[1100px] mx-auto px-8 xl:px-4">
       <Header title={transformation.title} subTitle={transformation.subTitle} />
       <section className="mt-10">
         <TransformationForm

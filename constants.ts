@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 export const MAX_FREE_COUNTS = 5;
-export const HARD_LIMIT_COUNTS = 50;
+export const HARD_LIMIT_COUNTS = 40;
 
 export type ContextType =
   | "ROUTE_HANDLER"
@@ -66,19 +66,19 @@ export const offerings = [
   },
   {
     label: "Companion AI",
-    description: "Chat with notable people or create your own companion",
+    description: "Chat with any character you can imagine",
     icon: UserRound,
     color: "text-green-700",
     bgColor: "bg-green-700/10",
     href: "/characters",
   },
   {
-    label: "Documents AI",
-    description: "Chat with your PDFs, youtube videos, and more",
-    icon: BookText,
+    label: "Transformations AI",
+    description: "Transform images like it's magic",
+    icon: Image,
     color: "text-pink-700",
     bgColor: "bg-pink-700/10",
-    href: "/documents",
+    href: "/transformations/restore",
   },
 ];
 

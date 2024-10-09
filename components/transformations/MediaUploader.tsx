@@ -2,6 +2,7 @@
 
 import { dataUrl, getImageSize } from "@/lib/utils";
 import { Plus } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { CldImage, CldUploadWidget } from "next-cloudinary";
 import { PlaceholderValue } from "next/dist/shared/lib/get-img-props";
@@ -41,12 +42,7 @@ const MediaUploader = ({
   };
 
   const onUploadErrorHandler = () => {
-    // toast({
-    //   title: "Something went wrong while uploading the image",
-    //   description: "Please try again",
-    //   duration: 5000,
-    //   className: "error-toast",
-    // });
+    toast.error("Something went wrong, please try again");
   };
   return (
     <CldUploadWidget

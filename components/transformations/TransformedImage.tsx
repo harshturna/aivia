@@ -2,11 +2,11 @@ import { dataUrl, debounce, getImageSize } from "@/lib/utils";
 import { Download, Loader2 } from "lucide-react";
 import { CldImage } from "next-cloudinary";
 import { PlaceholderValue } from "next/dist/shared/lib/get-img-props";
+import toast from "react-hot-toast";
 
 const TransformedImage = ({
   image,
   type,
-  title,
   transformationConfig,
   isTransforming,
   setIsTransforming,
@@ -39,17 +39,14 @@ const TransformedImage = ({
               setIsTransforming && setIsTransforming(false);
             }}
             onError={() => {
+              toast.error("Something went wrong, please try again");
               debounce(() => {
                 setIsTransforming && setIsTransforming(false);
               }, 8000);
             }}
             {...transformationConfig}
           />
-          {isTransforming && (
-            <div className="transforming-loader">
-              <Loader2 width={50} height={50} />
-            </div>
-          )}
+          {isTransforming && <div className="transforming-loader"></div>}
         </div>
       ) : (
         <div className="transformed-placeholder">Transformed image</div>

@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
 import { Button } from "../ui/button";
 import { Form } from "../ui/form";
 
@@ -26,8 +25,8 @@ import { useEffect, useState } from "react";
 import { AspectRatioKey, debounce, deepMergeObjects } from "@/lib/utils";
 import MediaUploader from "./MediaUploader";
 import TransformedImage from "./TransformedImage";
-import { getCldImageUrl } from "next-cloudinary";
-import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { didLimitReach, incrementLimit } from "@/lib/actions";
 
 export const formSchema = z.object({
   title: z.string(),
@@ -48,7 +47,6 @@ const TransformationForm = ({
   const [image, setImage] = useState(data);
   const [newTransformation, setNewTransformation] =
     useState<Transformations | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransforming, setIsTransforming] = useState(false);
   const [transformationConfig, setTransformationConfig] = useState(config);
 
@@ -67,72 +65,6 @@ const TransformationForm = ({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
   });
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    // setIsSubmitting(true);
-    console.log("Submitting");
-
-    // if (data || image) {
-    //   const transformationUrl = getCldImageUrl({
-    //     width: image?.width,
-    //     height: image?.height,
-    //     src: image?.publicId,
-    //     ...transformationConfig,
-    //   });
-
-    //   const imageData = {
-    //     title: values.title,
-    //     publicId: image?.publicId,
-    //     transformationType: type,
-    //     width: image?.width,
-    //     height: image?.height,
-    //     config: transformationConfig,
-    //     secureURL: image?.secureURL,
-    //     transformationURL: transformationUrl,
-    //     aspectRatio: values.aspectRatio,
-    //     prompt: values.prompt,
-    //     color: values.color,
-    //   };
-
-    //   if (action === "Add") {
-    //     try {
-    //       const newImage = await addImage({
-    //         image: imageData,
-    //         userId,
-    //         path: "/",
-    //       });
-
-    //       if (newImage) {
-    //         form.reset();
-    //         setImage(data);
-    //         router.push(`/transformations/${newImage._id}`);
-    //       }
-    //     } catch (error) {
-    //       console.log(error);
-    //     }
-    //   }
-
-    //   if (action === "Update") {
-    //     try {
-    //       const updatedImage = await updateImage({
-    //         image: {
-    //           ...imageData,
-    //           _id: data._id,
-    //         },
-    //         userId,
-    //         path: `/transformations/${data._id}`,
-    //       });
-
-    //       if (updatedImage) {
-    //         router.push(`/transformations/${updatedImage._id}`);
-    //       }
-    //     } catch (error) {
-    //       console.log(error);
-    //     }
-    //   }
-    // }
-    // setIsSubmitting(false);
-  }
 
   const onSelectFieldHandler = (
     value: string,
@@ -170,6 +102,15 @@ const TransformationForm = ({
 
   const onTransformHandler = async () => {
     setIsTransforming(true);
+    const didLimitReached = await didLimitReach();
+    console.log(didLimitReached);
+    if (didLimitReached) {
+      toast.error("Sorry, you have used up all your credits.");
+      return;
+    }
+
+    await incrementLimit();
+
     setTransformationConfig(
       deepMergeObjects(newTransformation, transformationConfig)
     );
@@ -185,13 +126,20 @@ const TransformationForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form className="space-y-8">
         <CustomField
           control={form.control}
           name="title"
-          formLabel="Image Title"
+          formLabel=""
           className="w-full"
-          render={({ field }) => <Input {...field} className="input-field" />}
+          render={({ field }) => (
+            <Input
+              {...field}
+              className="input-field"
+              type="hidden"
+              value="title"
+            />
+          )}
         />
         {type === "fill" && (
           <CustomField
@@ -305,13 +253,6 @@ const TransformationForm = ({
             onClick={onTransformHandler}
           >
             {isTransforming ? "Transforming..." : "Apply transformation"}
-          </Button>
-          <Button
-            type="submit"
-            className="submit-button capitalize"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Submitting..." : "Save image"}
           </Button>
         </div>
       </form>

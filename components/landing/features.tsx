@@ -1,39 +1,30 @@
 import Image from "next/image";
 import HeadingText from "@/components/heading-text";
 import { features } from "@/config/contents";
-import { Waves } from "lucide-react";
 
 export default function Features() {
   return (
-    <section className="container space-y-8 py-12 lg:py-20" id="features">
-      {features.header || features.subheader ? (
-        <HeadingText subtext={features.subheader} className="text-center">
-          {features.header}
-        </HeadingText>
-      ) : null}
-      <div className="grid grid-cols-1 gap-10 xl:mx-[26rem] lg:mx-[20rem]  md:mx-[10rem]">
-        {features.content.map((cards: any) => {
-          const Icon = cards.icon;
+    <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
+      <div className="container px-4 md:px-6">
+        <h2 className="text-3xl font-bold text-center mb-12">Our Features</h2>
+        <div className="grid md:grid-cols-3 max-w-[1110px] mx-auto gap-8 lg:gap-0">
+          {features.content.map((cards: any) => {
+            const Icon = cards.icon;
 
-          return (
-            <div
-              key={cards.text}
-              className="flex flex-col gap-2 text-center items-center md:flex-row md:gap-8 md:text-left"
-            >
-              <div className="flex">
-                <Icon className="h-[6rem] w-[6rem]" />
+            return (
+              <div
+                key={cards.text}
+                className="flex flex-col items-center text-center"
+              >
+                <div className="mb-4 p-4 bg-primary rounded-full">
+                  <Icon className="h-12 w-12 text-primary-foreground" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{cards.text}</h3>
+                <p className="text-muted-foreground">{cards.subtext}</p>
               </div>
-              <div className="flex-1">
-                <p className="md:text4xl text-2xl font-semibold">
-                  {cards.text}
-                </p>
-                <p className="font-light text-muted-foreground md:text-lg">
-                  {cards.subtext}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </section>
   );

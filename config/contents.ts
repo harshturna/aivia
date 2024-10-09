@@ -1,4 +1,4 @@
-import { Dna, UserRound, BookText } from "lucide-react";
+import { Dna, UserRound, Image } from "lucide-react";
 
 export const heroHeader = {
   header: `Transform your ideas into Reality`,
@@ -22,8 +22,8 @@ export const featureCards = {
       color: "text-green-700",
     },
     {
-      text: `Documents AI`,
-      icon: BookText,
+      text: `Transformation AI`,
+      icon: Image,
       color: "text-pink-700",
       bgColor: "bg-pink-700/10",
     },
@@ -42,13 +42,13 @@ export const features = {
     },
     {
       text: `Chat with`,
-      subtext: `scientists, celebrities, or create your own characters!`,
+      subtext: `any character you can imagine`,
       icon: UserRound,
     },
     {
-      text: `Upload and Chat with`,
-      subtext: `your PDFs, Resume, and other documents!`,
-      icon: BookText,
+      text: `Transform`,
+      subtext: `images like it's magic!`,
+      icon: Image,
     },
   ],
 };

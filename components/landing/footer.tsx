@@ -20,17 +20,21 @@ export default function Footer() {
             ))}
           </ul>
         </div>
-        <hr className="my-6 text-muted-foreground sm:mx-auto lg:my-8" />
-        <span className="block text-sm text-muted-foreground text-center">
-          © {new Date().getFullYear()}{" "}
-          <a
+        <hr className="my-6 sm:mx-auto lg:my-8" />
+        <span className="text-lg text-center flex items-center justify-center">
+          <Link
             target="_blank"
             href="https://aivia.byharsh.com"
             className="hover:underline"
           >
             Aivia
-          </a>
-          . All Rights Reserved.
+          </Link>
+          <span className="text-muted-foreground ml-2 text-sm mt-0.5">
+            by{" "}
+            <a target="_blank" href="https://harshturna.com">
+              harsh
+            </a>
+          </span>
         </span>
       </div>
     </footer>
