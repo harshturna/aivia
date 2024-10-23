@@ -47,7 +47,7 @@ export const features = {
     },
     {
       text: `Transform`,
-      subtext: `images like it's magic!`,
+      subtext: `and edit images like it's magic!`,
       icon: Image,
     },
   ],

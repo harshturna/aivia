@@ -4,9 +4,9 @@ import Logo from "../Logo";
 
 export default function Footer() {
   return (
-    <footer className="mt-auto">
-      <div className="mx-auto w-full max-w-screen-xl p-6 md:py-8">
-        <div className="sm:flex sm:items-center sm:justify-between">
+    <footer className="mt-auto py-6">
+      <div>
+        <div className="justify-center flex md:justify-between md:px-8 lg:max-w-7xl mx-auto">
           <Link href="/">
             <Logo />
           </Link>
