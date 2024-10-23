@@ -5,7 +5,7 @@ import { features } from "@/config/contents";
 export default function Features() {
   return (
     <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100">
-      <div className="max-w-[1000px] mx-auto px-4 md:pl-8 md:pr-3">
+      <div className="max-w-[1000px] mx-auto px-4 md:pl-6 md:pr-3">
         <h2 className="text-3xl font-bold text-center mb-12">Our Features</h2>
         <div className="grid md:grid-cols-3 max-w-[1110px] mx-auto gap-8 lg:gap-0">
           {features.content.map((cards: any) => {
