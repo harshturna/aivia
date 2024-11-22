@@ -12,7 +12,7 @@ const LogoutButton = () => {
     const { error } = await supabase.auth.signOut();
 
     if (!error) {
-      router.push("/");
+      window.location.href="/";
     }
 
     if (error) {
