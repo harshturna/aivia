@@ -1,7 +1,7 @@
 import { Dna, UserRound, Image } from "lucide-react";
 
 export const heroHeader = {
-  header: `Transform your ideas into Reality`,
+  header: `Transform your Ideas into Reality`,
   subheader: `, your suite of AI tools`,
   image: `/landing.png`,
 };
