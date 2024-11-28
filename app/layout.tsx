@@ -1,4 +1,5 @@
 import "./globals.css";
+import Script from "next/script";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ModalProvider } from "@/components/ModalProvider";
@@ -21,6 +22,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <Script id="lynq-init" strategy="beforeInteractive">
+          {`!function(){"use strict";window.lynq=window.lynq||{track:function(n,e){(window.lynqQueue=window.lynqQueue||[]).push({name:n,properties:e,eventId:crypto.randomUUID()})}}}();`}
+        </Script>
+        <script
+          async
+          src="https://cdn.jsdelivr.net/gh/harshturna/lynq-js@v1.0.5/dist/lynq.min.js"
+          data-domain="aivia.byharsh.com"
+          data-script-id="lynq"
+          dangerouslySetInnerHTML={{ __html: "" }}
+        />
+      </head>
       <body className={inter.className}>
         <ModalProvider />
         <ToasterProvider />

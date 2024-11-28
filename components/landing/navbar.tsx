@@ -80,7 +80,10 @@ export default function Navbar() {
                   <Link
                     className="hover:underline"
                     href={link.path}
-                    onClick={handleClick}
+                    onClick={() => {
+                      window.lynq.track("Features");
+                      handleClick;
+                    }}
                   >
                     {link.route}
                   </Link>
