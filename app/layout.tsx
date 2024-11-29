@@ -28,7 +28,7 @@ export default function RootLayout({
         </Script>
         <script
           async
-          src="https://cdn.jsdelivr.net/gh/harshturna/lynq-js@v1.0.5/dist/lynq.min.js"
+          src="https://cdn.jsdelivr.net/gh/harshturna/lynq-js@v1.0.6/dist/lynq.min.js"
           data-domain="aivia.byharsh.com"
           data-script-id="lynq"
           dangerouslySetInnerHTML={{ __html: "" }}
