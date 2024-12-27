@@ -29,6 +29,7 @@ const Login = () => {
 
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const form = useForm<z.infer<typeof FormSchema>>({
     mode: "onChange",
     resolver: zodResolver(FormSchema),
@@ -56,16 +57,18 @@ const Login = () => {
 
   const guestHandler = async (email: string, password: string) => {
     const supabase = createClientComponentClient();
+    setIsGuestLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    setIsGuestLoading(false);
     if (error) {
       toast.error("Error logging in as guest");
     }
     if (!error) {
       router.push("/dashboard");
-    }
+    }   
   };
 
   const isLoading = form.formState.isSubmitting;
@@ -131,7 +134,7 @@ const Login = () => {
           variant="ghost"
           className="underline !mt-1"
         >
-          Explore the app as guest
+          {!isGuestLoading ? "Explore the app as guest" : <Loader />}
         </Button>
       </form>
     </Form>
