@@ -130,7 +130,7 @@ const Login = () => {
         <p className="text-center font-semibold text-1.5xl">OR</p>
         <Button
           type="button"
-          onClick={() => guestHandler("blesv1502@gmail.com", "password123")}
+          onClick={() => guestHandler(process.env.NEXT_PUBLIC_GUEST_EMAIL || "", process.env.NEXT_PUBLIC_GUEST_PASSWORD || "")}
           variant="ghost"
           className="underline !mt-1"
         >
