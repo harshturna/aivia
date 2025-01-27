@@ -7,7 +7,7 @@ import { Loader } from "@/components/Loader";
 const Init = () => {
   useEffect(() => {
     router.refresh();
-    guestHandler(process.env.NEXT_PUBLIC_GUEST_EMAIL, process.env.NEXT_PUBLIC_GUEST_PASSWORD);
+    guestHandler(process.env.NEXT_PUBLIC_GUEST_EMAIL || "", process.env.NEXT_PUBLIC_GUEST_PASSWORD || "");
   }, []);
 
   const router = useRouter();
