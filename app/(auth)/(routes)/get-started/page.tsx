@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Loader } from "@/components/Loader";
 
-const Init = () => {
+const GetStarted = () => {
   useEffect(() => {
     router.refresh();
     guestHandler(process.env.NEXT_PUBLIC_GUEST_EMAIL || "", process.env.NEXT_PUBLIC_GUEST_PASSWORD || "");
@@ -45,4 +45,4 @@ const Init = () => {
   );
 };
 
-export default Init;
+export default GetStarted;
