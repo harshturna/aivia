@@ -17,7 +17,7 @@ export default function HeroHeader() {
           </h2>
         </div>
         <Link
-          href="/init"
+          href="/get-started"
           className={`w-[10rem] ${cn(buttonVariants({ size: "lg" }))}`}
         >
           Explore our tools
