@@ -1,5 +1,3 @@
-import { Sparkle } from "lucide-react";
-
 interface LoaderProps {
   description?: string;
 }
