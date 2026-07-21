@@ -213,7 +213,7 @@ export const GenerativeChat = ({
                   className={cn(
                     "character-grid grid w-full items-start gap-x-8 rounded-lg p-8",
                     message.role === "user"
-                      ? "border border-black/10 bg-white"
+                      ? "border border-border bg-card"
                       : "bg-muted"
                   )}
                 >
@@ -237,11 +237,11 @@ export const GenerativeChat = ({
                       </ul>
                     )}
                     {reasoning && (
-                      <details className="mb-3 rounded-md border border-black/10 bg-black/[0.03]">
-                        <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-900">
+                      <details className="mb-3 rounded-md border border-border bg-muted/50">
+                        <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
                           {text ? "Reasoning" : "Thinking…"}
                         </summary>
-                        <div className="whitespace-pre-wrap px-3 pb-3 text-xs leading-6 text-zinc-600">
+                        <div className="whitespace-pre-wrap px-3 pb-3 text-xs leading-6 text-muted-foreground">
                           {reasoning}
                         </div>
                       </details>

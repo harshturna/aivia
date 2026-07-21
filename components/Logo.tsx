@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 // the 32px slot in every sidebar and collided with the wordmark.
 const Logo = ({ className }: { className?: string }) => {
   return (
+    // Not filled: Brain is a line icon, and filling it collapses the interior
+    // strokes into a solid blob.
     <Brain
       className={cn("h-8 w-8 text-primary", className)}
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth={1}
+      strokeWidth={1.75}
       aria-hidden="true"
     />
   );

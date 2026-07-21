@@ -35,7 +35,9 @@ module.exports = {
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "#efe7f285",
+          // Was a hardcoded #efe7f285 lilac, so bg-muted ignored the theme
+          // entirely and rendered light in dark mode.
+          DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {

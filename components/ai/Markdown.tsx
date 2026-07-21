@@ -102,7 +102,7 @@ export const Markdown = ({ children }: { children: string }) => (
       ),
       blockquote: (props) => (
         <blockquote
-          className="my-2 border-l-2 border-black/20 pl-4 italic"
+          className="my-2 border-l-2 border-border pl-4 italic"
           {...props}
         />
       ),

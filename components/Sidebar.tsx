@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BookText,
   CodeIcon,
   ImageIcon,
   LayoutDashboard,
@@ -21,6 +22,7 @@ const routes: SidebarRoute[] = [
   { label: "Video Generation", icon: VideoIcon, href: "/video" },
   { label: "Music Generation", icon: MusicIcon, href: "/music" },
   { label: "Code Generation", icon: CodeIcon, href: "/code" },
+  { label: "Documents", icon: BookText, href: "/documents" },
   { label: "Settings", icon: Settings, href: "/generative/settings" },
 ];
 

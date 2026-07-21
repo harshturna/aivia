@@ -15,9 +15,13 @@ export default function Navbar() {
   const close = () => setOpen(false);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "auto";
+    // Must clear the property rather than set "auto". globals.css sets
+    // html/body to height:100%, so an explicit overflow on body turns it into
+    // a clipped scroll container of exactly viewport height and the landing
+    // page stops scrolling entirely.
+    document.body.style.overflow = open ? "hidden" : "";
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = "";
     };
   }, [open]);
 

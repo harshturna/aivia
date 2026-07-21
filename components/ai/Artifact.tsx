@@ -9,6 +9,9 @@ const LABELS: Record<string, { running: string; done: string }> = {
   generate_video: { running: "Generating video", done: "Video" },
   generate_music: { running: "Composing music", done: "Music" },
   web_search: { running: "Searching the web", done: "Sources" },
+  // web_search_20260209 filters results by running code server-side, which
+  // surfaces as its own tool call.
+  code_execution: { running: "Filtering results", done: "Filtered results" },
 };
 
 interface WebSearchResult {
@@ -21,12 +24,12 @@ const SearchResults = ({ results }: { results: WebSearchResult[] }) => (
   <ol className="space-y-1.5">
     {results.map((result, index) => (
       <li key={`${result.url}-${index}`} className="flex gap-2 text-xs">
-        <span className="shrink-0 text-zinc-400">{index + 1}.</span>
+        <span className="shrink-0 text-muted-foreground">{index + 1}.</span>
         <a
           href={result.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="min-w-0 text-violet-600 underline underline-offset-2"
+          className="min-w-0 text-primary underline underline-offset-2"
         >
           <span className="line-clamp-1">
             {result.title || new URL(result.url).hostname}
@@ -44,8 +47,8 @@ const Shell = ({
   title: React.ReactNode;
   children?: React.ReactNode;
 }) => (
-  <div className="my-3 overflow-hidden rounded-lg border border-black/10 bg-white">
-    <div className="border-b border-black/5 bg-black/[0.02] px-3 py-2 text-xs font-medium text-zinc-600">
+  <div className="my-3 overflow-hidden rounded-lg border border-border bg-card">
+    <div className="border-b border-border bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
       {title}
     </div>
     {children && <div className="p-3">{children}</div>}
@@ -85,7 +88,7 @@ export const Artifact = ({
         }
       >
         {detail && (
-          <p className="text-xs italic leading-5 text-zinc-500">“{detail}”</p>
+          <p className="text-xs italic leading-5 text-muted-foreground">“{detail}”</p>
         )}
       </Shell>
     );
@@ -95,13 +98,13 @@ export const Artifact = ({
     return (
       <Shell
         title={
-          <span className="flex items-center gap-2 text-red-600">
+          <span className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-3 w-3" aria-hidden="true" />
             {label.done} failed
           </span>
         }
       >
-        <p className="text-xs text-zinc-600">{part.errorText}</p>
+        <p className="text-xs text-muted-foreground">{part.errorText}</p>
       </Shell>
     );
   }
@@ -165,7 +168,7 @@ export const Artifact = ({
       )}
 
       {output.prompt && (
-        <p className="mt-2 text-xs italic leading-5 text-zinc-500">
+        <p className="mt-2 text-xs italic leading-5 text-muted-foreground">
           “{output.prompt}”
         </p>
       )}

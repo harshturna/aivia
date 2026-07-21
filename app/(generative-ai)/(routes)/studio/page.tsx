@@ -86,7 +86,7 @@ const StudioPage = () => {
             </label>
             <Input
               id="studio-prompt"
-              className="border-0 focus-visible:ring-1 focus-visible:ring-amber-500"
+              className="border-0 focus-visible:ring-1 focus-visible:ring-ring"
               disabled={isStreaming}
               placeholder="Design a logo for a coffee roastery and write three taglines"
               value={input}
@@ -104,7 +104,7 @@ const StudioPage = () => {
             <label
               htmlFor="studio-files"
               title="Attach images"
-              className="shrink-0 cursor-pointer rounded-md p-2 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900 focus-within:ring-1 focus-within:ring-amber-500"
+              className="shrink-0 cursor-pointer rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-within:ring-2 focus-within:ring-ring"
             >
               <Paperclip className="h-4 w-4" aria-hidden="true" />
               <span className="sr-only">Attach images</span>
@@ -132,7 +132,7 @@ const StudioPage = () => {
         </form>
 
         {files && files.length > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-zinc-600">
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
             <Paperclip className="h-3 w-3" aria-hidden="true" />
             <span>
               {files.length} image{files.length > 1 ? "s" : ""} attached
@@ -140,7 +140,7 @@ const StudioPage = () => {
             <button
               type="button"
               onClick={clearFiles}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-black/5"
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-muted"
             >
               <X className="h-3 w-3" aria-hidden="true" />
               <span className="sr-only">Remove attached images</span>
@@ -161,7 +161,7 @@ const StudioPage = () => {
                     key={example}
                     type="button"
                     onClick={() => send(example)}
-                    className="rounded-full border px-3 py-1.5 text-xs text-zinc-600 transition hover:border-amber-500 hover:text-zinc-900"
+                    className="rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary hover:text-foreground"
                   >
                     {example}
                   </button>
@@ -177,7 +177,7 @@ const StudioPage = () => {
                 className={cn(
                   "character-grid grid w-full items-start gap-x-8 rounded-lg p-8",
                   message.role === "user"
-                    ? "border border-black/10 bg-white"
+                    ? "border border-border bg-card"
                     : "bg-muted"
                 )}
               >
@@ -197,12 +197,12 @@ const StudioPage = () => {
                       return (
                         <details
                           key={index}
-                          className="mb-3 rounded-md border border-black/10 bg-black/[0.03]"
+                          className="mb-3 rounded-md border border-border bg-muted/50"
                         >
-                          <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-900">
+                          <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
                             Plan
                           </summary>
-                          <div className="whitespace-pre-wrap px-3 pb-3 text-xs leading-6 text-zinc-600">
+                          <div className="whitespace-pre-wrap px-3 pb-3 text-xs leading-6 text-muted-foreground">
                             {text}
                           </div>
                         </details>
@@ -227,7 +227,7 @@ const StudioPage = () => {
                           key={index}
                           src={file.url}
                           alt="Attached"
-                          className="mb-2 max-h-48 rounded-md border border-black/10"
+                          className="mb-2 max-h-48 rounded-md border border-border"
                         />
                       );
                     }
