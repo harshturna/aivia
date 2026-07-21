@@ -1,59 +1,41 @@
-import { getUser } from "@/lib/getUser";
 import { NextResponse } from "next/server";
-import Replicate from "replicate";
 
-import { increaseApiLimit, checkApiLimit } from "@/lib/api-limit";
-import { checkSubscription } from "@/lib/subscription";
-import { checkHardLimit, increaseHardLimit } from "@/lib/hard-limit";
+import { guardGeneration } from "@/lib/ai/guard";
+import { runFal, extractUrl } from "@/lib/ai/fal";
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
+// Video generation is slow relative to everything else here.
+export const maxDuration = 300;
+
+// Replaces anotherjesse/zeroscope-v2-xl (July 2023). Note that Kling on fal is
+// image-to-video; the text-to-video endpoints are Seedance, Grok Imagine and
+// Gemini. Seedance's fast tier is the cheapest text-to-video option.
+const VIDEO_MODEL = "bytedance/seedance-2.0/fast/text-to-video";
 
 export async function POST(req: Request) {
   try {
-    const user = await getUser("ROUTE_HANDLER");
-    const body = await req.json();
-    const { prompt } = body;
-
-    if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
+    const { prompt } = await req.json();
 
     if (!prompt) {
       return new NextResponse("Prompt is required", { status: 400 });
     }
 
-    const freeTrial = await checkApiLimit("ROUTE_HANDLER");
-    const isPro = await checkSubscription("ROUTE_HANDLER");
-    const hardLimitNotReached = await checkHardLimit("ROUTE_HANDLER");
+    const guard = await guardGeneration();
+    if (!guard.ok) return guard.response;
 
-    if (!freeTrial && !isPro) {
-      return new NextResponse("Free trial has expired", { status: 403 });
+    const data = await runFal(VIDEO_MODEL, { prompt });
+    const url = extractUrl(data);
+
+    if (!url) {
+      console.error("[VIDEO_ERROR] no video url in fal response", data);
+      return new NextResponse("No video generated", { status: 502 });
     }
 
-    if (!hardLimitNotReached) {
-      return new NextResponse("Demo generation limit reached. Please try again later.", { status: 429 });
-    }
+    await guard.consume();
 
-    const response = await replicate.run(
-      "anotherjesse/zeroscope-v2-xl:9f747673945c62801b13b84701c783929c0ee784e4748ec062204894dda1a351",
-      {
-        input: {
-          prompt,
-        },
-      }
-    );
-
-    if (!isPro) {
-      await increaseApiLimit("ROUTE_HANDLER");
-    }
-
-    await increaseHardLimit("ROUTE_HANDLER");
-
-    return NextResponse.json(response);
+    // Preserve the existing client contract: response.data[0] is the url.
+    return NextResponse.json([url]);
   } catch (error) {
-    console.log("[VIDEO_ERROR]", error);
+    console.error("[VIDEO_ERROR]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 }

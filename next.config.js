@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      "oaidalleapiprodscus.blob.core.windows.net",
-      "res.cloudinary.com",
+    domains: ["res.cloudinary.com"],
+    remotePatterns: [
+      // fal serves generated assets from its own CDN.
+      { protocol: "https", hostname: "**.fal.media" },
+      { protocol: "https", hostname: "fal.media" },
     ],
   },
 };

@@ -1,68 +1,57 @@
-import { getUser } from "@/lib/getUser";
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 
-import { increaseApiLimit, checkApiLimit } from "@/lib/api-limit";
-import { checkSubscription } from "@/lib/subscription";
-import { checkHardLimit, increaseHardLimit } from "@/lib/hard-limit";
+import { guardGeneration } from "@/lib/ai/guard";
+import { runFal } from "@/lib/ai/fal";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+export const maxDuration = 60;
+
+// FLUX Schnell: ~2s per image at roughly $0.003, which is the right trade for
+// a public demo. Swap to fal-ai/flux/dev or flux-pro/v1.1 for more fidelity.
+const IMAGE_MODEL = "fal-ai/flux/schnell";
+
+interface FalImageResponse {
+  images?: Array<{ url: string; width?: number; height?: number }>;
+}
 
 export async function POST(req: Request) {
   try {
-    const user = await getUser("ROUTE_HANDLER");
     const body = await req.json();
-    const { prompt, amount = 1, resolution = "512x512" } = body;
-
-    if (!user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    if (!openai.apiKey) {
-      return new NextResponse("OpenAI API Key not cofigured", { status: 500 });
-    }
+    const { prompt, amount = 1, resolution = "1024x1024" } = body;
 
     if (!prompt) {
       return new NextResponse("Prompt is required", { status: 400 });
     }
 
-    if (!amount) {
-      return new NextResponse("Amount is required", { status: 400 });
-    }
+    const guard = await guardGeneration();
+    if (!guard.ok) return guard.response;
 
-    if (!resolution) {
-      return new NextResponse("Resolution is required", { status: 400 });
-    }
+    const [width, height] = String(resolution)
+      .split("x")
+      .map((n) => parseInt(n, 10));
 
-    const freeTrial = await checkApiLimit("ROUTE_HANDLER");
-    const isPro = await checkSubscription("ROUTE_HANDLER");
-    const hardLimitNotReached = await checkHardLimit("ROUTE_HANDLER");
-
-    if (!freeTrial && !isPro) {
-      return new NextResponse("Free trial has expired", { status: 403 });
-    }
-
-    if (!hardLimitNotReached) {
-      return new NextResponse("Demo generation limit reached. Please try again later.", { status: 429 });
-    }
-
-    const response = await openai.images.generate({
+    const data = await runFal<FalImageResponse>(IMAGE_MODEL, {
       prompt,
-      n: parseInt(amount, 10),
-      size: resolution,
+      num_images: Math.min(parseInt(String(amount), 10) || 1, 4),
+      image_size:
+        Number.isFinite(width) && Number.isFinite(height)
+          ? { width, height }
+          : { width: 1024, height: 1024 },
+      output_format: "jpeg",
     });
 
-    if (!isPro) {
-      await increaseApiLimit("ROUTE_HANDLER");
+    const images = data.images ?? [];
+
+    if (!images.length) {
+      console.error("[IMAGE_ERROR] no images in fal response", data);
+      return new NextResponse("No images generated", { status: 502 });
     }
 
-    await increaseHardLimit("ROUTE_HANDLER");
+    await guard.consume();
 
-    return NextResponse.json(response.data);
+    // Preserve the existing client contract: an array of { url }.
+    return NextResponse.json(images.map((image) => ({ url: image.url })));
   } catch (error) {
-    console.log("[IMAGE_ERROR]", error);
+    console.error("[IMAGE_ERROR]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 }
