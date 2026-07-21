@@ -42,7 +42,7 @@ const SearchInput = () => {
       <Search className="absolute h-4 w-4 top-3 left-4 text-muted-foreground" />
       <Input
         placeholder="Search..."
-        className="pl-10 bg-slate-50/60"
+        className="pl-10 bg-muted"
         onChange={onChange}
         value={value}
       />

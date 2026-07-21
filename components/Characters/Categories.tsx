@@ -34,10 +34,10 @@ const Categories = ({ data }: CategoriesProps) => {
         className={cn(
           `
         flex items-center text-center text-xs md:text-sm
-        px-2 md:px-4 py-2 md:py-3 rounded-md bg-slate-200/50
+        px-2 md:px-4 py-2 md:py-3 rounded-md bg-muted
         hover:opacity-75 transition
     `,
-          categoryId ? "bg-slate-200/50" : "bg-slate-300/80"
+          categoryId ? "bg-muted" : "bg-accent"
         )}
       >
         All
@@ -49,10 +49,10 @@ const Categories = ({ data }: CategoriesProps) => {
           className={cn(
             `
         flex items-center text-center text-xs md:text-sm
-        px-2 md:px-4 py-2 md:py-3 rounded-md bg-slate-200/50
+        px-2 md:px-4 py-2 md:py-3 rounded-md bg-muted
         hover:opacity-75 transition
     `,
-            item.id === categoryId ? "bg-slate-300/80" : "bg-slate-200/50"
+            item.id === categoryId ? "bg-accent" : "bg-muted"
           )}
         >
           {item.name}

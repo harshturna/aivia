@@ -14,9 +14,9 @@ export default function HeroHeader() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10"
       >
-        <div className="absolute left-1/2 top-0 h-[32rem] w-[56rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl dark:bg-primary/15" />
+        <div className="absolute left-1/2 top-0 h-[32rem] w-[56rem] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
         <div
-          className="absolute inset-0 opacity-[0.35] dark:opacity-[0.18]"
+          className="absolute inset-0 opacity-[0.18]"
           style={{
             backgroundImage:
               "linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)",
@@ -85,7 +85,7 @@ export default function HeroHeader() {
               height={420}
               priority
               alt="Abstract tree illustration, branching above and rooting below"
-              className="mx-auto h-auto w-full max-w-[420px] dark:invert"
+              className="mx-auto h-auto w-full max-w-[420px] invert"
             />
           </div>
         )}

@@ -27,14 +27,14 @@ const ChatForm = ({
   return (
     <form
       onSubmit={onSubmit}
-      className="border-t border-slate-200/50 flex py-4 items-center gap-x-2"
+      className="border-t border-border flex py-4 items-center gap-x-2"
     >
       <Input
         disabled={isLoading}
         value={input}
         onChange={handleInputChange}
         placeholder="Type a message"
-        className="rounded-lg bg-slate-200/50"
+        className="rounded-lg bg-muted"
       />
       <Button disabled={isLoading} variant="ghost">
         <SendHorizonal />

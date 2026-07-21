@@ -218,7 +218,7 @@ export const GenerativeChat = ({
                   )}
                 >
                   {message.role === "user" ? (
-                    <UserAvatar color="violet" />
+                    <UserAvatar />
                   ) : (
                     <BotAvatar />
                   )}

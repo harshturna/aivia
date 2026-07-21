@@ -10,85 +10,71 @@ body,
 
 @layer base {
   /*
-   * Design tokens.
+   * Design tokens. The app is dark-only — there is no light palette and no
+   * theme toggle, so these live on :root unconditionally.
    *
-   * Previously these were the unmodified shadcn "zinc" defaults: --primary was
-   * near-black, so the product had no brand colour in the token system at all,
-   * and --radius was 0.3rem (~5px), which is the single most dating detail in
-   * the UI. Amber is the brand hue, picked to read as warm and distinct rather
-   * than the purple-gradient default that every AI product shipped in 2023.
+   * Palette: near-black neutrals, coral as the brand colour, deep navy as the
+   * secondary. Replaces the amber theme.
+   *
+   * These arrived as a Tailwind v4 export (`hsl(...)` values behind an
+   * `@theme inline` block). This project is on Tailwind 3.3.6, where the
+   * config wraps each token in `hsl()` itself, so the values are stored as
+   * bare `H S% L%` triplets. The source also carried lossy oklch conversions
+   * with out-of-range saturation (-172%, 123%); those are normalised here to
+   * the values a browser would have clamped them to anyway.
    */
   :root {
-    --background: 40 30% 99%;
-    --foreground: 240 10% 8%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 8%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 8%;
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 9.1%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 14.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 32 95% 44%;
-    --primary-foreground: 40 40% 99%;
+    --primary: 350 98% 65%;
+    --primary-foreground: 0 0% 96.5%;
 
-    --secondary: 40 12% 94%;
-    --secondary-foreground: 240 10% 12%;
-    --muted: 40 12% 96%;
-    --muted-foreground: 240 4% 44%;
-    --accent: 32 90% 96%;
-    --accent-foreground: 32 95% 30%;
+    --secondary: 213 74% 12%;
+    --secondary-foreground: 0 0% 96.5%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63%;
+    --accent: 0 0% 25%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 72% 48%;
+    --destructive: 359 100% 69.8%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 40 10% 89%;
-    --input: 40 10% 89%;
-    --ring: 32 95% 44%;
+    --border: 0 0% 15.5%;
+    --input: 0 0% 20.4%;
+    --ring: 0 0% 45.2%;
+
+    --chart-1: 212 100% 78.7%;
+    --chart-2: 217 91.4% 59.6%;
+    --chart-3: 221 86.4% 54.1%;
+    --chart-4: 224 78.7% 47.9%;
+    --chart-5: 227 70% 39.9%;
 
     /* Surfaces for the app shell, so the sidebar is not a hardcoded hex. */
-    --sidebar: 240 12% 10%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-muted: 240 6% 62%;
-    --sidebar-accent: 32 95% 55%;
+    --sidebar: 0 0% 9.1%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 225 84% 49%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 14.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15.5%;
+    --sidebar-ring: 0 0% 32.2%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
   }
 
-  .dark {
-    --background: 240 12% 7%;
-    --foreground: 40 20% 95%;
-    --card: 240 11% 10%;
-    --card-foreground: 40 20% 95%;
-    --popover: 240 11% 10%;
-    --popover-foreground: 40 20% 95%;
-
-    --primary: 32 95% 55%;
-    --primary-foreground: 240 12% 8%;
-
-    --secondary: 240 8% 16%;
-    --secondary-foreground: 40 20% 95%;
-    --muted: 240 8% 15%;
-    --muted-foreground: 240 6% 62%;
-    --accent: 240 8% 18%;
-    --accent-foreground: 32 95% 62%;
-
-    --destructive: 0 62% 45%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 8% 19%;
-    --input: 240 8% 19%;
-    --ring: 32 95% 55%;
-
-    --sidebar: 240 12% 9%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-muted: 240 6% 58%;
-    --sidebar-accent: 32 95% 58%;
-  }
-
+  /* Coral through deep navy to teal — the palette's own triad, rather than a
+     hue ramp invented for the gradient. */
   .gradient-text {
     background-image: linear-gradient(
       to right,
-      hsl(32 95% 50%),
-      hsl(18 90% 55%),
-      hsl(340 75% 58%)
+      hsl(350 98% 65%),
+      hsl(213 74% 30%),
+      hsl(179 46% 55%)
     );
     -webkit-background-clip: text;
     background-clip: text;

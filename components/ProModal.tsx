@@ -48,11 +48,11 @@ const ProModal = () => {
               </Badge>
             </div>
           </DialogTitle>
-          <DialogDescription className="text-center pt-2 space-y-2 text-zinc-900 font-medium">
+          <DialogDescription className="text-center pt-2 space-y-2 text-muted-foreground font-medium">
             {tools.map((tool) => (
               <Card
                 key={tool.href}
-                className="p-3 border-black/5 flex items-center justify-between"
+                className="p-3 border-border flex items-center justify-between"
               >
                 <div className="flex items-center gap-x-4">
                   <div className={cn("p-2 w-fit rounded-md", tool.bgColor)}>

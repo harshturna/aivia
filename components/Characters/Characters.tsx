@@ -19,7 +19,7 @@ const Characters = ({ data }: CharacterProps) => {
         <div className="relative w-60 h-60">
           <Image fill alt="Empty" src="/empty.png" />
         </div>
-        <p className="text-sm text-slate-400"></p>
+        <p className="text-sm text-muted-foreground"></p>
       </div>
     );
   }
@@ -28,7 +28,7 @@ const Characters = ({ data }: CharacterProps) => {
       {data.map((item) => (
         <Card
           key={item.id}
-          className="rounded-xl cursor-pointer hover:opacity-90 transition border-0 bg-slate-200/50"
+          className="rounded-xl cursor-pointer hover:opacity-90 transition border-0 bg-muted"
         >
           <Link href={`/characters/chat/${item.id}`}>
             <CardHeader className="flex items-center justify-center text-center text-muted-foreground">

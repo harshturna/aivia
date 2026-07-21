@@ -118,7 +118,7 @@ const CharacterForm = ({
           <div className="space-y-2 w-full">
             <div>
               <h3 className="text-lg font-medium">Your Character</h3>
-              <p className="text-slate-500">Information about your Character</p>
+              <p className="text-muted-foreground">Information about your Character</p>
             </div>
             <Separator />
           </div>
@@ -217,7 +217,7 @@ const CharacterForm = ({
           <div className="space-y-2 w-full">
             <div>
               <h3 className="text-lg font-medium">Configuration</h3>
-              <p className="text-slate-500">
+              <p className="text-muted-foreground">
                 Detailed instructions for Character&#39;s behaviour
               </p>
             </div>

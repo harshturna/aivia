@@ -28,7 +28,7 @@ export default function DashboardPage() {
             href={tool.href}
             >
             <Card
-              className="p-4 border-black/5 flex items-center justify-between hover:shadow-md transition cursor-pointer"
+              className="p-4 border-border flex items-center justify-between hover:shadow-md transition cursor-pointer"
             >
               <div className="flex items-center gap-x-4">
                 <div className={cn("p-2 w-fit rounded-md", tool.bgColor)}>

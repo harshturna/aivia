@@ -1,25 +1,17 @@
 import "./globals.css";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
-import { Inter, Bricolage_Grotesque } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { ModalProvider } from "@/components/ModalProvider";
 import { ToasterProvider } from "@/components/ToasterProvider";
-import { ThemeProvider } from "@/components/ThemeProvider";
 
-// Body text. `variable` rather than `className` so display type can coexist.
-const inter = Inter({
+// Montserrat carries both roles. It is bound to --font-display as well as
+// --font-sans so the existing `font-display` headings keep working; the
+// distinction is now weight and tracking rather than a second family.
+const montserrat = Montserrat({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
-});
-
-// Display face for headings and the wordmark. Inter alone is the single most
-// recognisable "generic AI product" tell; a distinct display face is the
-// cheapest way to stop reading as a template.
-const display = Bricolage_Grotesque({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -40,10 +32,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fdfcfa" },
-    { media: "(prefers-color-scheme: dark)", color: "#101014" },
-  ],
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -52,9 +41,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // suppressHydrationWarning is required by next-themes: it sets the theme
-    // class on <html> before React hydrates, which would otherwise mismatch.
-    <html lang="en" suppressHydrationWarning>
+    // The app is dark-only. `dark` is hardcoded rather than applied by
+    // next-themes at runtime: no toggle, no system preference, no flash of the
+    // wrong theme on first paint, and `color-scheme` keeps native form
+    // controls and scrollbars dark to match.
+    <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <head>
         <Script id="lynq-init" strategy="beforeInteractive">
           {`!function(){"use strict";window.lynq=window.lynq||{track:function(n,e){(window.lynqQueue=window.lynqQueue||[]).push({name:n,properties:e,eventId:crypto.randomUUID()})}}}();`}
@@ -68,18 +59,12 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${display.variable} font-sans antialiased`}
+        className={`${montserrat.variable} font-sans antialiased`}
+        style={{ "--font-display": "var(--font-sans)" } as React.CSSProperties}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <ModalProvider />
-          <ToasterProvider />
-          {children}
-        </ThemeProvider>
+        <ModalProvider />
+        <ToasterProvider />
+        {children}
       </body>
     </html>
   );

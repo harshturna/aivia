@@ -33,7 +33,7 @@ export const ImageUpload = ({
         }}
         uploadPreset="dh2qlatf"
       >
-        <div className="p-4 border-4 border-dashed border-slate-300/50 rounded-lg hover:opacity-75 transition flex flex-col space-y-2 items-center justify-center ">
+        <div className="p-4 border-4 border-dashed border-border rounded-lg hover:opacity-75 transition flex flex-col space-y-2 items-center justify-center ">
           <div className="relative h-40 w-40">
             <Image
               fill

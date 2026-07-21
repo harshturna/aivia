@@ -81,7 +81,7 @@ export const Markdown = ({ children }: { children: string }) => (
           <code className={className} {...props} />
         ) : (
           <code
-            className="rounded bg-black/10 px-1 py-0.5 text-[0.9em]"
+            className="rounded bg-foreground/10 px-1 py-0.5 text-[0.9em]"
             {...props}
           />
         );
@@ -94,7 +94,7 @@ export const Markdown = ({ children }: { children: string }) => (
       p: (props) => <p className="my-2 leading-7" {...props} />,
       a: (props) => (
         <a
-          className="text-violet-600 underline underline-offset-2"
+          className="text-primary underline underline-offset-2"
           target="_blank"
           rel="noopener noreferrer"
           {...props}

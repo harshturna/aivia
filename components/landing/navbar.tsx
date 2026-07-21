@@ -7,7 +7,6 @@ import { navLinks } from "@/lib/links";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Logo from "../Logo";
-import { ThemeToggle } from "../ThemeToggle";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -57,7 +56,6 @@ export default function Navbar() {
               </li>
             ))}
           </ul>
-          <ThemeToggle />
           <Link
             href="/init"
             className={buttonVariants({ size: "sm" })}
@@ -69,7 +67,6 @@ export default function Navbar() {
 
         {/* Mobile */}
         <div className="flex items-center gap-1 md:hidden">
-          <ThemeToggle />
           <button
             className="rounded-md p-2 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={open ? "Close menu" : "Open menu"}

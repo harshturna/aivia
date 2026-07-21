@@ -74,8 +74,8 @@ const ImagePage = () => {
         title="Image Generation"
         description="Bring your inner Michelangelo out with our image generation AI"
         icon={ImageIcon}
-        iconColor="text-pink-700"
-        bgColor="bg-pink-700/10"
+        iconColor="text-fuchsia-500"
+        bgColor="bg-fuchsia-500/10"
       />
       <div className="px-4 lg:px-8">
         <div>

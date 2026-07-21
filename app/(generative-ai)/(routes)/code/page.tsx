@@ -10,8 +10,8 @@ const CodePage = () => (
     title="Code Generation"
     description="Generate code using descriptive text"
     icon={Code}
-    iconColor="text-green-700"
-    bgColor="bg-green-700/10"
+    iconColor="text-emerald-500"
+    bgColor="bg-emerald-500/10"
     placeholder="Simple toggle button using react hooks"
     emptyLabel="No code generated"
   />
