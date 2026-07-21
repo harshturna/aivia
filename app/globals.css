@@ -112,7 +112,7 @@ body,
 @layer utilities {
   /* ===== UTILITIES */
   .wrapper {
-    @apply max-w-5xl mx-auto px-5 md:px-10 w-full text-gray-400 p-16-regular;
+    @apply max-w-5xl mx-auto px-5 md:px-10 w-full text-foreground p-16-regular;
   }
 
   /* NOTE: .gradient-text is defined once, in @layer base above. It used to be
@@ -197,23 +197,23 @@ body,
   }
 
   .dropdown-item {
-    @apply p-16-semibold text-dark-700 cursor-pointer transition-all px-4 py-3 rounded-none outline-none hover:border-none focus-visible:ring-ring hover:text-white hover:bg-purple-500 hover:bg-cover focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
+    @apply p-16-semibold text-foreground cursor-pointer transition-all px-4 py-3 rounded-none outline-none hover:border-none focus-visible:ring-ring hover:text-primary-foreground hover:bg-primary hover:bg-cover focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
   }
 
   .input-field {
-    @apply rounded-[16px] border-2 border-purple-200/20 shadow-sm  text-dark-600 disabled:opacity-100 p-16-semibold h-[50px] md:h-[54px] focus-visible:ring-offset-0 px-4 py-3 focus-visible:ring-ring !important;
+    @apply rounded-[16px] border-2 border-border shadow-sm  text-foreground disabled:opacity-100 p-16-semibold h-[50px] md:h-[54px] focus-visible:ring-offset-0 px-4 py-3 focus-visible:ring-ring !important;
   }
 
   .search-field {
-    @apply border-0 bg-transparent text-dark-600 w-full placeholder:text-dark-400 h-[50px] p-16-medium focus-visible:ring-offset-0 p-3 focus-visible:ring-ring !important;
+    @apply border-0 bg-transparent text-foreground w-full placeholder:text-muted-foreground h-[50px] p-16-medium focus-visible:ring-offset-0 p-3 focus-visible:ring-ring !important;
   }
 
   .submit-button {
-    @apply bg-black bg-cover rounded-full py-4 px-6 p-16-semibold h-[50px] w-full md:h-[54px];
+    @apply bg-primary text-primary-foreground bg-cover rounded-full py-4 px-6 p-16-semibold h-[50px] w-full md:h-[54px];
   }
 
   .select-field {
-    @apply w-full border-2 border-purple-200/20 shadow-sm  rounded-[16px] h-[50px] md:h-[54px] text-dark-600 p-16-semibold disabled:opacity-100 placeholder:text-dark-400/50 px-4 py-3 focus:ring-offset-0 focus-visible:ring-ring focus:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
+    @apply w-full border-2 border-border shadow-sm  rounded-[16px] h-[50px] md:h-[54px] text-foreground p-16-semibold disabled:opacity-100 placeholder:text-muted-foreground px-4 py-3 focus:ring-offset-0 focus-visible:ring-ring focus:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
   }
 
   .select-trigger {
@@ -221,7 +221,7 @@ body,
   }
 
   .select-item {
-    @apply py-3 cursor-pointer hover:bg-purple-100;
+    @apply py-3 cursor-pointer hover:bg-accent;
   }
 
   .IconButton {
@@ -234,7 +234,7 @@ body,
   }
 
   .transformation-original_image {
-    @apply h-fit min-h-[18rem] w-full rounded-[10px] border border-dashed bg-purple-100/20 object-cover p-2;
+    @apply h-fit min-h-[18rem] w-full rounded-[10px] border border-dashed bg-accent/40 object-cover p-2;
   }
 
   /* Collection Component */
@@ -247,33 +247,33 @@ body,
   }
 
   .collection-empty {
-    @apply flex-center h-60 w-full rounded-[10px] border border-dark-400/10 bg-white/20;
+    @apply flex-center h-60 w-full rounded-[10px] border border-border bg-card;
   }
 
   .collection-btn {
-    @apply button w-32 bg-purple-500 bg-cover text-white;
+    @apply button w-32 bg-primary bg-cover text-primary-foreground;
   }
 
   .collection-card {
-    @apply flex flex-1 cursor-pointer flex-col gap-5 rounded-[16px] border-2 border-purple-200/15 bg-white p-4 shadow-xl bg-purple-200/10 transition-all hover:bg-purple-200/20;
+    @apply flex flex-1 cursor-pointer flex-col gap-5 rounded-[16px] border-2 border-border bg-card p-4 shadow-xl bg-card transition-all hover:bg-accent;
   }
 
   /* MediaUploader Component */
   .media-uploader_cldImage {
-    @apply h-fit min-h-[18rem] w-full rounded-[10px] border border-dashed bg-purple-100/20 object-cover p-2;
+    @apply h-fit min-h-[18rem] w-full rounded-[10px] border border-dashed bg-accent/40 object-cover p-2;
   }
 
   .media-uploader_cta {
-    @apply flex-center flex h-72 cursor-pointer flex-col gap-5 rounded-[16px] border border-dashed bg-purple-100/20 shadow-inner;
+    @apply flex-center flex h-72 cursor-pointer flex-col gap-5 rounded-[16px] border border-dashed bg-accent/40 shadow-inner;
   }
 
   .media-uploader_cta-image {
-    @apply rounded-[16px] bg-white  p-5 shadow-sm bg-purple-200/50;
+    @apply rounded-[16px] bg-card  p-5 shadow-sm bg-card;
   }
 
   /* Navbar Component */
   .header {
-    @apply flex-between fixed h-16 w-full border-b-4 border-purple-100 bg-white p-5 lg:hidden;
+    @apply flex-between fixed h-16 w-full border-b-4 border-border bg-card p-5 lg:hidden;
   }
 
   .header-nav_elements {
@@ -283,12 +283,12 @@ body,
   /* Search Component */
   .search {
     /* max-w-96 landed in Tailwind 3.4; this project is on 3.3.6. */
-    @apply flex w-full rounded-[16px] border-2 border-purple-200/20 bg-white px-4 shadow-sm md:max-w-[24rem];
+    @apply flex w-full rounded-[16px] border-2 border-border bg-card px-4 shadow-sm md:max-w-[24rem];
   }
 
   /* Sidebar Component */
   .sidebar {
-    @apply hidden h-screen w-72 bg-white p-5 shadow-md bg-purple-200/50 lg:flex;
+    @apply hidden h-screen w-72 bg-card p-5 shadow-md bg-card lg:flex;
   }
 
   .sidebar-logo {
@@ -304,7 +304,7 @@ body,
   }
 
   .sidebar-nav_element {
-    @apply flex-center p-16-semibold w-full whitespace-nowrap rounded-full bg-cover  transition-all hover:bg-purple-100 hover:shadow-inner;
+    @apply flex-center p-16-semibold w-full whitespace-nowrap rounded-full bg-cover  transition-all hover:bg-accent hover:shadow-inner;
   }
 
   .sidebar-link {
@@ -326,14 +326,14 @@ body,
   }
 
   .transformed-image {
-    @apply h-fit min-h-[18rem] w-full rounded-[10px] border border-dashed bg-purple-100/20 object-cover p-2;
+    @apply h-fit min-h-[18rem] w-full rounded-[10px] border border-dashed bg-accent/40 object-cover p-2;
   }
 
   .transforming-loader {
-    @apply flex-center absolute left-[50%] top-[50%] w-full h-full -translate-x-1/2 -translate-y-1/2 flex-col gap-2 rounded-[10px] border bg-dark-700/90;
+    @apply flex-center absolute left-[50%] top-[50%] w-full h-full -translate-x-1/2 -translate-y-1/2 flex-col gap-2 rounded-[10px] border bg-background/90;
   }
 
   .transformed-placeholder {
-    @apply flex-center p-14-medium h-full min-h-[18rem] flex-col gap-5 rounded-[16px] border border-dashed bg-purple-100/20 shadow-inner;
+    @apply flex-center p-14-medium h-full min-h-[18rem] flex-col gap-5 rounded-[16px] border border-dashed bg-accent/40 shadow-inner;
   }
 }
