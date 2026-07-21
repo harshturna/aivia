@@ -10,8 +10,8 @@ const DocumentsPage = () => (
     title="Documents AI"
     description="Attach a PDF or text file and ask questions about it"
     icon={BookText}
-    iconColor="text-sky-500"
-    bgColor="bg-sky-500/10"
+    iconColor="text-primary"
+    bgColor="bg-primary/10"
     placeholder="What are the key findings in this report?"
     emptyLabel="Attach a document to get started"
     attachments={{

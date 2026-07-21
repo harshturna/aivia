@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#f5f5f5",
 };
 
 export default function RootLayout({
@@ -41,11 +41,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // The app is dark-only. `dark` is hardcoded rather than applied by
-    // next-themes at runtime: no toggle, no system preference, no flash of the
-    // wrong theme on first paint, and `color-scheme` keeps native form
-    // controls and scrollbars dark to match.
-    <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
+    // The app is light-only: no toggle, no system preference, no flash of the
+    // wrong theme on first paint. `color-scheme` pins native form controls and
+    // scrollbars to light so they cannot follow the OS setting.
+    <html lang="en" style={{ colorScheme: "light" }}>
       <head>
         <Script id="lynq-init" strategy="beforeInteractive">
           {`!function(){"use strict";window.lynq=window.lynq||{track:function(n,e){(window.lynqQueue=window.lynqQueue||[]).push({name:n,properties:e,eventId:crypto.randomUUID()})}}}();`}

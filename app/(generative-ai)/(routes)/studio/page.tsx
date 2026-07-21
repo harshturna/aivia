@@ -68,8 +68,8 @@ const StudioPage = () => {
         title="Studio"
         description="Describe what you want. Aivia plans it and builds it."
         icon={Sparkles}
-        iconColor="text-rose-500"
-        bgColor="bg-rose-500/10"
+        iconColor="text-primary"
+        bgColor="bg-primary/10"
       />
 
       <div className="px-4 lg:px-8">

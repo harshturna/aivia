@@ -60,8 +60,8 @@ const VideoGeneration = () => {
         title="Video Generation"
         description="Transform Visions into Reality with Our Video Generation AI"
         icon={Video}
-        iconColor="text-orange-500"
-        bgColor="bg-orange-500/10"
+        iconColor="text-primary"
+        bgColor="bg-primary/10"
       />
       <div className="px-4 lg:px-8">
         <div>

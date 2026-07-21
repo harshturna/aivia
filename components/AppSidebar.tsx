@@ -37,10 +37,12 @@ export const AppSidebar = ({
 }: AppSidebarProps) => {
   const pathname = usePathname();
 
+  // The sidebar shares the page background, so the right border is what
+  // separates it — without it the shell has no edge at all.
   return (
     <nav
       aria-label="Main navigation"
-      className="space-y-4 py-4 flex flex-col h-full bg-sidebar text-sidebar-foreground"
+      className="space-y-4 py-4 flex flex-col h-full border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
     >
       <div className="px-3 py-2 flex-1">
         <Link

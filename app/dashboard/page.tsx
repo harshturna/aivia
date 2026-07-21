@@ -17,7 +17,7 @@ const Dashboard = () => {
     <div className="flex h-full flex-col items-center justify-center px-4 lg:px-20 xl:px-40">
       <div className="mb-10 text-center">
         <h1 className="font-display text-3xl font-semibold tracking-tight md:text-5xl">
-          Explore our <span className="gradient-text">tools</span>
+          Explore our <span className="text-primary">tools</span>
         </h1>
         <p className="mt-3 text-muted-foreground">
           Start in the Studio, or drive any tool directly.

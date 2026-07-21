@@ -60,8 +60,8 @@ const MusicGeneration = () => {
         title="Music Generation"
         description="Unleash Symphonies with Our Music Generation AI"
         icon={Music}
-        iconColor="text-teal-500"
-        bgColor="bg-teal-500/10"
+        iconColor="text-primary"
+        bgColor="bg-primary/10"
       />
       <div className="px-4 lg:px-8">
         <div>

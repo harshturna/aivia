@@ -10,8 +10,8 @@ const ConversationPage = () => (
     title="Conversations"
     description="Chat with Aivia, your friendly AI"
     icon={MessageSquare}
-    iconColor="text-blue-500"
-    bgColor="bg-blue-500/10"
+    iconColor="text-primary"
+    bgColor="bg-primary/10"
     placeholder="How do I calculate the radius of a circle?"
     emptyLabel="No conversation started"
   />
