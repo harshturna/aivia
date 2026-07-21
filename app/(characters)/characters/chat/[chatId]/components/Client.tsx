@@ -1,23 +1,19 @@
 "use client";
 
-import { useState, useEffect, FormEvent, ChangeEvent } from "react";
+import { useState, FormEvent, ChangeEvent } from "react";
 import { Character, Message } from "@prisma/client";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import toast from "react-hot-toast";
+
 import ChatHeader from "./ChatHeader";
-import { useRouter } from "next/navigation";
 import ChatForm from "@/components/Characters/ChatForm";
 import ChatMessages from "@/components/Characters/ChatMessages";
 import { ChatMessageProps } from "@/components/Characters/ChatMessage";
-import axios from "axios";
-import toast from "react-hot-toast";
-
-// TODO: remove the _count props
 
 interface ChatClientProps {
   character: Character & {
     messages: Message[];
-    _count: {
-      messages: number;
-    };
   };
   currentUserId: string;
   isGuest: boolean;
@@ -28,54 +24,47 @@ const ChatClient = ({
   currentUserId,
   isGuest = true,
 }: ChatClientProps) => {
-  const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
-  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({ api: `/api/chat/${character.id}` }),
+    onError: (error) => {
+      const message = error?.message ?? "";
+      toast.error(
+        message.includes("limit reached")
+          ? "Demo generation limit reached. Please try again later."
+          : "Something went wrong"
+      );
+    },
+  });
+
+  const isLoading = status === "submitted" || status === "streaming";
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-    setInput(target.value);
+    setInput(e.target.value);
   };
 
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Prevents the default form submission behavior
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const prompt = input.trim();
+    if (!prompt || isLoading) return;
 
-    if (!input) {
-      return;
-    }
-    const userMessage = {
-      role: "user",
-      content: input,
-    };
-
-    // Update the messages state
-    setMessages((current) => [...current, userMessage]);
-
-    try {
-      setIsLoading(true);
-      setInput("");
-      const { data } = await axios.post(`/api/chat/${character.id}`, {
-        messages: [...messages, userMessage],
-      });
-      setMessages((current) => [...current, data]);
-    } catch (error) {
-      toast.error("Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
+    sendMessage({ text: prompt });
+    setInput("");
   };
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return null;
-  }
+  // ChatMessage predates the SDK and models roles as "system" | "user",
+  // where "system" means the character's reply.
+  const uiMessages: ChatMessageProps[] = messages.map((message) => ({
+    role: message.role === "user" ? "user" : "system",
+    content: message.parts
+      .filter((part) => part.type === "text")
+      .map((part) => (part as { text: string }).text)
+      .join(""),
+    src: character.src,
+  }));
 
   return (
     <div className="flex flex-col h-full p-4 space-y-2">
@@ -86,8 +75,10 @@ const ChatClient = ({
       />
       <ChatMessages
         character={character}
-        isLoading={isLoading}
-        messages={messages}
+        // Only show the typing indicator while waiting for the first token.
+        // Once text is streaming, the message itself is the progress signal.
+        isLoading={status === "submitted"}
+        messages={uiMessages}
       />
       <ChatForm
         isLoading={isLoading}

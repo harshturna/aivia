@@ -1,78 +1,87 @@
-import { getUser } from "@/lib/getUser";
-import { NextResponse } from "next/server";
-import { OpenAI } from "langchain/llms/openai";
-import prismadb from "@/lib/prismadb";
-import { checkHardLimit, increaseHardLimit } from "@/lib/hard-limit";
+import {
+  convertToModelMessages,
+  createUIMessageStreamResponse,
+  streamText,
+  toUIMessageStream,
+  type UIMessage,
+} from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
 
-interface Message {
-  role: "system" | "user";
-  content: string;
-}
+import prismadb from "@/lib/prismadb";
+import { guardGeneration } from "@/lib/ai/guard";
+
+export const maxDuration = 60;
 
 export async function POST(
   request: Request,
   { params }: { params: { chatId: string } }
 ) {
   try {
-    const { messages } = await request.json();
-    const user = await getUser("ROUTE_HANDLER");
+    const { messages }: { messages: UIMessage[] } = await request.json();
 
-    if (!user || !user.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!messages?.length) {
+      return new Response("Input is required", { status: 400 });
     }
 
-    if (!messages) {
-      return new NextResponse("Input is required", { status: 400 });
-    }
+    const guard = await guardGeneration();
+    if (!guard.ok) return guard.response;
 
-    const hardLimitNotReached = await checkHardLimit("ROUTE_HANDLER");
-
-    if (!hardLimitNotReached) {
-      return new NextResponse("Demo generation limit reached. Please try again later.", { status: 429 });
-    }
-
-    const character = await prismadb.character.findUnique({
+    // Scope the lookup to characters this user is allowed to see: their own,
+    // plus the shared demo characters on the guest account. Previously this
+    // was findUnique by id alone, so any signed-in user could talk to any
+    // character and indirectly read its instructions and seed.
+    const character = await prismadb.character.findFirst({
       where: {
         id: params.chatId,
+        OR: [{ userId: guard.user.id }, { userId: process.env.GUEST_USER_ID }],
       },
     });
 
     if (!character) {
-      return new NextResponse("Character not found", { status: 404 });
+      return new Response("Character not found", { status: 404 });
     }
 
-    const name = character.id;
+    // The persona belongs in the system prompt. The previous implementation
+    // used LangChain's legacy completions wrapper, which flattened the whole
+    // conversation into a single prompt string and had no notion of roles.
+    const system = [
+      `You are ${character.name}. ${character.description}`,
+      "",
+      "Speak in the first person, as the character, always.",
+      `Never prefix your reply with "${character.name}:" or any other name or label.`,
+      "Reply with at least one complete sentence. Stay in character at all times.",
+      "",
+      "Background about you:",
+      character.instructions,
+      "",
+      "Relevant details about your past and this conversation:",
+      character.seed,
+    ].join("\n");
 
-    const model = new OpenAI({
-      modelName: "gpt-4",
-      temperature: 0.9,
-      openAIApiKey: process.env.OPENAI_API_KEY,
+    const result = streamText({
+      model: anthropic("claude-sonnet-5"),
+      system,
+      messages: await convertToModelMessages(messages),
+      providerOptions: {
+        anthropic: {
+          // Roleplay wants voice, not deliberation. Disabling thinking was only
+          // marginally faster to first token here (2.75s vs 3.14s, single
+          // samples, so treat as noise-adjacent) but it does avoid paying for
+          // thinking tokens on every turn of a public demo.
+          thinking: { type: "disabled" },
+          effort: "low",
+        },
+      },
+      onFinish: async () => {
+        await guard.consume();
+      },
     });
 
-    const formattedMessages = messages
-      .map((message: Message) => `${message.role}: ${message.content}`)
-      .join("\n");
-
-    const resp = await model
-      .call(
-        `ONLY generate sentences in the first person, speaking as the character directly. DO NOT use any prefixes like "${character.name}:" or other identifiers before the response. Respond in at least one complete sentence.\nBelow is the background about you as the character:\n${character.instructions}.\n\nBelow are the relevant details about your past and the current conversation:\n${character.seed}\n${formattedMessages}\n\nFor example, instead of saying "${character.name}: I think...", simply start with "I think...".`
-      )
-      .catch(console.error);
-
-    if (!resp) {
-      return new NextResponse(`Error generating response`, { status: 500 });
-    }
-
-    const response = {
-      role: "system",
-      content: resp.trim(),
-    };
-
-    await increaseHardLimit("ROUTE_HANDLER");
-
-    return NextResponse.json(response);
+    return createUIMessageStreamResponse({
+      stream: toUIMessageStream({ stream: result.stream }),
+    });
   } catch (error) {
-    console.log("[CHAT_POST]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("[CHAT_POST]", error);
+    return new Response("Internal Error", { status: 500 });
   }
 }

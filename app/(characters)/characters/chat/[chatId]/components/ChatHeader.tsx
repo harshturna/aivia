@@ -14,14 +14,9 @@ import { ChevronLeft, Edit, MoreVertical, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-// TODO: remove the _count from props
-
 interface ChatHeaderProps {
   character: Character & {
     messages: Message[];
-    _count: {
-      messages: number;
-    };
   };
   currentUserId: string;
   isGuest: boolean;
