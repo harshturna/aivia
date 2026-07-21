@@ -1,0 +1,195 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, isToolUIPart } from "ai";
+import { Sparkles, Square } from "lucide-react";
+import toast from "react-hot-toast";
+
+import Heading from "@/components/Heading";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/UserAvatar";
+import { BotAvatar } from "@/components/BotAvatar";
+import { Markdown } from "@/components/ai/Markdown";
+import { Artifact } from "@/components/ai/Artifact";
+import { userProModal } from "@/hooks/useProModal";
+
+const EXAMPLES = [
+  "Design a logo for a coffee roastery and write three taglines",
+  "Make a 5-second clip of rain on a window, and a lo-fi track to match",
+  "Create album art for a synthwave record and name the album",
+];
+
+const StudioPage = () => {
+  const proModal = userProModal();
+  const [input, setInput] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const { messages, sendMessage, status, stop } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/agent" }),
+    onError: (error) => {
+      const message = error?.message ?? "";
+      if (message.includes("Free trial")) return proModal.onOpen();
+      if (message.includes("limit reached")) {
+        return toast.error(
+          "Demo generation limit reached. Please try again later."
+        );
+      }
+      toast.error("Something went wrong");
+    },
+  });
+
+  const isStreaming = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, status]);
+
+  const send = (text: string) => {
+    if (!text.trim() || isStreaming) return;
+    sendMessage({ text: text.trim() });
+    setInput("");
+  };
+
+  return (
+    <div>
+      <Heading
+        title="Studio"
+        description="Describe what you want. Aivia plans it and builds it."
+        icon={Sparkles}
+        iconColor="text-amber-500"
+        bgColor="bg-amber-500/10"
+      />
+
+      <div className="px-4 lg:px-8">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            send(input);
+          }}
+          className="grid w-full grid-cols-12 gap-2 rounded-lg border p-4 px-3 focus-within:shadow-sm md:px-6"
+        >
+          <div className="col-span-12 lg:col-span-10">
+            <label htmlFor="studio-prompt" className="sr-only">
+              What should Aivia make?
+            </label>
+            <Input
+              id="studio-prompt"
+              className="border-0 focus-visible:ring-1 focus-visible:ring-amber-500"
+              disabled={isStreaming}
+              placeholder="Design a logo for a coffee roastery and write three taglines"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+            />
+          </div>
+          {isStreaming ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={stop}
+              className="col-span-12 w-full lg:col-span-2"
+            >
+              <Square className="mr-2 h-4 w-4" aria-hidden="true" />
+              Stop
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              className="col-span-12 w-full lg:col-span-2"
+              disabled={!input.trim()}
+            >
+              Build it
+            </Button>
+          )}
+        </form>
+
+        <div className="mt-4 space-y-4">
+          {!messages.length && !isStreaming && (
+            <div className="rounded-lg border border-dashed p-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                One prompt. Aivia decides which tools to use — images, video,
+                music — and runs them for you.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {EXAMPLES.map((example) => (
+                  <button
+                    key={example}
+                    type="button"
+                    onClick={() => send(example)}
+                    className="rounded-full border px-3 py-1.5 text-xs text-zinc-600 transition hover:border-amber-500 hover:text-zinc-900"
+                  >
+                    {example}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={cn(
+                  "character-grid grid w-full items-start gap-x-8 rounded-lg p-8",
+                  message.role === "user"
+                    ? "border border-black/10 bg-white"
+                    : "bg-muted"
+                )}
+              >
+                {message.role === "user" ? (
+                  <UserAvatar color="violet" />
+                ) : (
+                  <BotAvatar />
+                )}
+
+                {/* Render parts in order so the plan, the tool runs and the
+                    closing summary appear as they actually happened. */}
+                <div className="min-w-0 text-sm">
+                  {message.parts.map((part, index) => {
+                    if (part.type === "reasoning") {
+                      const text = (part as { text: string }).text?.trim();
+                      if (!text) return null;
+                      return (
+                        <details
+                          key={index}
+                          className="mb-3 rounded-md border border-black/10 bg-black/[0.03]"
+                        >
+                          <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-900">
+                            Plan
+                          </summary>
+                          <div className="whitespace-pre-wrap px-3 pb-3 text-xs leading-6 text-zinc-600">
+                            {text}
+                          </div>
+                        </details>
+                      );
+                    }
+
+                    if (part.type === "text") {
+                      return (
+                        <Markdown key={index}>
+                          {(part as { text: string }).text}
+                        </Markdown>
+                      );
+                    }
+
+                    if (isToolUIPart(part)) {
+                      return <Artifact key={index} part={part} />;
+                    }
+
+                    return null;
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div ref={bottomRef} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudioPage;

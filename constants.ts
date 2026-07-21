@@ -7,6 +7,7 @@ import {
   Dna,
   UserRound,
   BookText,
+  Sparkles,
 } from "lucide-react";
 
 export const MAX_FREE_COUNTS = 5;
@@ -21,6 +22,15 @@ export type ContextType =
   | "CLIENT_COMPONENT";
 
 export const tools = [
+  {
+    // The agent surface. Listed first because it supersedes the individual
+    // tools below — those remain for people who want direct control.
+    label: "Studio",
+    icon: Sparkles,
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
+    href: "/studio",
+  },
   {
     label: "Conversation",
     icon: MessageSquare,
