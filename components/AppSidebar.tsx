@@ -10,6 +10,12 @@ export interface SidebarRoute {
   label: string;
   icon: LucideIcon;
   href: string;
+  /**
+   * Draw a divider and a gap below this item. Used to set the section's home
+   * route apart from the tools beneath it, since it is the way back rather
+   * than another destination.
+   */
+  separatorAfter?: boolean;
 }
 
 interface AppSidebarProps {
@@ -58,7 +64,13 @@ export const AppSidebar = ({
           {routes.map((route) => {
             const isActive = pathname === route.href;
             return (
-              <li key={route.href}>
+              <li
+                key={route.href}
+                className={cn(
+                  route.separatorAfter &&
+                    "mb-3 border-b border-sidebar-border pb-3"
+                )}
+              >
                 <Link
                   href={route.href}
                   aria-current={isActive ? "page" : undefined}

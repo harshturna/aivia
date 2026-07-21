@@ -22,7 +22,10 @@ export const metadata: Metadata = {
   },
   description:
     "One prompt. Aivia plans it and builds it — images, video, music and code.",
-  icons: { icon: "/favicon.ico" },
+  // No `icons` entry: app/icon.svg is picked up by the App Router convention
+  // and the <link> tags are generated automatically. The previous value
+  // pointed at /favicon.ico, which does not exist in this repo — the app has
+  // been serving a 404 for its icon.
   openGraph: {
     title: "Aivia — an AI studio",
     description:

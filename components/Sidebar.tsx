@@ -15,8 +15,15 @@ import { AppSidebar, type SidebarRoute } from "./AppSidebar";
 import { FreeCounter } from "./FreeCounter";
 
 const routes: SidebarRoute[] = [
+  // Dashboard leads and is set apart: it is the way back to the tool picker,
+  // not another tool.
+  {
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    href: "/generative",
+    separatorAfter: true,
+  },
   { label: "Studio", icon: Sparkles, href: "/studio" },
-  { label: "Dashboard", icon: LayoutDashboard, href: "/generative" },
   { label: "Conversation", icon: MessageSquare, href: "/conversation" },
   { label: "Image Generation", icon: ImageIcon, href: "/image" },
   { label: "Video Generation", icon: VideoIcon, href: "/video" },
