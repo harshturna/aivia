@@ -5,6 +5,6 @@ export const navLinks = [
   },
   {
     route: "Get Started",
-    path: "/init",
+    path: "/get-started",
   },
 ];

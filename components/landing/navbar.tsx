@@ -57,7 +57,7 @@ export default function Navbar() {
             ))}
           </ul>
           <Link
-            href="/init"
+            href="/get-started"
             className={buttonVariants({ size: "sm" })}
             onClick={() => window.lynq.track("Get Started")}
           >
@@ -102,7 +102,7 @@ export default function Navbar() {
             ))}
             <li className="mt-2">
               <Link
-                href="/init"
+                href="/get-started"
                 onClick={close}
                 className={cn(buttonVariants({ size: "sm" }), "w-full")}
               >

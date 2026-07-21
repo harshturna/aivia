@@ -49,7 +49,7 @@ export default function HeroHeader() {
           style={{ animationDelay: "120ms" }}
         >
           <Link
-            href="/init"
+            href="/get-started"
             className={cn(buttonVariants({ size: "lg" }), "group")}
           >
             Try it now
