@@ -12,10 +12,27 @@ import { runFal, extractUrl } from "@/lib/ai/fal";
  * per tool call, otherwise a single prompt could burn several credits.
  */
 
-// ~2s, ~$0.003. Swap to fal-ai/flux/dev or flux-pro/v1.1 for more fidelity.
+// ~2s, $0.003 per megapixel. Swap to fal-ai/flux/dev or flux-pro/v1.1 for
+// more fidelity.
 export const IMAGE_MODEL = "fal-ai/flux/schnell";
-// Kling on fal is image-to-video; Seedance is the text-to-video option.
-export const VIDEO_MODEL = "bytedance/seedance-2.0/fast/text-to-video";
+
+/**
+ * Not 1024. fal bills images by rounding *up* to the nearest megapixel, and
+ * 1024x1024 is 1.048 MP — it bills as 2 MP, so it costs double ($0.006 vs
+ * $0.003) for 5% more pixels. 992x992 is 0.98 MP, stays inside one megapixel,
+ * and is still a multiple of 32.
+ */
+export const IMAGE_DEFAULT_EDGE = 992;
+
+/**
+ * $0.04 per second at 1080p, minimum duration 6s, so ~$0.24 per clip.
+ *
+ * Replaces bytedance/seedance-2.0/fast, which was $0.2419 *per second* — a
+ * single 10s clip cost $2.42. Against a shared guest account with a 100
+ * generation cap that was up to $240 of exposure from one surface.
+ */
+export const VIDEO_MODEL = "fal-ai/ltx-2/text-to-video/fast";
+export const VIDEO_DURATION_SECONDS = 6;
 
 // $0.02 per output minute, so ~$0.01 for a 30s clip. Replaces
 // fal-ai/minimax-music/v2.6, which was $0.15 flat per generation — 15x more —
@@ -35,8 +52,8 @@ interface FalImageResponse {
 export async function generateImages({
   prompt,
   amount = 1,
-  width = 1024,
-  height = 1024,
+  width = IMAGE_DEFAULT_EDGE,
+  height = IMAGE_DEFAULT_EDGE,
 }: {
   prompt: string;
   amount?: number;
@@ -59,8 +76,19 @@ export async function generateImages({
   return urls;
 }
 
-export async function generateVideo(prompt: string): Promise<string> {
-  const url = extractUrl(await runFal(VIDEO_MODEL, { prompt }));
+export async function generateVideo(
+  prompt: string,
+  durationSeconds: number = VIDEO_DURATION_SECONDS
+): Promise<string> {
+  // duration is an enum (6, 8, 10, ...20) and resolution drives the rate, so
+  // both are pinned rather than left to the endpoint's defaults.
+  const url = extractUrl(
+    await runFal(VIDEO_MODEL, {
+      prompt,
+      duration: durationSeconds,
+      resolution: "1080p",
+    })
+  );
 
   if (!url) {
     throw new Error("Video generation returned no video");

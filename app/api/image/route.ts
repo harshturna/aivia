@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { guardGeneration } from "@/lib/ai/guard";
-import { generateImages } from "@/lib/ai/capabilities";
+import { generateImages, IMAGE_DEFAULT_EDGE } from "@/lib/ai/capabilities";
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt, amount = 1, resolution = "1024x1024" } = body;
+    const { prompt, amount = 1, resolution = "" } = body;
 
     if (!prompt) {
       return new NextResponse("Prompt is required", { status: 400 });
@@ -24,8 +24,8 @@ export async function POST(req: Request) {
     const urls = await generateImages({
       prompt,
       amount: parseInt(String(amount), 10) || 1,
-      width: Number.isFinite(width) ? width : 1024,
-      height: Number.isFinite(height) ? height : 1024,
+      width: Number.isFinite(width) ? width : IMAGE_DEFAULT_EDGE,
+      height: Number.isFinite(height) ? height : IMAGE_DEFAULT_EDGE,
     });
 
     await guard.consume();

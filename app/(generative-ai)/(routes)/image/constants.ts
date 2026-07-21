@@ -8,6 +8,8 @@ export const formSchema = z.object({
   resolution: z.string().min(1),
 });
 
+// Capped at 4: generateImages clamps num_images to 4, so a "5 Photos"
+// option silently returned four.
 export const amountOptions = [
   {
     value: "1",
@@ -24,10 +26,6 @@ export const amountOptions = [
   {
     value: "4",
     label: "4 Photos",
-  },
-  {
-    value: "5",
-    label: "5 Photos",
   },
 ];
 

@@ -48,14 +48,28 @@ export const agentTools = {
     description:
       "Generate a short video clip from a text description. Call this when the " +
       "user asks for a video, clip, animation, or motion sequence. This is slow " +
-      "(tens of seconds), so do not call it speculatively.",
+      "(tens of seconds) and by far the most expensive tool, so do not call it " +
+      "speculatively and keep clips short unless a longer one is asked for.",
     inputSchema: z.object({
       prompt: z
         .string()
         .describe("A detailed description of the scene, motion and camera."),
+      durationSeconds: z
+        .union([
+          z.literal(6),
+          z.literal(8),
+          z.literal(10),
+          z.literal(12),
+          z.literal(14),
+          z.literal(16),
+          z.literal(18),
+          z.literal(20),
+        ])
+        .default(6)
+        .describe("Clip length in seconds. Prefer 6 — cost scales with this."),
     }),
-    execute: async ({ prompt }) => {
-      const url = await generateVideo(prompt);
+    execute: async ({ prompt, durationSeconds }) => {
+      const url = await generateVideo(prompt, durationSeconds);
       return { url, prompt };
     },
   }),
