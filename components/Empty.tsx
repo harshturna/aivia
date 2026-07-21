@@ -6,13 +6,14 @@ interface EmptyProps {
 
 export const Empty = ({ label }: EmptyProps) => {
   return (
-    <div className="h-full p-20 flex flex-col items-center">
-      <div className="relative h-72 w-72">
-        <Image alt="Empty" fill src="https://res.cloudinary.com/dlp6wui7r/image/upload/v1706318362/aivia/empty.png" />
+    <div className="flex h-full flex-col items-center p-12">
+      {/* Local asset; previously a hardcoded Cloudinary URL for the same file.
+          sizes keeps next/image from serving the 2160px original for a 224px
+          slot. dark:invert because the illustration is black-on-transparent. */}
+      <div className="relative h-56 w-56 opacity-80 dark:invert">
+        <Image alt="" fill sizes="224px" src="/empty.png" />
       </div>
-      <p className="text-muted-foreground text-sm text-center capitalize">
-        {label}
-      </p>
+      <p className="text-center text-sm text-muted-foreground">{label}</p>
     </div>
   );
 };

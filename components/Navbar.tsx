@@ -2,6 +2,7 @@ import MobileSidebar from "./MobileSidebar";
 import { getApiLimitCount } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
 import LogoutButton from "./LogoutButton";
+import { ThemeToggle } from "./ThemeToggle";
 import { isGuestUser } from "@/lib/guest-user";
 
 const Navbar = async () => {
@@ -10,12 +11,13 @@ const Navbar = async () => {
   const guestUser = await isGuestUser("SERVER_COMPONENT");
 
   return (
-    <div className="flex items-center p-4">
+    <header className="sticky top-0 z-40 flex items-center border-b border-border/60 bg-background/80 p-4 backdrop-blur">
       <MobileSidebar apiLimitCount={apiLimitCount} isPro={isPro} />
-      <div className="flex w-full justify-end">
+      <div className="flex w-full items-center justify-end gap-2">
+        <ThemeToggle />
         <LogoutButton isGuestUser={guestUser} />
       </div>
-    </div>
+    </header>
   );
 };
 

@@ -2,97 +2,115 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
 import { navLinks } from "@/lib/links";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import Logo from "../Logo";
+import { ThemeToggle } from "../ThemeToggle";
 
 export default function Navbar() {
-  const [navbar, setNavbar] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const handleClick = async () => {
-    setNavbar(false);
-  };
+  const close = () => setOpen(false);
 
   useEffect(() => {
-    if (navbar) {
-      document.body.style.overflow = "hidden";
-    } else {
+    document.body.style.overflow = open ? "hidden" : "auto";
+    return () => {
       document.body.style.overflow = "auto";
-    }
-  }, [navbar]);
+    };
+  }, [open]);
 
   return (
-    <header className="select-none">
-      <nav className="mx-auto justify-between px-4 md:flex md:items-center md:px-8 lg:max-w-7xl">
-        <div>
-          <div className="flex items-center justify-between py-3 md:block md:py-5">
-            <Link href="/" onClick={handleClick}>
-              <Logo />
-            </Link>
-            <div className="flex gap-1 md:hidden">
-              <button
-                className="rounded-md p-2 text-primary outline-none focus:border focus:border-primary"
-                aria-label="Hamburger Menu"
-                onClick={() => setNavbar(!navbar)}
-              >
-                {navbar ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 "
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 "
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className={`absolute left-0 right-0 z-10 m-auto justify-self-center rounded-md border bg-background p-4 md:static md:mt-0 md:block md:border-none md:p-0 ${
-              navbar ? "block" : "hidden"
-            }`}
-            style={{ width: "100%", maxWidth: "20rem" }}
+    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur">
+      <nav
+        aria-label="Landing navigation"
+        className="container flex items-center justify-between py-3"
+      >
+        <Link
+          href="/"
+          onClick={close}
+          className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Logo className="h-7 w-7" />
+          <span className="font-display text-xl font-semibold tracking-tight">
+            Aivia
+          </span>
+        </Link>
+
+        {/* Desktop */}
+        <div className="hidden items-center gap-6 md:flex">
+          <ul className="flex items-center gap-6">
+            {navLinks.map((link) => (
+              <li key={link.route}>
+                <Link
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  href={link.path}
+                  onClick={() => window.lynq.track(link.route)}
+                >
+                  {link.route}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <ThemeToggle />
+          <Link
+            href="/init"
+            className={buttonVariants({ size: "sm" })}
+            onClick={() => window.lynq.track("Get Started")}
           >
-            <ul className="flex flex-col items-center space-y-4 text-primary opacity-60 md:flex-row md:space-x-6 md:space-y-0">
-              {navLinks.map((link) => (
-                <li key={link.route}>
-                  <Link
-                    className="hover:underline"
-                    href={link.path}
-                    onClick={() => {
-                      window.lynq.track("Features");
-                      handleClick;
-                    }}
-                  >
-                    {link.route}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+            Get started
+          </Link>
+        </div>
+
+        {/* Mobile */}
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+          <button
+            className="rounded-md p-2 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            {open ? (
+              <X className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            )}
+          </button>
         </div>
       </nav>
+
+      {/* Mobile menu */}
+      {open && (
+        <div className="border-t border-border/60 bg-background/95 backdrop-blur md:hidden animate-fade-up">
+          <ul className="container flex flex-col gap-1 py-4">
+            {navLinks.map((link) => (
+              <li key={link.route}>
+                <Link
+                  className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                  href={link.path}
+                  onClick={() => {
+                    window.lynq.track(link.route);
+                    close();
+                  }}
+                >
+                  {link.route}
+                </Link>
+              </li>
+            ))}
+            <li className="mt-2">
+              <Link
+                href="/init"
+                onClick={close}
+                className={cn(buttonVariants({ size: "sm" }), "w-full")}
+              >
+                Get started
+              </Link>
+            </li>
+          </ul>
+        </div>
+      )}
     </header>
   );
 }

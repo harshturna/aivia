@@ -1,54 +1,51 @@
-import { Dna, UserRound, Image } from "lucide-react";
+import {
+  Sparkles,
+  ImageIcon,
+  UserRound,
+  Wand2,
+  Code,
+  Clapperboard,
+} from "lucide-react";
 
 export const heroHeader = {
-  header: `Transform your Ideas into Reality`,
-  subheader: `, your suite of AI tools`,
+  header: `Transform your ideas into reality`,
+  subheader: ` plans it and builds it — images, video, music and code.`,
   image: `/landing.png`,
-};
-
-export const featureCards = {
-  header: `Our Suite`,
-  content: [
-    {
-      text: `Generative AI`,
-      icon: Dna,
-      bgColor: "bg-violet-500/10",
-      color: "text-violet-500",
-    },
-    {
-      text: `Characters AI`,
-      icon: UserRound,
-      bgColor: "bg-green-700/10",
-      color: "text-green-700",
-    },
-    {
-      text: `Transformation AI`,
-      icon: Image,
-      color: "text-pink-700",
-      bgColor: "bg-pink-700/10",
-    },
-  ],
 };
 
 export const features = {
   header: `Features`,
   subheader: `What our tools offer`,
-  image: `/features.png`,
   content: [
     {
-      text: `Generate`,
-      subtext: `images, music, videos, and more!`,
-      icon: Dna,
+      text: `Agentic Studio`,
+      subtext: `One prompt. Aivia plans the work, picks the tools, and runs them — grounded with live web search.`,
+      icon: Sparkles,
     },
     {
-      text: `Chat with`,
-      subtext: `any character you can imagine!`,
+      text: `Generate anything`,
+      subtext: `Images, video and music from state-of-the-art models, streamed as they are made.`,
+      icon: ImageIcon,
+    },
+    {
+      text: `Write code`,
+      subtext: `Streaming code generation with visible reasoning and syntax-highlighted output.`,
+      icon: Code,
+    },
+    {
+      text: `Chat with characters`,
+      subtext: `Talk to notable personalities, or design your own with a backstory and voice.`,
       icon: UserRound,
     },
     {
-      text: `Transform`,
-      subtext: `and edit images like it's magic!`,
-      icon: Image,
+      text: `Transform images`,
+      subtext: `Restore, recolor, remove objects and swap backgrounds like it's magic.`,
+      icon: Wand2,
+    },
+    {
+      text: `Watch it work`,
+      subtext: `Responses stream in real time — plans, reasoning, sources and artifacts as they happen.`,
+      icon: Clapperboard,
     },
   ],
 };

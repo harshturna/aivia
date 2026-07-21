@@ -9,67 +9,90 @@ body,
 }
 
 @layer base {
+  /*
+   * Design tokens.
+   *
+   * Previously these were the unmodified shadcn "zinc" defaults: --primary was
+   * near-black, so the product had no brand colour in the token system at all,
+   * and --radius was 0.3rem (~5px), which is the single most dating detail in
+   * the UI. Amber is the brand hue, picked to read as warm and distinct rather
+   * than the purple-gradient default that every AI product shipped in 2023.
+   */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 40 30% 99%;
+    --foreground: 240 10% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 240 10% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 240 10% 8%;
+
+    --primary: 32 95% 44%;
+    --primary-foreground: 40 40% 99%;
+
+    --secondary: 40 12% 94%;
+    --secondary-foreground: 240 10% 12%;
+    --muted: 40 12% 96%;
+    --muted-foreground: 240 4% 44%;
+    --accent: 32 90% 96%;
+    --accent-foreground: 32 95% 30%;
+
+    --destructive: 0 72% 48%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.3rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+
+    --border: 40 10% 89%;
+    --input: 40 10% 89%;
+    --ring: 32 95% 44%;
+
+    /* Surfaces for the app shell, so the sidebar is not a hardcoded hex. */
+    --sidebar: 240 12% 10%;
+    --sidebar-foreground: 40 20% 92%;
+    --sidebar-muted: 240 6% 62%;
+    --sidebar-accent: 32 95% 55%;
+
+    --radius: 0.75rem;
   }
- 
+
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 240 12% 7%;
+    --foreground: 40 20% 95%;
+    --card: 240 11% 10%;
+    --card-foreground: 40 20% 95%;
+    --popover: 240 11% 10%;
+    --popover-foreground: 40 20% 95%;
+
+    --primary: 32 95% 55%;
+    --primary-foreground: 240 12% 8%;
+
+    --secondary: 240 8% 16%;
+    --secondary-foreground: 40 20% 95%;
+    --muted: 240 8% 15%;
+    --muted-foreground: 240 6% 62%;
+    --accent: 240 8% 18%;
+    --accent-foreground: 32 95% 62%;
+
+    --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+
+    --border: 240 8% 19%;
+    --input: 240 8% 19%;
+    --ring: 32 95% 55%;
+
+    --sidebar: 240 12% 9%;
+    --sidebar-foreground: 40 20% 92%;
+    --sidebar-muted: 240 6% 58%;
+    --sidebar-accent: 32 95% 58%;
   }
 
   .gradient-text {
-    color: #000;
-    background-image: linear-gradient(to right, #6366f1, #8b5cf6, #db75a8);
+    background-image: linear-gradient(
+      to right,
+      hsl(32 95% 50%),
+      hsl(18 90% 55%),
+      hsl(340 75% 58%)
+    );
     -webkit-background-clip: text;
     background-clip: text;
-    -webkit-text-fill-color: transparent; /* for WebKit browsers */
+    -webkit-text-fill-color: transparent;
   }
 
   .character-grid {
@@ -92,9 +115,10 @@ body,
     @apply max-w-5xl mx-auto px-5 md:px-10 w-full text-gray-400 p-16-regular;
   }
 
-  .gradient-text {
-    @apply bg-purple-500 bg-cover bg-clip-text text-transparent;
-  }
+  /* NOTE: .gradient-text is defined once, in @layer base above. It used to be
+     redefined here too, and since utilities are emitted after base at equal
+     specificity, this copy won. The result was that the hero wordmark rendered
+     as flat purple and the gradient never shipped. */
 
   /* ===== ALIGNMENTS */
   .flex-center {
@@ -165,7 +189,7 @@ body,
 
   /* =====  SHADCN OVERRIDES */
   .button {
-    @apply py-4 px-6 flex-center gap-3 rounded-full p-16-semibold focus-visible:ring-offset-0 focus-visible:ring-transparent !important;
+    @apply py-4 px-6 flex-center gap-3 rounded-full p-16-semibold focus-visible:ring-offset-0 focus-visible:ring-ring !important;
   }
 
   .dropdown-content {
@@ -173,15 +197,15 @@ body,
   }
 
   .dropdown-item {
-    @apply p-16-semibold text-dark-700 cursor-pointer transition-all px-4 py-3 rounded-none outline-none hover:border-none focus-visible:ring-transparent hover:text-white hover:bg-purple-500 hover:bg-cover focus-visible:ring-offset-0 focus-visible:outline-none !important;
+    @apply p-16-semibold text-dark-700 cursor-pointer transition-all px-4 py-3 rounded-none outline-none hover:border-none focus-visible:ring-ring hover:text-white hover:bg-purple-500 hover:bg-cover focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
   }
 
   .input-field {
-    @apply rounded-[16px] border-2 border-purple-200/20 shadow-sm  text-dark-600 disabled:opacity-100 p-16-semibold h-[50px] md:h-[54px] focus-visible:ring-offset-0 px-4 py-3 focus-visible:ring-transparent !important;
+    @apply rounded-[16px] border-2 border-purple-200/20 shadow-sm  text-dark-600 disabled:opacity-100 p-16-semibold h-[50px] md:h-[54px] focus-visible:ring-offset-0 px-4 py-3 focus-visible:ring-ring !important;
   }
 
   .search-field {
-    @apply border-0 bg-transparent text-dark-600 w-full placeholder:text-dark-400 h-[50px] p-16-medium focus-visible:ring-offset-0 p-3 focus-visible:ring-transparent !important;
+    @apply border-0 bg-transparent text-dark-600 w-full placeholder:text-dark-400 h-[50px] p-16-medium focus-visible:ring-offset-0 p-3 focus-visible:ring-ring !important;
   }
 
   .submit-button {
@@ -189,11 +213,11 @@ body,
   }
 
   .select-field {
-    @apply w-full border-2 border-purple-200/20 shadow-sm  rounded-[16px] h-[50px] md:h-[54px] text-dark-600 p-16-semibold disabled:opacity-100 placeholder:text-dark-400/50 px-4 py-3 focus:ring-offset-0 focus-visible:ring-transparent focus:ring-transparent focus-visible:ring-0 focus-visible:outline-none !important;
+    @apply w-full border-2 border-purple-200/20 shadow-sm  rounded-[16px] h-[50px] md:h-[54px] text-dark-600 p-16-semibold disabled:opacity-100 placeholder:text-dark-400/50 px-4 py-3 focus:ring-offset-0 focus-visible:ring-ring focus:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
   }
 
   .select-trigger {
-    @apply flex items-center  gap-2 py-5 capitalize focus-visible:outline-none;
+    @apply flex items-center  gap-2 py-5 capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ;
   }
 
   .select-item {
@@ -201,7 +225,7 @@ body,
   }
 
   .IconButton {
-    @apply focus-visible:ring-transparent focus:ring-offset-0 focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:border-none !important;
+    @apply focus-visible:ring-ring focus:ring-offset-0 focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
   }
 
   /* Transformation Details */

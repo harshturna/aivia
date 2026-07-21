@@ -1,10 +1,17 @@
 import { Brain } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-import React from "react";
-
-const Logo = () => {
+// Sized by the caller. The previous version hardcoded 50x50, which overflowed
+// the 32px slot in every sidebar and collided with the wordmark.
+const Logo = ({ className }: { className?: string }) => {
   return (
-    <Brain className="w-[50px] h-[50px]" fill="#db75a8" stroke="#f584bc" />
+    <Brain
+      className={cn("h-8 w-8 text-primary", className)}
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth={1}
+      aria-hidden="true"
+    />
   );
 };
 

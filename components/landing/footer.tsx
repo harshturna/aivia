@@ -4,38 +4,51 @@ import Logo from "../Logo";
 
 export default function Footer() {
   return (
-    <footer className="mt-auto py-6">
-      <div>
-        <div className="justify-center flex md:justify-between md:px-8 lg:max-w-7xl mx-auto">
-          <Link href="/">
-            <Logo />
+    <footer className="border-t border-border/60 py-10">
+      <div className="container">
+        <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+          <Link
+            href="/"
+            className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Logo className="h-6 w-6" />
+            <span className="font-display text-lg font-semibold tracking-tight">
+              Aivia
+            </span>
           </Link>
-          <ul className="mb-6 hidden md:flex flex-wrap items-center text-primary opacity-60 sm:mb-0">
+          <ul className="flex flex-wrap items-center gap-6">
             {navLinks.map((link) => (
               <li key={link.route}>
-                <Link href={link.path} className="mr-4 hover:underline md:mr-6">
+                <Link
+                  href={link.path}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
                   {link.route}
                 </Link>
               </li>
             ))}
           </ul>
         </div>
-        <hr className="my-6 sm:mx-auto lg:my-8" />
-        <span className="text-lg text-center flex items-center justify-center">
+        <div className="mt-8 flex items-center justify-center gap-1 text-sm text-muted-foreground">
           <Link
             target="_blank"
             href="https://aivia.byharsh.com"
-            className="hover:underline"
+            className="font-medium text-foreground hover:underline"
           >
             Aivia
           </Link>
-          <span className="text-muted-foreground ml-2 text-sm mt-0.5">
+          <span>
             by{" "}
-            <a target="_blank" href="https://harshturna.com">
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://harshturna.com"
+              className="hover:underline"
+            >
               harsh
             </a>
           </span>
-        </span>
+        </div>
       </div>
     </footer>
   );

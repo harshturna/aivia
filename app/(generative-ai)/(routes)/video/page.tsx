@@ -100,7 +100,7 @@ const VideoGeneration = () => {
               <Loader description="Hold tight, we're generating your video" />
             </div>
           )}
-          {!video && !isLoading && <Empty label="no video generated" />}
+          {!video && !isLoading && <Empty label="No video generated" />}
           {video && (
             <video
               controls

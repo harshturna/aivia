@@ -100,7 +100,7 @@ const MusicGeneration = () => {
               <Loader description="hold tight, we're generating your music" />
             </div>
           )}
-          {!music && !isLoading && <Empty label="no music generated" />}
+          {!music && !isLoading && <Empty label="No music generated" />}
           {music && (
             <audio controls className="w-full mt-8">
               <source src={music} />
