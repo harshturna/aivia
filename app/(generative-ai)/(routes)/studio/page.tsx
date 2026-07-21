@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart } from "ai";
-import { Sparkles, Square } from "lucide-react";
+import { Paperclip, Sparkles, Square, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 import Heading from "@/components/Heading";
@@ -25,6 +25,8 @@ const EXAMPLES = [
 const StudioPage = () => {
   const proModal = userProModal();
   const [input, setInput] = useState("");
+  const [files, setFiles] = useState<FileList | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { messages, sendMessage, status, stop } = useChat({
@@ -47,10 +49,17 @@ const StudioPage = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, status]);
 
+  const clearFiles = () => {
+    setFiles(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const send = (text: string) => {
     if (!text.trim() || isStreaming) return;
-    sendMessage({ text: text.trim() });
+    // Attached images ride along as file parts; Sonnet 5 reads them natively.
+    sendMessage({ text: text.trim(), files });
     setInput("");
+    clearFiles();
   };
 
   return (
@@ -71,7 +80,7 @@ const StudioPage = () => {
           }}
           className="grid w-full grid-cols-12 gap-2 rounded-lg border p-4 px-3 focus-within:shadow-sm md:px-6"
         >
-          <div className="col-span-12 lg:col-span-10">
+          <div className="col-span-12 flex items-center gap-2 lg:col-span-10">
             <label htmlFor="studio-prompt" className="sr-only">
               What should Aivia make?
             </label>
@@ -83,6 +92,23 @@ const StudioPage = () => {
               value={input}
               onChange={(event) => setInput(event.target.value)}
             />
+            <input
+              ref={fileInputRef}
+              id="studio-files"
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              onChange={(event) => setFiles(event.target.files ?? undefined)}
+            />
+            <label
+              htmlFor="studio-files"
+              title="Attach images"
+              className="shrink-0 cursor-pointer rounded-md p-2 text-zinc-500 transition hover:bg-black/5 hover:text-zinc-900 focus-within:ring-1 focus-within:ring-amber-500"
+            >
+              <Paperclip className="h-4 w-4" aria-hidden="true" />
+              <span className="sr-only">Attach images</span>
+            </label>
           </div>
           {isStreaming ? (
             <Button
@@ -104,6 +130,23 @@ const StudioPage = () => {
             </Button>
           )}
         </form>
+
+        {files && files.length > 0 && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-zinc-600">
+            <Paperclip className="h-3 w-3" aria-hidden="true" />
+            <span>
+              {files.length} image{files.length > 1 ? "s" : ""} attached
+            </span>
+            <button
+              type="button"
+              onClick={clearFiles}
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-black/5"
+            >
+              <X className="h-3 w-3" aria-hidden="true" />
+              <span className="sr-only">Remove attached images</span>
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 space-y-4">
           {!messages.length && !isStreaming && (
@@ -171,6 +214,21 @@ const StudioPage = () => {
                         <Markdown key={index}>
                           {(part as { text: string }).text}
                         </Markdown>
+                      );
+                    }
+
+                    // Images the user attached, echoed back into the transcript.
+                    if (part.type === "file") {
+                      const file = part as { url: string; mediaType: string };
+                      if (!file.mediaType?.startsWith("image")) return null;
+                      return (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={index}
+                          src={file.url}
+                          alt="Attached"
+                          className="mb-2 max-h-48 rounded-md border border-black/10"
+                        />
                       );
                     }
 

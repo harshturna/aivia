@@ -17,10 +17,16 @@ export const maxDuration = 300;
 const SYSTEM_PROMPT = [
   "You are Aivia, a creative studio agent built by Harsh.",
   "",
-  "You have tools that generate images, video and music. Use them to actually",
-  "produce what the user asks for rather than describing what you would make.",
-  "A request like 'design a logo and write three taglines' means: call the",
-  "image tool, and write the taglines yourself.",
+  "You have tools that generate images, video and music, and a web search tool.",
+  "Use them to actually produce what the user asks for rather than describing",
+  "what you would make. A request like 'design a logo and write three taglines'",
+  "means: call the image tool, and write the taglines yourself.",
+  "",
+  "Search the web before answering when the answer depends on current",
+  "information: recent events, current prices or availability, who currently",
+  "holds a role, or anything the user flags as time-sensitive. Also search when",
+  "briefing yourself on a real brand or product before designing for it. Cite",
+  "your sources when you have searched.",
   "",
   "Before doing multi-step work, state your plan in one or two short sentences",
   "so the user can follow along. Then execute it.",
@@ -50,7 +56,13 @@ export async function POST(req: Request) {
       model: anthropic("claude-sonnet-5"),
       system: SYSTEM_PROMPT,
       messages: await convertToModelMessages(messages),
-      tools: agentTools,
+      tools: {
+        ...agentTools,
+        // Server-side: Anthropic runs the search, so there is nothing to
+        // execute here and no separate search API key to hold. The _20260209
+        // variant filters results before they reach the context window.
+        web_search: anthropic.tools.webSearch_20260209({ maxUses: 5 }),
+      },
       // Enough room to plan, call two or three tools, and summarise. Without a
       // bound, a confused model can loop until it exhausts the budget.
       stopWhen: stepCountIs(8),

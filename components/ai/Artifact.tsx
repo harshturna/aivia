@@ -1,14 +1,41 @@
 "use client";
 
 import Image from "next/image";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Search } from "lucide-react";
 import { getToolName, type ToolUIPart, type DynamicToolUIPart } from "ai";
 
 const LABELS: Record<string, { running: string; done: string }> = {
   generate_image: { running: "Generating image", done: "Image" },
   generate_video: { running: "Generating video", done: "Video" },
   generate_music: { running: "Composing music", done: "Music" },
+  web_search: { running: "Searching the web", done: "Sources" },
 };
+
+interface WebSearchResult {
+  type: "web_search_result";
+  url: string;
+  title: string | null;
+}
+
+const SearchResults = ({ results }: { results: WebSearchResult[] }) => (
+  <ol className="space-y-1.5">
+    {results.map((result, index) => (
+      <li key={`${result.url}-${index}`} className="flex gap-2 text-xs">
+        <span className="shrink-0 text-zinc-400">{index + 1}.</span>
+        <a
+          href={result.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="min-w-0 text-violet-600 underline underline-offset-2"
+        >
+          <span className="line-clamp-1">
+            {result.title || new URL(result.url).hostname}
+          </span>
+        </a>
+      </li>
+    ))}
+  </ol>
+);
 
 const Shell = ({
   title,
@@ -43,7 +70,11 @@ export const Artifact = ({
   const label = LABELS[name] ?? { running: name, done: name };
 
   if (part.state === "input-streaming" || part.state === "input-available") {
-    const prompt = (part.input as { prompt?: string } | undefined)?.prompt;
+    const input = part.input as
+      | { prompt?: string; query?: string }
+      | undefined;
+    // Media tools carry a prompt; the search tool carries a query.
+    const detail = input?.prompt ?? input?.query;
     return (
       <Shell
         title={
@@ -53,8 +84,8 @@ export const Artifact = ({
           </span>
         }
       >
-        {prompt && (
-          <p className="text-xs italic leading-5 text-zinc-500">“{prompt}”</p>
+        {detail && (
+          <p className="text-xs italic leading-5 text-zinc-500">“{detail}”</p>
         )}
       </Shell>
     );
@@ -71,6 +102,29 @@ export const Artifact = ({
         }
       >
         <p className="text-xs text-zinc-600">{part.errorText}</p>
+      </Shell>
+    );
+  }
+
+  // Web search is provider-executed and returns an array of results rather
+  // than the { url } / { urls } shape the media tools use.
+  if (name === "web_search") {
+    const results = (
+      Array.isArray(part.output) ? part.output : []
+    ) as WebSearchResult[];
+
+    if (!results.length) return null;
+
+    return (
+      <Shell
+        title={
+          <span className="flex items-center gap-2">
+            <Search className="h-3 w-3" aria-hidden="true" />
+            {label.done} ({results.length})
+          </span>
+        }
+      >
+        <SearchResults results={results} />
       </Shell>
     );
   }

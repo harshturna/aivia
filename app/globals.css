@@ -258,7 +258,8 @@ body,
 
   /* Search Component */
   .search {
-    @apply flex w-full rounded-[16px] border-2 border-purple-200/20 bg-white px-4 shadow-sm  md:max-w-96;
+    /* max-w-96 landed in Tailwind 3.4; this project is on 3.3.6. */
+    @apply flex w-full rounded-[16px] border-2 border-purple-200/20 bg-white px-4 shadow-sm md:max-w-[24rem];
   }
 
   /* Sidebar Component */
