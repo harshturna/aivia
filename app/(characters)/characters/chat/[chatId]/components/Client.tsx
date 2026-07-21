@@ -4,7 +4,6 @@ import { useState, useEffect, FormEvent, ChangeEvent } from "react";
 import { Character, Message } from "@prisma/client";
 import ChatHeader from "./ChatHeader";
 import { useRouter } from "next/navigation";
-import { useChat } from "ai/react";
 import ChatForm from "@/components/Characters/ChatForm";
 import ChatMessages from "@/components/Characters/ChatMessages";
 import { ChatMessageProps } from "@/components/Characters/ChatMessage";
