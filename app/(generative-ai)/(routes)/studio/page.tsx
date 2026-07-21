@@ -16,6 +16,41 @@ import { Markdown } from "@/components/ai/Markdown";
 import { Artifact } from "@/components/ai/Artifact";
 import { userProModal } from "@/hooks/useProModal";
 
+/**
+ * Merge runs of adjacent text parts into one block, leaving everything else in
+ * place.
+ *
+ * Anthropic's server-side web search cuts the answer into a separate text part
+ * at every citation boundary, so a single sentence arrives as several parts:
+ * the cited span, then the trailing ".", then the next connective. Rendering
+ * each through its own <Markdown> gave every fragment its own <p>, which is
+ * why answers came out with stray full stops on their own lines.
+ *
+ * Non-text parts still act as boundaries, so a tool call or a plan block
+ * appears exactly where it happened in the run.
+ */
+type Grouped<T> = { kind: "text"; text: string } | { kind: "part"; part: T };
+
+function groupTextParts<T extends { type: string }>(parts: T[]): Grouped<T>[] {
+  const groups: Grouped<T>[] = [];
+
+  for (const part of parts) {
+    if (part.type === "text") {
+      const previous = groups[groups.length - 1];
+      const text = (part as unknown as { text: string }).text ?? "";
+      if (previous?.kind === "text") {
+        previous.text += text;
+      } else {
+        groups.push({ kind: "text", text });
+      }
+      continue;
+    }
+    groups.push({ kind: "part", part });
+  }
+
+  return groups;
+}
+
 const EXAMPLES = [
   "Design a logo for a coffee roastery and write three taglines",
   "Make a 5-second clip of rain on a window, and a lo-fi track to match",
@@ -118,7 +153,13 @@ const StudioPage = () => {
                 {/* Render parts in order so the plan, the tool runs and the
                     closing summary appear as they actually happened. */}
                 <div className="min-w-0 text-sm">
-                  {message.parts.map((part, index) => {
+                  {groupTextParts(message.parts).map((group, index) => {
+                    if (group.kind === "text") {
+                      return <Markdown key={index}>{group.text}</Markdown>;
+                    }
+
+                    const part = group.part;
+
                     if (part.type === "reasoning") {
                       const text = (part as { text: string }).text?.trim();
                       if (!text) return null;
@@ -134,14 +175,6 @@ const StudioPage = () => {
                             {text}
                           </div>
                         </details>
-                      );
-                    }
-
-                    if (part.type === "text") {
-                      return (
-                        <Markdown key={index}>
-                          {(part as { text: string }).text}
-                        </Markdown>
                       );
                     }
 
