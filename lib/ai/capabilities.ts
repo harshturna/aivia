@@ -16,7 +16,17 @@ import { runFal, extractUrl } from "@/lib/ai/fal";
 export const IMAGE_MODEL = "fal-ai/flux/schnell";
 // Kling on fal is image-to-video; Seedance is the text-to-video option.
 export const VIDEO_MODEL = "bytedance/seedance-2.0/fast/text-to-video";
-export const MUSIC_MODEL = "fal-ai/minimax-music/v2.6";
+
+// $0.02 per output minute, so ~$0.01 for a 30s clip. Replaces
+// fal-ai/minimax-music/v2.6, which was $0.15 flat per generation — 15x more —
+// and rejected every call this app made: it requires either non-empty
+// `lyrics` or `is_instrumental: true`, and we sent a bare prompt.
+export const MUSIC_MODEL = "cassetteai/music-generator";
+export const MUSIC_DURATION_SECONDS = 30;
+
+// $0.002 per second. Music models produce nonsense for "a lion's roar"; this
+// is the model for non-musical audio.
+export const SFX_MODEL = "fal-ai/elevenlabs/sound-effects/v2";
 
 interface FalImageResponse {
   images?: Array<{ url: string; width?: number; height?: number }>;
@@ -59,11 +69,39 @@ export async function generateVideo(prompt: string): Promise<string> {
   return url;
 }
 
-export async function generateMusic(prompt: string): Promise<string> {
-  const url = extractUrl(await runFal(MUSIC_MODEL, { prompt }));
+export async function generateMusic(
+  prompt: string,
+  durationSeconds: number = MUSIC_DURATION_SECONDS
+): Promise<string> {
+  // `duration` is required and must be an integer; omitting it is a 422.
+  const url = extractUrl(
+    await runFal(MUSIC_MODEL, {
+      prompt,
+      duration: Math.round(durationSeconds),
+    })
+  );
 
   if (!url) {
     throw new Error("Music generation returned no audio");
+  }
+
+  return url;
+}
+
+export async function generateSoundEffect(
+  prompt: string,
+  durationSeconds?: number
+): Promise<string> {
+  // Note the field is `text`, not `prompt`, on this endpoint.
+  const url = extractUrl(
+    await runFal(SFX_MODEL, {
+      text: prompt,
+      ...(durationSeconds ? { duration_seconds: durationSeconds } : {}),
+    })
+  );
+
+  if (!url) {
+    throw new Error("Sound effect generation returned no audio");
   }
 
   return url;

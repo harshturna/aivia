@@ -97,7 +97,17 @@ export function extractUrl(value: unknown): string | null {
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
     if (typeof record.url === "string") return record.url;
-    for (const key of ["video", "audio", "image", "file", "output"]) {
+    // `audio_file` is Cassette's wrapper; without it a perfectly successful
+    // response reads as "returned no audio".
+    for (const key of [
+      "video",
+      "audio",
+      "audio_file",
+      "audio_url",
+      "image",
+      "file",
+      "output",
+    ]) {
       if (key in record) {
         const found = extractUrl(record[key]);
         if (found) return found;

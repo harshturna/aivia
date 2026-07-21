@@ -8,6 +8,7 @@ const LABELS: Record<string, { running: string; done: string }> = {
   generate_image: { running: "Generating image", done: "Image" },
   generate_video: { running: "Generating video", done: "Video" },
   generate_music: { running: "Composing music", done: "Music" },
+  generate_sound_effect: { running: "Generating sound", done: "Sound effect" },
   web_search: { running: "Searching the web", done: "Sources" },
   // web_search_20260209 filters results by running code server-side, which
   // surfaces as its own tool call.
@@ -73,9 +74,7 @@ export const Artifact = ({
   const label = LABELS[name] ?? { running: name, done: name };
 
   if (part.state === "input-streaming" || part.state === "input-available") {
-    const input = part.input as
-      | { prompt?: string; query?: string }
-      | undefined;
+    const input = part.input as { prompt?: string; query?: string } | undefined;
     // Media tools carry a prompt; the search tool carries a query.
     const detail = input?.prompt ?? input?.query;
     return (
@@ -88,7 +87,9 @@ export const Artifact = ({
         }
       >
         {detail && (
-          <p className="text-xs italic leading-5 text-muted-foreground">“{detail}”</p>
+          <p className="text-xs italic leading-5 text-muted-foreground">
+            “{detail}”
+          </p>
         )}
       </Shell>
     );
@@ -133,8 +134,7 @@ export const Artifact = ({
   }
 
   const output = part.output as
-    | { url?: string; urls?: string[]; prompt?: string }
-    | undefined;
+    { url?: string; urls?: string[]; prompt?: string } | undefined;
 
   if (!output) return null;
 
@@ -163,9 +163,8 @@ export const Artifact = ({
         <video controls src={urls[0]} className="w-full rounded-md" />
       )}
 
-      {name === "generate_music" && urls[0] && (
-        <audio controls src={urls[0]} className="w-full" />
-      )}
+      {(name === "generate_music" || name === "generate_sound_effect") &&
+        urls[0] && <audio controls src={urls[0]} className="w-full" />}
 
       {output.prompt && (
         <p className="mt-2 text-xs italic leading-5 text-muted-foreground">

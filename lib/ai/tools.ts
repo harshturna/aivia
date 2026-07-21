@@ -5,6 +5,7 @@ import {
   generateImages,
   generateVideo,
   generateMusic,
+  generateSoundEffect,
 } from "@/lib/ai/capabilities";
 
 /**
@@ -62,15 +63,48 @@ export const agentTools = {
   generate_music: tool({
     description:
       "Generate a music track from a text description. Call this when the user " +
-      "asks for music, a song, a jingle, a soundtrack or background audio. " +
-      "Describe genre, instrumentation, tempo and mood.",
+      "asks for music, a song, a jingle, a soundtrack or background audio — " +
+      "anything with melody, instrumentation or rhythm. Do NOT use this for " +
+      "sound effects such as an animal noise, an explosion, footsteps or " +
+      "ambience; use generate_sound_effect for those. Describe genre, " +
+      "instrumentation, tempo and mood.",
     inputSchema: z.object({
       prompt: z
         .string()
         .describe("A description of the genre, instrumentation, tempo and mood."),
+      durationSeconds: z
+        .number()
+        .int()
+        .min(5)
+        .max(180)
+        .default(30)
+        .describe("Track length in seconds. Prefer 30 unless asked."),
     }),
-    execute: async ({ prompt }) => {
-      const url = await generateMusic(prompt);
+    execute: async ({ prompt, durationSeconds }) => {
+      const url = await generateMusic(prompt, durationSeconds);
+      return { url, prompt };
+    },
+  }),
+
+  generate_sound_effect: tool({
+    description:
+      "Generate a non-musical sound effect from a text description. Call this " +
+      "for animal noises, weather, impacts, footsteps, machinery, ambience, UI " +
+      "sounds, or any real-world noise. Use this rather than generate_music " +
+      "whenever the request has no melody or instrumentation.",
+    inputSchema: z.object({
+      prompt: z
+        .string()
+        .describe("A description of the sound, e.g. 'a lion roaring nearby'."),
+      durationSeconds: z
+        .number()
+        .min(0.5)
+        .max(22)
+        .optional()
+        .describe("Length in seconds. Omit to let the model choose."),
+    }),
+    execute: async ({ prompt, durationSeconds }) => {
+      const url = await generateSoundEffect(prompt, durationSeconds);
       return { url, prompt };
     },
   }),
