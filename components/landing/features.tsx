@@ -21,9 +21,9 @@ export default function Features() {
             return (
               <div
                 key={feature.text}
-                className="group rounded-lg border border-border bg-card p-6 transition-colors hover:border-primary/40"
+                className="group rounded-lg border border-border bg-card p-6 transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
               >
-                <div className="mb-4 inline-flex rounded-lg bg-accent p-2.5 text-accent-foreground">
+                <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-2.5 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h3 className="mb-1.5 font-display text-lg font-semibold">

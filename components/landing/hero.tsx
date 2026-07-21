@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { heroHeader } from "@/config/contents";
@@ -30,21 +30,13 @@ export default function HeroHeader() {
       </div>
 
       <div className="container flex flex-col items-center gap-6 pb-16 pt-24 text-center lg:pt-32">
-        <p className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-primary/30 bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
-          <Sparkles className="h-3 w-3" aria-hidden="true" />
-          Now with an agentic Studio
-        </p>
-
-        <h1
-          className="animate-fade-up font-display text-5xl font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl"
-          style={{ animationDelay: "60ms" }}
-        >
+        <h1 className="animate-fade-up font-display text-5xl font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
           {heroHeader.header}
         </h1>
 
         <p
           className="animate-fade-up max-w-xl text-lg text-muted-foreground lg:text-xl"
-          style={{ animationDelay: "120ms" }}
+          style={{ animationDelay: "60ms" }}
         >
           <span className="text-primary font-display font-semibold">
             aivia
@@ -54,7 +46,7 @@ export default function HeroHeader() {
 
         <div
           className="animate-fade-up flex flex-wrap items-center justify-center gap-3"
-          style={{ animationDelay: "180ms" }}
+          style={{ animationDelay: "120ms" }}
         >
           <Link
             href="/init"
@@ -77,7 +69,7 @@ export default function HeroHeader() {
         {heroHeader.image !== "" && (
           <div
             className="animate-fade-up mt-6"
-            style={{ animationDelay: "240ms" }}
+            style={{ animationDelay: "180ms" }}
           >
             <Image
               src={heroHeader.image}
