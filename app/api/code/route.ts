@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     }
 
     if (!hardLimitNotReached) {
-      return new NextResponse("Limit reached", { status: 500 });
+      return new NextResponse("Demo generation limit reached. Please try again later.", { status: 429 });
     }
 
     const response = await openai.chat.completions.create({

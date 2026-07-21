@@ -55,6 +55,10 @@ const CodePage = () => {
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
+      } else if (error?.response?.status === 429) {
+        toast.error(
+          error?.response?.data || "Generation limit reached. Please try again later."
+        );
       } else {
         toast.error("Something went wrong");
       }

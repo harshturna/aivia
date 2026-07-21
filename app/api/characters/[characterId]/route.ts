@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
 import prismadb from "@/lib/prismadb";
+import { isGuestUser } from "@/lib/guest-user";
 
 export async function PATCH(
   req: Request,
@@ -17,6 +18,14 @@ export async function PATCH(
 
     if (!user || !user.id) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const isGuest = await isGuestUser("ROUTE_HANDLER");
+
+    if (isGuest) {
+      return new NextResponse("Guest cannot edit characters", {
+        status: 401,
+      });
     }
 
     if (
@@ -62,6 +71,14 @@ export async function DELETE(
     const user = await getUser("ROUTE_HANDLER");
     if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const isGuest = await isGuestUser("ROUTE_HANDLER");
+
+    if (isGuest) {
+      return new NextResponse("Guest cannot delete characters", {
+        status: 401,
+      });
     }
 
     const character = await prismadb.character.delete({

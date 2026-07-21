@@ -28,7 +28,7 @@ export async function POST(
     const hardLimitNotReached = await checkHardLimit("ROUTE_HANDLER");
 
     if (!hardLimitNotReached) {
-      return new NextResponse("Limit reached", { status: 500 });
+      return new NextResponse("Demo generation limit reached. Please try again later.", { status: 429 });
     }
 
     const character = await prismadb.character.findUnique({
