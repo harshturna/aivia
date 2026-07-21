@@ -40,6 +40,10 @@ const SYSTEM_PROMPT = [
   "",
   "Media generation costs real money and takes time. Generate what was asked",
   "for and no more; do not produce speculative extra variations.",
+  "",
+  "If a tool returns an error, say plainly that it failed and quote the error.",
+  "Do not guess at the cause or invent a limitation of the tool — you cannot",
+  "tell from an error message why a model rejected a request.",
 ].join("\n");
 
 export async function POST(req: Request) {
@@ -84,7 +88,19 @@ export async function POST(req: Request) {
     });
 
     return createUIMessageStreamResponse({
-      stream: toUIMessageStream({ stream: result.stream, sendReasoning: true }),
+      stream: toUIMessageStream({
+        stream: result.stream,
+        sendReasoning: true,
+        // Without this the SDK replaces every tool failure with the string
+        // "An error occurred." The model then has nothing to report and
+        // invents a plausible-sounding reason instead — a generate_music
+        // failure came back to the user as "the tool only supports musical
+        // content", which was pure confabulation.
+        onError: (error) => {
+          console.error("[AGENT_TOOL_ERROR]", error);
+          return error instanceof Error ? error.message : String(error);
+        },
+      }),
     });
   } catch (error) {
     console.error("[AGENT_ERROR]", error);
