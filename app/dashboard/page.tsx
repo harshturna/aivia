@@ -1,81 +1,58 @@
-import { offerings } from "@/constants";
-import { Card } from "../../components/ui/card";
-import { Sparkles } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
+import { offerings } from "@/constants";
+import { Card } from "@/components/ui/card";
+
+/**
+ * Tool picker.
+ *
+ * The Documents AI entry used to be special-cased into a disabled card with a
+ * "Coming Soon!" tooltip. It ships now, so every offering is a plain link and
+ * the branch is gone — along with the text-gray-300 description it rendered,
+ * which sat at roughly 1.6:1 contrast on white.
+ */
 const Dashboard = () => {
   return (
-    <div className="flex justify-center flex-col h-[100%] xl:px-[10rem] lg:px-[5rem] items-center">
-      <div className="mb-8 flex-col">
-        <div className="flex items-center gap-2 justify-center">
-          <Sparkles
-            className="w-[40px] h-[40px]"
-            fill="#db75a8"
-            stroke="#8b5cf5"
-            strokeWidth={1}
-          />
-          <h2 className="text-2xl md:text-4xl font-bold text-center gradient-text">
-            Explore our tools
-          </h2>
-        </div>
+    <div className="flex h-full flex-col items-center justify-center px-4 lg:px-20 xl:px-40">
+      <div className="mb-10 text-center">
+        <h1 className="font-display text-3xl font-semibold tracking-tight md:text-5xl">
+          Explore our <span className="gradient-text">tools</span>
+        </h1>
+        <p className="mt-3 text-muted-foreground">
+          Start in the Studio, or drive any tool directly.
+        </p>
       </div>
-      <div className="px-4 space-y-4 md:w-[800px]">
-        {offerings.map((tool) => {
-          if (tool.label === "Documents AI") {
-            return (
-              <TooltipProvider key={tool.href}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Card className="p-3 border border-gray-200 rounded-md flex items-center justify-between transition-all hover:shadow-md gap-2">
-                      <div className="grid grid-cols-[40px_1fr] grid-rows-2 gap-x-6 items-center">
-                        <div
-                          className={`row-span-2 p-2 w-[50px] h-[50px] flex justify-center items-center rounded-md ${tool.bgColor}`}
-                        >
-                          <tool.icon className={`w-6 h-6 ${tool.color}`} />
-                        </div>
-                        <div className="font-semibold text-left text-gray-400">
-                          {tool.label}
-                        </div>
-                        <div className="text-sm text-left text-gray-300">
-                          {tool.description}
-                        </div>
-                      </div>
-                    </Card>
-                  </TooltipTrigger>
-                  <TooltipContent>Coming Soon!</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          }
-          return (
-            <Link
-              href={tool.href}
-              key={tool.href}
-              className="flex flex-col gap-5"
-            >
-              <Card className="p-3 border border-gray-200 rounded-md flex items-center justify-between transition-all hover:shadow-md gap-2">
-                <div className="grid grid-cols-[40px_1fr] grid-rows-2 gap-x-6 items-center">
-                  <div
-                    className={`row-span-2 p-2 w-[50px] h-[50px] flex justify-center items-center rounded-md ${tool.bgColor}`}
-                  >
-                    <tool.icon className={`w-6 h-6 ${tool.color}`} />
-                  </div>
-                  <div className="font-semibold text-left text-gray-700">
-                    {tool.label}
-                  </div>
-                  <div className="text-sm text-left text-gray-400">
-                    {tool.description}
-                  </div>
+
+      <div className="w-full max-w-3xl space-y-3">
+        {offerings.map((tool) => (
+          <Link
+            href={tool.href}
+            key={tool.href}
+            className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Card className="flex items-center gap-5 p-4 transition-colors group-hover:border-primary/40">
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${tool.bgColor}`}
+              >
+                <tool.icon
+                  className={`h-6 w-6 ${tool.color}`}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-display font-semibold">{tool.label}</div>
+                <div className="text-sm text-muted-foreground">
+                  {tool.description}
                 </div>
-              </Card>
-            </Link>
-          );
-        })}
+              </div>
+              <ArrowRight
+                className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
+                aria-hidden="true"
+              />
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
   );

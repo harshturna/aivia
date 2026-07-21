@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Square, type LucideIcon } from "lucide-react";
+import { Paperclip, Square, X, type LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 import Heading from "@/components/Heading";
@@ -26,6 +26,12 @@ interface GenerativeChatProps {
   bgColor: string;
   placeholder: string;
   emptyLabel: string;
+  /** Show a file picker beside the input. */
+  attachments?: {
+    /** `accept` attribute, e.g. "application/pdf,text/*". */
+    accept: string;
+    label: string;
+  };
 }
 
 /**
@@ -44,9 +50,12 @@ export const GenerativeChat = ({
   bgColor,
   placeholder,
   emptyLabel,
+  attachments,
 }: GenerativeChatProps) => {
   const proModal = userProModal();
   const [input, setInput] = useState("");
+  const [files, setFiles] = useState<FileList | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { messages, sendMessage, status, stop } = useChat({
@@ -73,13 +82,19 @@ export const GenerativeChat = ({
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, status]);
 
+  const clearFiles = () => {
+    setFiles(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const onSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const prompt = input.trim();
     if (!prompt || isStreaming) return;
 
-    sendMessage({ text: prompt });
+    sendMessage({ text: prompt, files });
     setInput("");
+    clearFiles();
   };
 
   return (
@@ -96,18 +111,39 @@ export const GenerativeChat = ({
           onSubmit={onSubmit}
           className="grid w-full grid-cols-12 gap-2 rounded-lg border p-4 px-3 focus-within:shadow-sm md:px-6"
         >
-          <div className="col-span-12 lg:col-span-10">
+          <div className="col-span-12 flex items-center gap-2 lg:col-span-10">
             <label htmlFor="prompt" className="sr-only">
               {placeholder}
             </label>
             <Input
               id="prompt"
-              className="border-0 focus-visible:ring-1 focus-visible:ring-violet-500"
+              className="border-0 focus-visible:ring-1 focus-visible:ring-ring"
               disabled={isStreaming}
               placeholder={placeholder}
               value={input}
               onChange={(event) => setInput(event.target.value)}
             />
+            {attachments && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  id="chat-files"
+                  type="file"
+                  accept={attachments.accept}
+                  multiple
+                  className="sr-only"
+                  onChange={(event) => setFiles(event.target.files ?? undefined)}
+                />
+                <label
+                  htmlFor="chat-files"
+                  title={attachments.label}
+                  className="shrink-0 cursor-pointer rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-within:ring-2 focus-within:ring-ring"
+                >
+                  <Paperclip className="h-4 w-4" aria-hidden="true" />
+                  <span className="sr-only">{attachments.label}</span>
+                </label>
+              </>
+            )}
           </div>
           {isStreaming ? (
             <Button
@@ -130,6 +166,25 @@ export const GenerativeChat = ({
           )}
         </form>
 
+        {files && files.length > 0 && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Paperclip className="h-3 w-3" aria-hidden="true" />
+            <span>
+              {Array.from(files)
+                .map((file) => file.name)
+                .join(", ")}
+            </span>
+            <button
+              type="button"
+              onClick={clearFiles}
+              className="inline-flex items-center rounded px-1.5 py-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X className="h-3 w-3" aria-hidden="true" />
+              <span className="sr-only">Remove attachments</span>
+            </button>
+          </div>
+        )}
+
         <div className="mt-4 space-y-4">
           {!messages.length && !isStreaming && <Empty label={emptyLabel} />}
 
@@ -148,6 +203,10 @@ export const GenerativeChat = ({
                 .join("")
                 .trim();
 
+              const attached = message.parts.filter(
+                (part) => part.type === "file"
+              ) as Array<{ filename?: string; mediaType: string }>;
+
               return (
                 <div
                   key={message.id}
@@ -164,6 +223,19 @@ export const GenerativeChat = ({
                     <BotAvatar />
                   )}
                   <div className="min-w-0 text-sm">
+                    {attached.length > 0 && (
+                      <ul className="mb-2 flex flex-wrap gap-2">
+                        {attached.map((file, i) => (
+                          <li
+                            key={i}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground"
+                          >
+                            <Paperclip className="h-3 w-3" aria-hidden="true" />
+                            {file.filename ?? file.mediaType}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {reasoning && (
                       <details className="mb-3 rounded-md border border-black/10 bg-black/[0.03]">
                         <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-900">

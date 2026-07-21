@@ -66,9 +66,24 @@ export const tools = [
     bgColor: "bg-emerald-700/10",
     href: "/code",
   },
+  {
+    label: "Documents",
+    icon: BookText,
+    color: "text-sky-500",
+    bgColor: "bg-sky-500/10",
+    href: "/documents",
+  },
 ];
 
 export const offerings = [
+  {
+    label: "Studio",
+    description: "One prompt — Aivia plans it, picks the tools, and builds it",
+    icon: Sparkles,
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
+    href: "/studio",
+  },
   {
     label: "Generative AI",
     description: "Generate text, code, images, videos and music",
@@ -76,6 +91,15 @@ export const offerings = [
     color: "text-violet-500",
     bgColor: "bg-violet-500/10",
     href: "/generative",
+  },
+  {
+    // Shipped. This was a disabled "Coming Soon" card for eighteen months.
+    label: "Documents AI",
+    description: "Attach a PDF or text file and ask questions about it",
+    icon: BookText,
+    color: "text-sky-500",
+    bgColor: "bg-sky-500/10",
+    href: "/documents",
   },
   {
     label: "Companion AI",
