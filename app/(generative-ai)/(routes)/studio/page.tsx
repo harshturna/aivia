@@ -63,7 +63,10 @@ const StudioPage = () => {
   };
 
   return (
-    <div>
+    // Column layout with the transcript growing and the composer pinned to the
+    // bottom of the viewport. The composer used to sit above the messages, so
+    // it scrolled out of view as soon as a run got long.
+    <div className="flex min-h-[calc(100dvh-4.5rem)] flex-col">
       <Heading
         title="Studio"
         description="Describe what you want. Aivia plans it and builds it."
@@ -72,82 +75,7 @@ const StudioPage = () => {
         bgColor="bg-primary/10"
       />
 
-      <div className="px-4 lg:px-8">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            send(input);
-          }}
-          className="grid w-full grid-cols-12 gap-2 rounded-lg border p-4 px-3 focus-within:shadow-sm md:px-6"
-        >
-          <div className="col-span-12 flex items-center gap-2 lg:col-span-10">
-            <label htmlFor="studio-prompt" className="sr-only">
-              What should Aivia make?
-            </label>
-            <Input
-              id="studio-prompt"
-              className="border-0 focus-visible:ring-1 focus-visible:ring-ring"
-              disabled={isStreaming}
-              placeholder="Design a logo for a coffee roastery and write three taglines"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-            />
-            <input
-              ref={fileInputRef}
-              id="studio-files"
-              type="file"
-              accept="image/*"
-              multiple
-              className="sr-only"
-              onChange={(event) => setFiles(event.target.files ?? undefined)}
-            />
-            <label
-              htmlFor="studio-files"
-              title="Attach images"
-              className="shrink-0 cursor-pointer rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-within:ring-2 focus-within:ring-ring"
-            >
-              <Paperclip className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only">Attach images</span>
-            </label>
-          </div>
-          {isStreaming ? (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={stop}
-              className="col-span-12 w-full lg:col-span-2"
-            >
-              <Square className="mr-2 h-4 w-4" aria-hidden="true" />
-              Stop
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              className="col-span-12 w-full lg:col-span-2"
-              disabled={!input.trim()}
-            >
-              Build it
-            </Button>
-          )}
-        </form>
-
-        {files && files.length > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <Paperclip className="h-3 w-3" aria-hidden="true" />
-            <span>
-              {files.length} image{files.length > 1 ? "s" : ""} attached
-            </span>
-            <button
-              type="button"
-              onClick={clearFiles}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-muted"
-            >
-              <X className="h-3 w-3" aria-hidden="true" />
-              <span className="sr-only">Remove attached images</span>
-            </button>
-          </div>
-        )}
-
+      <div className="flex-1 px-4 lg:px-8">
         <div className="mt-4 space-y-4">
           {!messages.length && !isStreaming && (
             <div className="rounded-lg border border-dashed p-8 text-center">
@@ -243,8 +171,85 @@ const StudioPage = () => {
             ))}
           </div>
 
-          <div ref={bottomRef} />
+          <div ref={bottomRef} className="scroll-mb-28" />
         </div>
+      </div>
+
+      <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:px-8">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            send(input);
+          }}
+          className="grid w-full grid-cols-12 gap-2 rounded-lg border bg-card p-2 focus-within:shadow-sm"
+        >
+          <div className="col-span-12 flex items-center gap-2 lg:col-span-10">
+            <label htmlFor="studio-prompt" className="sr-only">
+              What should Aivia make?
+            </label>
+            <Input
+              id="studio-prompt"
+              className="border-0 focus-visible:ring-1 focus-visible:ring-ring"
+              disabled={isStreaming}
+              placeholder="Design a logo for a coffee roastery and write three taglines"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+            />
+            <input
+              ref={fileInputRef}
+              id="studio-files"
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              onChange={(event) => setFiles(event.target.files ?? undefined)}
+            />
+            <label
+              htmlFor="studio-files"
+              title="Attach images"
+              className="shrink-0 cursor-pointer rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-within:ring-2 focus-within:ring-ring"
+            >
+              <Paperclip className="h-4 w-4" aria-hidden="true" />
+              <span className="sr-only">Attach images</span>
+            </label>
+          </div>
+          {isStreaming ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={stop}
+              className="col-span-12 w-full lg:col-span-2"
+            >
+              <Square className="mr-2 h-4 w-4" aria-hidden="true" />
+              Stop
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              className="col-span-12 w-full lg:col-span-2"
+              disabled={!input.trim()}
+            >
+              Build it
+            </Button>
+          )}
+        </form>
+
+        {files && files.length > 0 && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Paperclip className="h-3 w-3" aria-hidden="true" />
+            <span>
+              {files.length} image{files.length > 1 ? "s" : ""} attached
+            </span>
+            <button
+              type="button"
+              onClick={clearFiles}
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-muted"
+            >
+              <X className="h-3 w-3" aria-hidden="true" />
+              <span className="sr-only">Remove attached images</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
