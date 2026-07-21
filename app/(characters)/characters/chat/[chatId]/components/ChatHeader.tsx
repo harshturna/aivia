@@ -41,22 +41,29 @@ const ChatHeader = ({
   };
 
   return (
-    <div className="flex w-full justify-between items-center border-b border-slate-300/50 pb-4">
+    <div className="flex w-full justify-between items-center border-b border-border pb-4">
       <div className="flex gap-x-2 items-center">
-        <Button size="icon" variant="ghost">
-          <ChevronLeft className="h-8 w-8" onClick={() => router.back()} />
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Go back"
+          onClick={() => router.back()}
+        >
+          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
         </Button>
         <BotAvatar src={character.src} />
         <div className="flex flex-col gap-y-1">
           <div className="flex items-center gap-x-2 ">
-            <p className="font-bolt">{character.name}</p>
+            <p className="font-semibold">{character.name}</p>
           </div>
         </div>
       </div>
       {currentUserId === character.userId && (
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <MoreVertical className="hover:bg-slate-100/50 rounded-sm  text-black w-9 h-9 p-2" />
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" aria-label="Character options">
+              <MoreVertical className="h-5 w-5" aria-hidden="true" />
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem

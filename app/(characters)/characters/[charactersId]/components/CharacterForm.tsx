@@ -163,7 +163,7 @@ const CharacterForm = ({
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrption</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Input
                       disabled={isLoading}
@@ -216,7 +216,7 @@ const CharacterForm = ({
           </div>
           <div className="space-y-2 w-full">
             <div>
-              <h3 className="text-lg font-medium">Configuartion</h3>
+              <h3 className="text-lg font-medium">Configuration</h3>
               <p className="text-slate-500">
                 Detailed instructions for Character&#39;s behaviour
               </p>

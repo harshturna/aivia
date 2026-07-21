@@ -39,7 +39,7 @@ export async function PATCH(
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
-    const charcter = await prismadb.character.update({
+    const character = await prismadb.character.update({
       where: {
         id: params.characterId,
         userId: user.id,
@@ -56,7 +56,7 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(charcter);
+    return NextResponse.json(character);
   } catch (error) {
     console.log("[CHARACTER_PATCH]", error);
     return new NextResponse("Internal Error", { status: 500 });

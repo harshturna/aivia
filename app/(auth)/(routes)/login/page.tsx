@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Loader from "@/components/SubmitLoader";
+import { useGuestLogin } from "@/hooks/useGuestLogin";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +16,7 @@ import {
   FormDescription,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -29,7 +31,6 @@ const Login = () => {
 
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
-  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const form = useForm<z.infer<typeof FormSchema>>({
     mode: "onChange",
     resolver: zodResolver(FormSchema),
@@ -55,21 +56,8 @@ const Login = () => {
     }
   };
 
-  const guestHandler = async (email: string, password: string) => {
-    const supabase = createClientComponentClient();
-    setIsGuestLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setIsGuestLoading(false);
-    if (error) {
-      toast.error("Error logging in as guest");
-    }
-    if (!error) {
-      router.push("/dashboard");
-    }   
-  };
+
+  const { guestHandler, isGuestLoading } = useGuestLogin();
 
   const isLoading = form.formState.isSubmitting;
 
@@ -77,11 +65,11 @@ const Login = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full sm:justify-center sm:w-[400px] space-y-6 flex flex-col m-4 border px-5 py-4 rounded-lg border-slate-200 md:w-[600px]"
+        className="w-full sm:justify-center sm:w-[400px] space-y-6 flex flex-col m-4 border border-border bg-card px-6 py-6 rounded-xl shadow-sm md:w-[600px]"
       >
-        <Link href="/" className="w-full flex justify-left items-center">
+        <Link href="/" className="w-full flex justify-start items-center">
           <Logo />
-          <span className="font-semibold text-4xl first-letter:ml-2">
+          <span className="font-display font-semibold text-3xl ml-2">
             aivia.
           </span>
         </Link>
@@ -93,8 +81,9 @@ const Login = () => {
           render={({ field }) => {
             return (
               <FormItem>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Email" {...field} />
+                  <Input type="email" autoComplete="email" placeholder="you@example.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -105,8 +94,9 @@ const Login = () => {
           name="password"
           render={({ field }) => (
             <FormItem>
+              <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="Password" {...field} />
+                <Input type="password" autoComplete="current-password" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -121,16 +111,16 @@ const Login = () => {
         >
           {!isLoading ? "Login" : <Loader />}
         </Button>
-        <span className="self-container text-slate-400">
+        <span className="text-center text-sm text-muted-foreground">
           Dont have an account?{" "}
-          <Link href="/signup" className="text-slate-400 underline">
+          <Link href="/signup" className="font-medium text-foreground underline underline-offset-2">
             Sign up
           </Link>
         </span>
-        <p className="text-center font-semibold text-1.5xl">OR</p>
+        <p className="text-center text-sm font-medium text-muted-foreground">OR</p>
         <Button
           type="button"
-          onClick={() => guestHandler("blesv1502@gmail.com", "password123")}
+          onClick={guestHandler}
           variant="ghost"
           className="underline !mt-1"
         >

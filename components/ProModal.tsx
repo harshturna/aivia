@@ -73,7 +73,7 @@ const ProModal = () => {
             className="w-full"
             onClick={onSubscribe}
           >
-            Upgarde
+            Upgrade
             <Zap className="w-4 h-4 ml-2 fill-white" />
           </Button>
         </DialogFooter>

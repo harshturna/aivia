@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
-    const charcter = await prismadb.character.create({
+    const character = await prismadb.character.create({
       data: {
         categoryId,
         userId: user.id,
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(charcter);
+    return NextResponse.json(character);
   } catch (error) {
     console.log("[CHARACTER_POST]", error);
     return new NextResponse("Internal Error", { status: 500 });
