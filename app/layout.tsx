@@ -1,5 +1,4 @@
 import "./globals.css";
-import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import { ModalProvider } from "@/components/ModalProvider";
@@ -49,15 +48,13 @@ export default function RootLayout({
     // scrollbars to light so they cannot follow the OS setting.
     <html lang="en" style={{ colorScheme: "light" }}>
       <head>
-        <Script id="lynq-init" strategy="beforeInteractive">
-          {`!function(){"use strict";window.lynq=window.lynq||{track:function(n,e){(window.lynqQueue=window.lynqQueue||[]).push({name:n,properties:e,eventId:crypto.randomUUID()})}}}();`}
-        </Script>
+        {/* Lynq analytics: one deferred tag, no cookies. docs-lynq.byharsh.com/install/nextjs */}
         <script
-          async
-          src="https://cdn.jsdelivr.net/gh/harshturna/lynq-js@v1.0.6/dist/lynq.min.js"
-          data-domain="aivia.byharsh.com"
-          data-script-id="lynq"
-          dangerouslySetInnerHTML={{ __html: "" }}
+          defer
+          src="https://lynq.byharsh.com/js/lynq.js"
+          data-site="aivia.byharsh.com"
+          data-vitals=""
+          data-outbound=""
         />
       </head>
       <body

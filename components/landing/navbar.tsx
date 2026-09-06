@@ -49,7 +49,7 @@ export default function Navbar() {
                 <Link
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   href={link.path}
-                  onClick={() => window.lynq.track(link.route)}
+                  onClick={() => window.lynq?.track(link.route)}
                 >
                   {link.route}
                 </Link>
@@ -59,7 +59,7 @@ export default function Navbar() {
           <Link
             href="/get-started"
             className={buttonVariants({ size: "sm" })}
-            onClick={() => window.lynq.track("Get Started")}
+            onClick={() => window.lynq?.track("Get Started")}
           >
             Get started
           </Link>
@@ -92,7 +92,7 @@ export default function Navbar() {
                   className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
                   href={link.path}
                   onClick={() => {
-                    window.lynq.track(link.route);
+                    window.lynq?.track(link.route);
                     close();
                   }}
                 >
