@@ -29,22 +29,7 @@ export default function Footer() {
             ))}
           </ul>
         </div>
-        {/* The demo label Lynq's docs point at (docs-lynq.byharsh.com/product/accessibility#the-demo). */}
-        <p className="mx-auto mt-8 max-w-[640px] text-center text-xs text-muted-foreground">
-          Aivia is a demonstration site with deliberately introduced
-          accessibility defects, so Lynq&apos;s Accessibility screen shows real
-          findings. The list of defects is in{" "}
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://docs-lynq.byharsh.com/product/accessibility#the-demo"
-            className="underline underline-offset-2 hover:text-foreground"
-          >
-            the docs
-          </a>
-          .
-        </p>
-        <div className="mt-4 flex items-center justify-center gap-1 text-sm text-muted-foreground">
+        <div className="mt-8 flex items-center justify-center gap-1 text-sm text-muted-foreground">
           <Link
             target="_blank"
             href="https://aivia.byharsh.com"
