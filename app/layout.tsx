@@ -55,6 +55,7 @@ export default function RootLayout({
           data-site="aivia.byharsh.com"
           data-vitals=""
           data-outbound=""
+          data-a11y=""
         />
       </head>
       <body
