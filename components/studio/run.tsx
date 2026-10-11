@@ -2,10 +2,14 @@
 
 import { isToolUIPart, type UIMessage } from "ai";
 import { Check, ChevronDown, FileText, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Markdown } from "@/components/ai/Markdown";
+import { useStudioActions } from "@/components/studio/actions";
+import { CutAction } from "@/components/studio/cut";
 import { Spinner } from "@/components/ui/spinner";
 import { readPlan } from "@/lib/ai/plan";
+import { canCut, collectCut } from "@/lib/cut";
+import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 import { ToolOutput, type ToolPart } from "./outputs";
 
@@ -36,6 +40,8 @@ export function Run({
   onRetry,
 }: RunProps) {
   const parts = assistant?.parts ?? [];
+  const { cut } = useStudioActions();
+  const pieces = useMemo(() => collectCut(parts as never), [parts]);
   const { steps, notes, done, failed } = readPlan(parts as never, !active);
   const tools = parts.filter((p) => isToolUIPart(p)) as ToolPart[];
   const elapsed = useElapsed(active ? startedAt : undefined);
@@ -154,6 +160,15 @@ export function Run({
         <div className="mt-5 max-w-[68ch] text-[15px] leading-6 text-fg [&_p:first-child]:mt-0">
           <Markdown>{notes}</Markdown>
         </div>
+      )}
+
+      {!active && cut && canCut(pieces) && (
+        <CutAction
+          pieces={pieces}
+          title={titleFromBrief(messageText(user))}
+          canSave={cut.canSave}
+          sessionId={cut.sessionId}
+        />
       )}
     </article>
   );

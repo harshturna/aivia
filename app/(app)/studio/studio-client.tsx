@@ -253,8 +253,11 @@ export function StudioClient({
     [send]
   );
   const actions = useMemo(
-    () => ({ animate: busy || limit ? undefined : animate }),
-    [animate, busy, limit]
+    () => ({
+      animate: busy || limit ? undefined : animate,
+      cut: { canSave: !isGuest, sessionId: isGuest ? null : id },
+    }),
+    [animate, busy, limit, isGuest, id]
   );
 
   // From the library: animate the asset once, on arrival (TICKET-039). Scheduled and

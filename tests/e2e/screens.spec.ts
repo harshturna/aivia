@@ -29,6 +29,9 @@ test.describe("signed out", () => {
     test(`${path} loads, fits, passes axe`, async ({ page }) => {
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(e.message));
+      // axe reads opacity, so the landing is judged in its settled state: with reduced motion
+      // every fade and replay renders final (TICKET-040: the demo's steps kept racing a wait)
+      if (path === "/") await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto(path, { waitUntil: "networkidle" });
       await expect(page.locator("h1").first()).toBeVisible();
       if (path === "/") {

@@ -299,6 +299,15 @@ Three taglines: …
   generation used", Retry and Edit prompt.
 - **Notes** are the assistant's prose through the markdown renderer, 15 px / 24 px, `max-w-[68ch]`.
 
+**Cut it together (TICKET-040).** A finished run with a clip, or with a still and a track,
+offers "Cut it together". A dialog lists the plan as lanes (title, clip, end card, score),
+then renders in the browser with WebCodecs (`mediabunny`, loaded only then): a title card on
+the first tagline in the display face, the clips back to back with half-second crossfades,
+an end card on the poster with the next line and a slow push-in, a fade out, and the score
+fitted underneath with fades. MP4 where the browser encodes H.264 and AAC, WebM otherwise.
+It costs nothing. The result plays in the dialog, downloads, and for a signed-in user is
+kept in the library (`POST /api/cuts`, on the session); a guest downloads only.
+
 ### 5.4 Direct modes
 
 Image, Video, Music and Sound skip the planner: the brief and the parameters go to one route,

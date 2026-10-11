@@ -14,6 +14,8 @@ export type StudioActions = {
     width: number;
     height: number;
   }) => void;
+  /** Cut a finished run into one piece (TICKET-040); saving needs an account. */
+  cut?: { canSave: boolean; sessionId: string | null };
 };
 
 const Context = createContext<StudioActions>({});
