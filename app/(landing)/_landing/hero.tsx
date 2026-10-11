@@ -124,7 +124,7 @@ function SoundButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       type="button"
       onClick={onToggle}
       aria-pressed={on}
-      aria-label={on ? "Turn the sound off" : "Turn the sound on"}
+      aria-label="Sound"
       className="grid size-8 place-items-center rounded-full border border-fg/30 bg-bg/40 text-fg transition-colors hover:bg-fg/15"
     >
       {on ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
@@ -396,6 +396,8 @@ export function Hero() {
     opened: new Set<Key>(),
     inView: true,
     teaserOpen: false,
+    /** The filmstrip lies over the teaser: nothing to decode under it. */
+    teaserCovered: false,
     raf: 0,
     /** The one timeline clock: seconds at `ref` (a performance.now() time). */
     base: 0,
@@ -459,7 +461,8 @@ export function Hero() {
     const st = state.current;
     if (!v || !st.teaserOpen) return;
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (st.inView && !document.hidden && !still) v.play().catch(() => {});
+    if (st.inView && !st.teaserCovered && !document.hidden && !still)
+      v.play().catch(() => {});
     else v.pause();
   }, []);
 
@@ -472,7 +475,11 @@ export function Hero() {
       pieceRefs.current[k]?.setAttribute("data-on", "true");
       if (k === "teaser") {
         st.teaserOpen = true;
-        if (videoRef.current) videoRef.current.preload = "auto";
+        // under reduced motion it never plays: the poster is enough
+        const still = window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches;
+        if (videoRef.current && !still) videoRef.current.preload = "auto";
         syncVideo();
       }
     },
@@ -553,7 +560,14 @@ export function Hero() {
         el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) rotate(${rot.toFixed(2)}deg)`;
         el.style.borderRadius = `${rx.toFixed(1)}px ${rx.toFixed(1)}px ${rb.toFixed(1)}px ${rb.toFixed(1)}px / ${ry.toFixed(1)}px ${ry.toFixed(1)}px ${rb.toFixed(1)}px ${rb.toFixed(1)}px`;
         const pt = parts.current;
-        if (k === "teaser" && pt.strip) pt.strip.style.opacity = b.toFixed(3);
+        if (k === "teaser" && pt.strip) {
+          pt.strip.style.opacity = b.toFixed(3);
+          const covered = b > 0.97;
+          if (covered !== state.current.teaserCovered) {
+            state.current.teaserCovered = covered;
+            syncVideo();
+          }
+        }
         if (k === "score") {
           const m = a - b;
           if (pt.head) pt.head.style.opacity = m.toFixed(3);
@@ -582,7 +596,7 @@ export function Hero() {
         syncClock();
       }
     },
-    [syncClock]
+    [syncClock, syncVideo]
   );
 
   const measure = useCallback(() => {
@@ -683,12 +697,36 @@ export function Hero() {
       for (const k of KEYS) open(k);
       return;
     }
-    const since = performance.now();
-    const ids = KEYS.map((k) =>
-      setTimeout(() => open(k), Math.max(0, OPEN_AT[k] - since))
-    );
+    // Each window opens a beat after its own word starts to rise, on the page's animation
+    // clock, not the wall clock: a late hydration does not open them all at once, and a tab
+    // opened in the background waits for its words. Words that rose before this ran are
+    // followed one after another (TICKET-044).
+    const timers: number[] = [];
+    const offs: Array<() => void> = [];
+    let late = 0;
+    for (const k of KEYS) {
+      const word = sentenceRef.current?.querySelector(`[data-noun="${k}"]`);
+      const clock = word?.getAnimations()[0]?.currentTime;
+      const rises = OPEN_AT[k] - 300;
+      if (!word || typeof clock !== "number") {
+        timers.push(
+          window.setTimeout(
+            () => open(k),
+            Math.max(0, OPEN_AT[k] - performance.now())
+          )
+        );
+      } else if (clock >= rises) {
+        timers.push(window.setTimeout(() => open(k), late++ * 260));
+      } else {
+        const onStart = () =>
+          timers.push(window.setTimeout(() => open(k), 300));
+        word.addEventListener("animationstart", onStart, { once: true });
+        offs.push(() => word.removeEventListener("animationstart", onStart));
+      }
+    }
     return () => {
-      for (const id of ids) clearTimeout(id);
+      for (const id of timers) clearTimeout(id);
+      for (const off of offs) off();
     };
   }, [reduced, open]);
 
@@ -702,7 +740,8 @@ export function Hero() {
     const frame = () => {
       queued = 0;
       const r = section.getBoundingClientRect();
-      const total = r.height - window.innerHeight;
+      // the stage is one screen tall: the scroll it pins for is the rest of the section
+      const total = r.height - stage.offsetHeight;
       const p = reduced ? 0.47 : total > 0 ? clamp01(-r.top / total) : 0;
       if (p > 0.01 && state.current.opened.size < KEYS.length)
         for (const k of KEYS) open(k);
@@ -717,6 +756,14 @@ export function Hero() {
     const still = () => {
       const s = state.current;
       stage.classList.toggle("is-still", !s.inView || document.hidden);
+      // the soundtrack belongs to the hero: scrolled away, it stops where it is
+      const a = audioRef.current;
+      if (a && !a.paused && !s.inView) {
+        s.base = a.currentTime % SCORE_SECONDS;
+        s.ref = performance.now();
+        s.seekTo = null;
+        a.pause();
+      }
       syncVideo();
       syncClock();
     };
@@ -770,13 +817,11 @@ export function Hero() {
   return (
     <section
       ref={sectionRef}
-      className={
-        reduced ? "relative h-svh min-h-[640px]" : "relative h-[380svh]"
-      }
+      className={reduced ? "relative h-svh" : "relative h-[380svh]"}
     >
       <div
         ref={stageRef}
-        className="w-stage sticky top-0 h-svh min-h-[640px] overflow-hidden bg-bg"
+        className="w-stage sticky top-0 h-svh overflow-hidden bg-bg"
       >
         {/* the forest */}
         <div
@@ -879,7 +924,12 @@ export function Hero() {
                           background: MEDIUM[k].tint,
                         }}
                       />
-                      <span aria-hidden className="w-word" style={style}>
+                      <span
+                        aria-hidden
+                        data-noun={k}
+                        className="w-word"
+                        style={style}
+                      >
                         {w.text}
                       </span>
                     </span>
@@ -912,7 +962,7 @@ export function Hero() {
                   <div className="mb-2 flex h-7 items-center gap-2 text-[13px]">
                     <Mark k={k} />
                     <span className="text-fg">{MEDIUM[k].label}</span>
-                    <span className="text-fg/55">{MEDIUM[k].meta}</span>
+                    <span className="text-fg/75">{MEDIUM[k].meta}</span>
                     {k === "score" && (
                       <span className="ml-auto">
                         <SoundButton on={playing} onToggle={toggle} />
@@ -938,8 +988,8 @@ export function Hero() {
           ref={k2Ref}
           className="invisible absolute inset-0 z-10 opacity-0 will-change-[opacity]"
         >
-          <div className="mx-auto flex h-full max-w-[1280px] flex-col justify-center px-5 pb-10 pt-20 sm:px-8 sm:pt-24">
-            <div className="mb-5 flex items-center justify-between gap-4">
+          <div className="mx-auto flex h-full max-w-[1280px] flex-col justify-center px-5 pb-10 pt-20 sm:px-8 sm:pt-24 short:pb-3 short:pt-16 sm:short:pt-16">
+            <div className="mb-5 flex items-center justify-between gap-4 short:mb-1">
               <p className="font-display text-[19px] italic text-fg sm:text-[22px]">
                 Cut together on one timeline.
               </p>
@@ -980,14 +1030,14 @@ export function Hero() {
               </div>
               {(
                 [
-                  ["teaser", "h-[64px] sm:h-[104px]", "inset-0"],
+                  ["teaser", "h-[64px] sm:h-[104px] short:h-[52px]", "inset-0"],
                   [
                     "poster",
-                    "h-[48px] sm:h-[72px]",
+                    "h-[48px] sm:h-[72px] short:h-[36px]",
                     "inset-y-0 left-[68%] right-0",
                   ],
-                  ["score", "h-[48px] sm:h-[72px]", "inset-0"],
-                  ["words", "h-[40px] sm:h-[50px]", "inset-0"],
+                  ["score", "h-[48px] sm:h-[72px] short:h-[36px]", "inset-0"],
+                  ["words", "h-[40px] sm:h-[50px] short:h-[30px]", "inset-0"],
                 ] as const
               ).map(([k, h, pos]) => (
                 <div key={k} className="contents">
@@ -1048,7 +1098,7 @@ export function Hero() {
         </div>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[26] h-40 bg-linear-to-t from-bg to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[26] h-40 bg-linear-to-t from-bg to-transparent short:h-12"
         />
       </div>
       <audio

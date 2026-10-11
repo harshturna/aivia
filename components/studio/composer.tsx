@@ -210,7 +210,6 @@ export function Composer({
         onKeyDown={onKeyDown}
         onPaste={onPaste}
         placeholder={placeholder ?? current.placeholder}
-        aria-keyshortcuts="/"
         className="block w-full resize-none bg-transparent px-1.5 py-1 text-[15px] leading-6 text-fg outline-none placeholder:text-mute"
       />
       <div className="mt-2 flex flex-wrap items-center gap-1.5">

@@ -19,7 +19,7 @@ export function Modes() {
         Switch to Image, Video, Music or Sound and Aivia makes exactly that,
         with no plan in between. Give Video a still and it comes to life.
       </p>
-      <div className="mt-12 grid gap-x-4 gap-y-8 md:grid-cols-2">
+      <div className="mt-12 grid grid-cols-[minmax(0,1fr)] gap-x-4 gap-y-8 md:grid-cols-2">
         <Plate title="Image" caption={still.prompt}>
           <div className="aspect-video overflow-hidden rounded-media bg-surface">
             <Image
@@ -87,7 +87,7 @@ function Plate({
 /** Pricing (design §11.7): the line and nothing else (TICKET-036). */
 export function Pricing() {
   return (
-    <section id="pricing" className={WRAP}>
+    <section id="pricing" className={cn(WRAP, "scroll-mt-20")}>
       <h2 className={H2}>Start free.</h2>
       <p className={LEDE}>
         Five generations in every mode to begin. Go Pro when one sentence turns

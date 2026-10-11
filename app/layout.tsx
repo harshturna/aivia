@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Cormorant, Host_Grotesk, JetBrains_Mono } from "next/font/google";
 import { ModalProvider } from "@/components/ModalProvider";
+import { OneSound } from "@/components/one-sound";
 import { ToasterProvider } from "@/components/ToasterProvider";
 
 /** Host Grotesk for the interface, Cormorant for display (D-004); the mono is for code only. */
@@ -74,6 +75,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
+        <OneSound />
         <ModalProvider />
         <ToasterProvider />
         {children}

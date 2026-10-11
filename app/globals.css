@@ -1,5 +1,9 @@
 @import "tailwindcss";
+
 @import "tw-animate-css";
+
+/* a landscape phone: the hero's timeline tightens to fit the screen (TICKET-044) */
+@custom-variant short (@media (max-height: 520px));
 
 /*
  * Aivia design tokens (docs/design/revamp.md §2, D-004). The app is warm neutral charcoal so
@@ -207,6 +211,10 @@
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
     transition-duration: 0.01ms;
+    scroll-behavior: auto;
+  }
+  /* html is :root itself, not under it; unlayered, this beats the base layer */
+  html {
     scroll-behavior: auto;
   }
 }

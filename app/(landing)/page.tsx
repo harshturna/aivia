@@ -19,7 +19,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen overflow-x-clip bg-bg text-fg">
       <LandingNav />
-      <main id="main" className="space-y-40">
+      <main id="main" tabIndex={-1} className="space-y-40 outline-none">
         <Hero />
         <YourTurn />
         <div className={LATER}>
