@@ -124,13 +124,44 @@ describe("readPlan", () => {
     expect(r.notes).toContain("2. Listen to the roots");
   });
 
-  it("marks a call the run ended without finishing as failed", () => {
+  it("marks a call the run ended without finishing as stopped, not failed", () => {
     const r = readPlan(
       [plan, tool("output-available"), tool("input-available")],
       true
     );
-    expect(r.steps.map((s) => s.status)).toEqual(["done", "failed", "done"]);
-    expect(r.failed).toBe(true);
+    expect(r.steps.map((s) => s.status)).toEqual(["done", "stopped", "done"]);
+    expect(r.stopped).toBe(true);
+    expect(r.failed).toBe(false);
+  });
+
+  it("keeps a list as the answer when the run made nothing", () => {
+    const answer = {
+      type: "text",
+      text: "Here are three taglines.\n\n1. Older than memory\n2. Listen to the roots\n3. Still growing",
+    };
+    const r = readPlan([answer], true);
+    expect(r.steps).toEqual([]);
+    expect(r.notes).toContain("3. Still growing");
+  });
+
+  it("keeps a list as the answer when only a search came before it", () => {
+    const r = readPlan(
+      [
+        { type: "tool-web_search", state: "output-available" },
+        { type: "text", text: "1. Lisbon\n2. Porto\n3. Faro" },
+      ],
+      true
+    );
+    expect(r.steps).toEqual([]);
+    expect(r.notes).toContain("2. Porto");
+  });
+
+  it("does not take text with a list in the middle as a plan while running", () => {
+    const r = readPlan(
+      [{ type: "text", text: "Here are three names.\n\n1. Moss\n2. Fern" }],
+      false
+    );
+    expect(r.steps).toEqual([]);
   });
 
   it("still reads a plan written after a web search", () => {

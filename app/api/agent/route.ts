@@ -56,9 +56,10 @@ const SYSTEM_PROMPT = [
   "Media generation costs real money and takes time. Generate what was asked",
   "for and no more; do not produce speculative extra variations.",
   "",
-  "If a tool returns an error, say plainly that it failed and quote the error.",
-  "Do not guess at the cause or invent a limitation of the tool — you cannot",
-  "tell from an error message why a model rejected a request.",
+  "If a tool returns an error, say in one plain sentence which piece did not",
+  "get made. Do not quote the error, its status code or any service name: the",
+  "interface already shows what went wrong and offers to try again. Do not",
+  "guess at the cause or invent a limitation of the tool.",
 ].join("\n");
 
 export async function POST(req: Request) {

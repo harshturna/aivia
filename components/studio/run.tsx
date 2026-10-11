@@ -1,7 +1,7 @@
 "use client";
 
 import { isToolUIPart, type UIMessage } from "ai";
-import { Check, ChevronDown, FileText, X } from "lucide-react";
+import { Check, ChevronDown, FileText, Square, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Markdown } from "@/components/ai/Markdown";
 import { useStudioActions } from "@/components/studio/actions";
@@ -27,8 +27,18 @@ export interface RunProps {
   /** What the run says while it waits for its first part: a direct mode has no plan. */
   waitingLabel?: string;
   onReusePrompt?: (prompt: string) => void;
+  /** Run the whole brief again, in place. */
   onRetry?: () => void;
+  /** Make one piece again as a new run, keeping the pieces that worked (TICKET-051). */
+  onRetryPiece?: (part: ToolPart) => void;
 }
+
+const MEDIA = new Set([
+  "tool-generate_image",
+  "tool-generate_video",
+  "tool-generate_music",
+  "tool-generate_sound_effect",
+]);
 
 export function Run({
   user,
@@ -38,12 +48,20 @@ export function Run({
   waitingLabel = "Planning…",
   onReusePrompt,
   onRetry,
+  onRetryPiece,
 }: RunProps) {
   const parts = assistant?.parts ?? [];
   const { cut } = useStudioActions();
   const pieces = useMemo(() => collectCut(parts as never), [parts]);
-  const { steps, notes, done, failed } = readPlan(parts as never, !active);
+  const { steps, notes, done, failed, stopped } = readPlan(
+    parts as never,
+    !active
+  );
   const tools = parts.filter((p) => isToolUIPart(p)) as ToolPart[];
+  // with one piece there is nothing to keep: the brief runs again in place
+  const single = tools.filter((t) => MEDIA.has(t.type)).length <= 1;
+  const retryFor = (part: ToolPart) =>
+    single || !onRetryPiece ? onRetry : () => onRetryPiece(part);
   const elapsed = useElapsed(active ? startedAt : undefined);
   const [open, setOpen] = useState<boolean | null>(null);
   const stepsOpen = open ?? active;
@@ -84,6 +102,8 @@ export function Run({
               <Spinner className="size-3" />
             ) : failed ? (
               <X className="size-3.5 text-poor" />
+            ) : stopped ? (
+              <Square className="size-3 text-mute" />
             ) : (
               <Check className="size-3.5 text-good" />
             )}
@@ -93,7 +113,9 @@ export function Run({
                 ? `${done} done`
                 : failed
                   ? "not everything worked"
-                  : "done"}
+                  : stopped
+                    ? "stopped"
+                    : "done"}
             </span>
             {active && elapsed !== null && (
               <span className="tabular text-mute">{clock(elapsed)}</span>
@@ -134,6 +156,9 @@ export function Run({
                     {step.status === "failed" && (
                       <X className="size-3.5 text-poor" />
                     )}
+                    {step.status === "stopped" && (
+                      <Square className="size-3 text-mute" />
+                    )}
                   </span>
                 </li>
               ))}
@@ -150,7 +175,7 @@ export function Run({
               part={part}
               active={active}
               onReusePrompt={onReusePrompt}
-              onRetry={onRetry}
+              onRetry={retryFor(part)}
             />
           ))}
         </div>

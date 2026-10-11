@@ -2,6 +2,7 @@
 
 import { Download, Pause, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { downloadFile, fileNameFrom } from "@/lib/download";
 import { cn } from "@/lib/utils";
 
 /**
@@ -168,14 +169,14 @@ export function AudioRow({
       <span className="tabular w-9 shrink-0 text-right text-[12px] text-mute">
         {duration === undefined ? "" : format(duration)}
       </span>
-      <a
-        href={src}
-        download
+      <button
+        type="button"
+        onClick={() => downloadFile(src, fileNameFrom(title, "audio"))}
         aria-label={`Download ${title}`}
         className="grid size-8 shrink-0 place-items-center rounded-control text-mute transition-colors hover:bg-surface-2 hover:text-fg"
       >
         <Download className="size-4" />
-      </a>
+      </button>
     </div>
   );
 }

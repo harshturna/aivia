@@ -8,12 +8,15 @@ import {
   Maximize2,
   RotateCcw,
   Search,
+  Square,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { useStudioActions } from "@/components/studio/actions";
 import { AudioRow } from "@/components/studio/audio-row";
 import { RevealImage } from "@/components/studio/reveal-image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { plainFailure } from "@/lib/ai/failure";
+import { downloadFile, fileNameFrom } from "@/lib/download";
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,6 +29,7 @@ interface OutputActions {
   /** The run is still working; a part left unfinished by a run that ended was stopped. */
   active?: boolean;
   onReusePrompt?: (prompt: string) => void;
+  /** Make this piece again; the run's other pieces stay (TICKET-051). */
   onRetry?: () => void;
 }
 
@@ -35,6 +39,20 @@ type SearchResult = {
   url: string;
   title: string | null;
 };
+
+/**
+ * A media box that keeps one shape from placeholder to result, so nothing jumps when it lands
+ * (TICKET-051): its width is the column, capped, and capped again so it is never taller than
+ * 70% of the screen.
+ */
+function box(aspect: string | undefined, fallback: string, maxPx: number) {
+  const [w, h] = (aspect ?? fallback).split(/[:/]/).map(Number);
+  const ratio = w > 0 && h > 0 ? w / h : 1;
+  return {
+    aspectRatio: String(ratio),
+    width: `min(100%, ${maxPx}px, calc(70vh * ${ratio.toFixed(4)}))`,
+  };
+}
 
 const RUNNING_LABEL: Record<string, string> = {
   generate_image: "Generating the image",
@@ -57,7 +75,11 @@ export function ToolOutput({
   const what = RUNNING_LABEL[name]?.replace(/^\w+ing /, "") ?? name;
   if (part.state === "output-error") {
     return (
-      <Failed what={what} reason={part.errorText} onRetry={actions.onRetry} />
+      <Failed
+        what={what}
+        reason={plainFailure(part.errorText)}
+        onRetry={actions.onRetry}
+      />
     );
   }
   // Stop, a closed tab or a dropped connection leaves a part without its result: say so
@@ -68,6 +90,7 @@ export function ToolOutput({
     return (
       <Failed
         what={what}
+        stopped
         headline="Stopped before it finished."
         onRetry={actions.onRetry}
       />
@@ -104,22 +127,17 @@ export function ToolOutput({
         </Skeleton>
       );
     }
-    const ratio =
-      input?.aspect?.replace(":", "/") ??
-      (name === "generate_video" ? "16/9" : "1/1");
-    const count =
-      name === "generate_image" ? Math.min(input?.amount ?? 1, 4) : 1;
+    const video = name === "generate_video";
+    const count = video ? 1 : Math.min(input?.amount ?? 1, 4);
+    const shape = box(input?.aspect, video ? "16:9" : "1:1", video ? 760 : 560);
     return (
       <div className={cn("grid gap-2", count > 1 && "grid-cols-2")}>
         {Array.from({ length: count }, (_, i) => (
           <Skeleton
             // biome-ignore lint/suspicious/noArrayIndexKey: placeholders are positional
             key={i}
-            className={cn(
-              "flex items-end p-3 text-[13px] leading-5 text-mute",
-              count === 1 && name === "generate_image" && "max-w-[420px]"
-            )}
-            style={{ aspectRatio: ratio }}
+            className="flex items-end p-3 text-[13px] leading-5 text-mute"
+            style={count === 1 ? shape : { aspectRatio: shape.aspectRatio }}
           >
             <span className="line-clamp-3">
               {i === 0
@@ -148,6 +166,7 @@ export function ToolOutput({
       <Images
         urls={urls}
         prompt={prompt}
+        aspect={input?.aspect}
         onReusePrompt={actions.onReusePrompt}
       />
     );
@@ -161,7 +180,8 @@ export function ToolOutput({
           preload="metadata"
           src={urls[0]}
           // in its own shape: an animated portrait still stays portrait (TICKET-039)
-          className="max-h-[70vh] w-auto max-w-full rounded-media bg-surface"
+          style={box(input?.aspect, "16:9", 760)}
+          className="rounded-media bg-surface object-contain"
         />
         <Caption prompt={prompt} onReusePrompt={actions.onReusePrompt} />
       </figure>
@@ -201,26 +221,29 @@ export function titleFrom(prompt: string) {
 function Images({
   urls,
   prompt,
+  aspect,
   onReusePrompt,
 }: {
   urls: string[];
   prompt: string;
+  aspect?: string;
   onReusePrompt?: (prompt: string) => void;
 }) {
   return (
     <figure>
-      <div
-        className={cn(
-          "grid gap-2",
-          urls.length > 1 ? "grid-cols-2" : "max-w-[560px]"
-        )}
-      >
-        {urls.map((url) => (
+      <div className={cn("grid gap-2", urls.length > 1 && "grid-cols-2")}>
+        {urls.map((url, i) => (
           <RevealedImage
             key={url}
             url={url}
-            alt={prompt || "Generated image"}
+            alt={
+              urls.length > 1
+                ? `${prompt || "Generated image"} (${i + 1} of ${urls.length})`
+                : prompt || "Generated image"
+            }
             prompt={prompt}
+            aspect={aspect}
+            single={urls.length === 1}
           />
         ))}
       </div>
@@ -233,21 +256,54 @@ function RevealedImage({
   url,
   alt,
   prompt,
+  aspect,
+  single,
 }: {
   url: string;
   alt: string;
   prompt: string;
+  /** The shape it was asked for; without one (an example, an old run) the image's own. */
+  aspect?: string;
+  single: boolean;
 }) {
   const { animate } = useStudioActions();
+  const [natural, setNatural] = useState<string>();
+  const frame = useRef<HTMLDivElement>(null);
+  const measure = useCallback((img: HTMLImageElement | null | undefined) => {
+    if (img?.naturalWidth && img.naturalHeight)
+      setNatural(`${img.naturalWidth}:${img.naturalHeight}`);
+  }, []);
+  // a server-rendered image can finish loading before React listens for it
+  useLayoutEffect(() => {
+    measure(frame.current?.querySelector("img"));
+  }, [measure]);
+  const shape = box(aspect ?? natural, "1:1", 560);
+  // on a touch screen the actions wait for a tap on the image: Animate spends a generation,
+  // and an always-on button sits under a scrolling thumb (TICKET-051)
+  const [shown, setShown] = useState(false);
   return (
-    <div className="group relative overflow-hidden rounded-media bg-surface">
+    // biome-ignore lint/a11y/useKeyWithClickEvents: a tap shows the actions; keyboard reaches them by focus
+    // biome-ignore lint/a11y/noStaticElementInteractions: as above
+    <div
+      ref={frame}
+      className="group relative overflow-hidden rounded-media bg-surface"
+      style={single ? shape : { aspectRatio: shape.aspectRatio }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget.querySelector("img"))
+          setShown((s) => !s);
+      }}
+    >
       <RevealImage
         src={url}
         alt={alt}
         loading="lazy"
-        className="block w-full"
+        onLoad={(event) => measure(event.currentTarget)}
+        className="block size-full object-cover"
       />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-linear-to-t from-bg/70 to-transparent p-2 pt-8 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100">
+      <div
+        data-shown={shown}
+        className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-linear-to-t from-bg/70 to-transparent p-2 pt-8 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100 data-[shown=true]:pointer-events-auto data-[shown=true]:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100"
+      >
         {animate && (
           <button
             type="button"
@@ -272,34 +328,40 @@ function RevealedImage({
         <IconLink href={url} label="Open full size">
           <Maximize2 />
         </IconLink>
-        <IconLink href={url} label="Download" download>
+        <button
+          type="button"
+          aria-label="Download"
+          title="Download"
+          onClick={() => downloadFile(url, fileNameFrom(prompt, "image"))}
+          className={ICON_BUTTON}
+        >
           <Download />
-        </IconLink>
+        </button>
       </div>
     </div>
   );
 }
 
+const ICON_BUTTON =
+  "grid size-8 place-items-center rounded-control bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80 [&_svg]:size-4";
+
 function IconLink({
   href,
   label,
   children,
-  download = false,
 }: {
   href: string;
   label: string;
   children: React.ReactNode;
-  download?: boolean;
 }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      {...(download ? { download: "" } : {})}
       aria-label={label}
       title={label}
-      className="grid size-8 place-items-center rounded-control bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80 [&_svg]:size-4"
+      className={ICON_BUTTON}
     >
       {children}
     </a>
@@ -377,16 +439,23 @@ function Failed({
   what,
   headline,
   reason,
+  stopped = false,
   onRetry,
 }: {
   what: string;
   headline?: string;
   reason?: string;
+  /** Stopped by the person, or cut off: not an error, so not shown as one. */
+  stopped?: boolean;
   onRetry?: () => void;
 }) {
   return (
     <div className="flex items-start gap-3 rounded-media border border-border bg-surface p-4 text-[13px]">
-      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-poor" />
+      {stopped ? (
+        <Square className="mt-0.5 size-3.5 shrink-0 text-mute" />
+      ) : (
+        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-poor" />
+      )}
       <div className="min-w-0 flex-1">
         <p className="text-fg">
           {headline ?? `Could not make ${what || "the output"}.`}
@@ -399,7 +468,7 @@ function Failed({
           onClick={onRetry}
           className="inline-flex shrink-0 items-center gap-1.5 text-fg-2 transition-colors hover:text-fg"
         >
-          <RotateCcw className="size-3.5" /> Retry
+          <RotateCcw className="size-3.5" /> Try again
         </button>
       )}
     </div>

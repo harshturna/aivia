@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AudioRow } from "@/components/studio/audio-row";
 import { titleFrom } from "@/components/studio/outputs";
 import { Button } from "@/components/ui/button";
+import { downloadFile, fileNameFrom } from "@/lib/download";
 import { cn } from "@/lib/utils";
 import type { LibraryAsset } from "./types";
 
@@ -222,15 +223,14 @@ export function Lightbox({
         </dl>
 
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="secondary" size="sm">
-            <a
-              href={asset.url}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Download /> Download
-            </a>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              downloadFile(asset.url, fileNameFrom(asset.prompt, asset.kind))
+            }
+          >
+            <Download /> Download
           </Button>
           {!readOnly && (
             <Button

@@ -3,14 +3,15 @@
  * wrote as numbered steps, each step's status, the outputs, and the notes.
  *
  * The agent is asked to open with its plan as a numbered list. The first text block that
- * holds such a list, before any tool call, is the plan (a list written after the tools, like
- * three taglines, is part of the answer); its numbered lines become steps and the rest of the text
- * becomes notes. Tool calls are matched to steps by order, which is how the agent works
+ * holds such a list, before any tool call, is the plan when a media tool follows it (a list
+ * written after the tools, or an answer with no tools at all, like three taglines, is the
+ * answer); its numbered lines become steps and the rest of the text becomes notes. While a run
+ * is still going, text that opens with a list counts as its plan until the run shows otherwise. Tool calls are matched to steps by order, which is how the agent works
  * through them; a plan with more steps than tool calls finishes its text-only steps when
  * the run finishes.
  */
 
-export type StepStatus = "queued" | "running" | "done" | "failed";
+export type StepStatus = "queued" | "running" | "done" | "failed" | "stopped";
 
 export interface PlanStep {
   text: string;
@@ -67,7 +68,10 @@ export interface RunShape {
   notes: string;
   done: number;
   /** A tool call failed, so the run did not do everything it planned. */
+  /** A tool call returned an error. */
   failed: boolean;
+  /** The run ended with a call unfinished: stopped, or the connection dropped. */
+  stopped: boolean;
 }
 
 /**
@@ -81,9 +85,16 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
   let text = "";
   const tools: PartLike[] = [];
 
-  const flush = () => {
+  // `before` is the tool the text leads into, if any: a plan is followed by the work it plans
+  const flush = (before?: PartLike) => {
     if (!text) return;
-    if (!planFound && !tools.some((t) => !BRIEFING.has(t.type))) {
+    const open = !planFound && !tools.some((t) => !BRIEFING.has(t.type));
+    const leadsToWork = before !== undefined && !BRIEFING.has(before.type);
+    const first = text
+      .split("\n")
+      .find((line) => line.trim() && !PLAN_LABEL.test(line));
+    const opensWithList = STEP.test(first ?? "");
+    if (open && (leadsToWork || (!before && !finished && opensWithList))) {
       const split = splitPlan(text);
       if (split.steps.length) {
         planFound = true;
@@ -105,7 +116,7 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
     // Only a tool call breaks the text: sources, step markers and reasoning sit between
     // fragments of one sentence when the answer cites the web.
     if (!isToolPart(part)) continue;
-    flush();
+    flush(part);
     tools.push(part);
   }
   flush();
@@ -113,12 +124,16 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
   const finishedTools = tools.filter(
     (t) => t.state === "output-available" || t.state === "output-error"
   );
-  // an error, or a call the run ended without finishing (stopped), did not do its step
+  // an error did not do its step; nor did a call the run ended without finishing (stopped)
   const failedAt = new Set(
     tools
+      .map((t, i) => (t.state === "output-error" ? i : -1))
+      .filter((i) => i >= 0)
+  );
+  const stoppedAt = new Set(
+    tools
       .map((t, i) =>
-        t.state === "output-error" ||
-        (finished && t.state !== "output-available")
+        finished && t.state !== "output-available" && t.state !== "output-error"
           ? i
           : -1
       )
@@ -127,6 +142,7 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
 
   const status = (i: number): StepStatus => {
     if (failedAt.has(i)) return "failed";
+    if (stoppedAt.has(i)) return "stopped";
     if (finished) return "done";
     if (i < finishedTools.length) return "done";
     if (i === finishedTools.length) return "running";
@@ -147,5 +163,6 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
       .join("\n\n"),
     done: planSteps.filter((s) => s.status === "done").length,
     failed: failedAt.size > 0,
+    stopped: stoppedAt.size > 0,
   };
 }

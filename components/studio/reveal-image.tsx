@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * An image that reveals from blur when it loads (design §2.3). An image already in the cache
- * can finish before React attaches `onLoad`, so the mount also checks `complete`; without
- * that, a cached image stays invisible.
+ * An image that reveals from blur when it loads (design §2.3). It starts plain, so an image the
+ * server rendered shows before the page hydrates (TICKET-051); on mount, one that has not
+ * loaded yet hides and reveals when it does. An image already in the cache can finish before
+ * React attaches `onLoad`, which is why the mount checks `complete` instead.
  */
 export function RevealImage({
   className,
@@ -14,9 +15,10 @@ export function RevealImage({
   ...props
 }: React.ImgHTMLAttributes<HTMLImageElement>) {
   const ref = useRef<HTMLImageElement>(null);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true);
+  const [phase, setPhase] = useState<"plain" | "waiting" | "shown">("plain");
+  useLayoutEffect(() => {
+    const img = ref.current;
+    if (img && !(img.complete && img.naturalWidth > 0)) setPhase("waiting");
   }, []);
   return (
     // biome-ignore lint/a11y/useAltText: alt comes through props
@@ -25,12 +27,13 @@ export function RevealImage({
       ref={ref}
       {...props}
       onLoad={(event) => {
-        setLoaded(true);
+        setPhase((p) => (p === "waiting" ? "shown" : p));
         onLoad?.(event);
       }}
       className={cn(
-        "transition-[filter,opacity] duration-500 ease-out",
-        loaded ? "opacity-100 blur-0" : "opacity-0 blur-md",
+        phase !== "plain" &&
+          "transition-[filter,opacity] duration-500 ease-out",
+        phase === "waiting" && "opacity-0 blur-md",
         className
       )}
     />

@@ -13,6 +13,7 @@ import {
   Composer,
   type ComposerMode,
 } from "@/components/studio/composer";
+import type { ToolPart } from "@/components/studio/outputs";
 import {
   costOf,
   DEFAULT_PARAMS,
@@ -81,6 +82,73 @@ const EXAMPLES = [
 ];
 
 type Limit = "free" | "demo" | null;
+
+/** What went wrong with a run, in plain words, and the one thing to do about it (TICKET-051). */
+function describeFailure(error: Error, started: boolean) {
+  const message = error.message ?? "";
+  if (message.includes("too long"))
+    return {
+      text: "The brief is too long. Shorten it and send again.",
+      action: null,
+    };
+  if (message === "Unauthorized")
+    return {
+      text: "You were signed out. Reload the page to keep going.",
+      action: "reload" as const,
+    };
+  if (/failed to fetch|networkerror|load failed|network/i.test(message))
+    return {
+      text: "The connection dropped. Check it and try again.",
+      action: "retry" as const,
+    };
+  return {
+    text: started
+      ? "The run stopped before it finished."
+      : "The run did not start. Try again.",
+    action: "retry" as const,
+  };
+}
+
+/** The direct mode and parameters that make one piece of a run again. */
+function pieceRequest(part: ToolPart) {
+  const input = (part.input ?? {}) as {
+    prompt?: string;
+    amount?: number;
+    aspect?: string;
+    seconds?: number;
+  };
+  const nearest = <T extends number>(options: readonly T[], value?: number) =>
+    value === undefined
+      ? undefined
+      : options.reduce((a, b) =>
+          Math.abs(b - value) < Math.abs(a - value) ? b : a
+        );
+  const output = part.output as { prompt?: string } | undefined;
+  const prompt = output?.prompt ?? input.prompt ?? "";
+  const params: Partial<ModeParams> = {};
+  let mode: ComposerMode;
+  switch (part.type) {
+    case "tool-generate_image":
+      mode = "image";
+      params.count = (nearest([1, 2, 3, 4] as const, input.amount) ??
+        1) as ModeParams["count"];
+      if (input.aspect) params.aspect = input.aspect as ModeParams["aspect"];
+      break;
+    case "tool-generate_video":
+      mode = "video";
+      if (input.aspect)
+        params.videoAspect = input.aspect as ModeParams["videoAspect"];
+      break;
+    case "tool-generate_music":
+      mode = "music";
+      params.musicSeconds = nearest([15, 30, 60] as const, input.seconds) ?? 30;
+      break;
+    default:
+      mode = "sound";
+      params.soundSeconds = nearest([0, 2, 5, 10] as const, input.seconds) ?? 0;
+  }
+  return { prompt, mode, params };
+}
 
 /**
  * What a brief was sent with, kept on the message itself, so Retry repeats the same request
@@ -152,6 +220,12 @@ export function StudioClient({
   );
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
+  // the reader is at the foot of the thread, so it follows the run as it grows (TICKET-051)
+  const follow = useRef(false);
+  const finishedAt = useRef(0);
+  // a saved session opens at its last run, once
+  const opened = useRef(false);
 
   const {
     messages,
@@ -183,10 +257,31 @@ export function StudioClient({
       }),
     }),
     onFinish: () => {
+      finishedAt.current = Date.now();
       if (!isGuest) window.dispatchEvent(new Event(SESSIONS_CHANGED));
     },
     onError: (err) => {
       const message = err?.message ?? "";
+      // a refused first send made nothing: its address would not reopen, its brief is not kept
+      const undoAddress = () => {
+        const before = revert.current;
+        if (!before) return;
+        window.history.replaceState(null, "", before.address);
+        touched.current = false;
+        setLocalKey(before.localKey);
+        setTitle(initialTitle);
+      };
+      // too long: the brief goes back in the composer to shorten, not left as a dead run
+      if (message.includes("too long")) {
+        setMessages((all) => {
+          const last = all[all.length - 1];
+          if (last?.role !== "user") return all;
+          setInput(messageText(last));
+          return all.slice(0, -1);
+        });
+        undoAddress();
+        return;
+      }
       const refused = message.includes("Free trial")
         ? "free"
         : message.includes("limit reached")
@@ -194,13 +289,7 @@ export function StudioClient({
           : null;
       if (!refused) return;
       setLimit(refused);
-      // a refused first send made nothing: its address would not reopen, its brief is not kept
-      const before = revert.current;
-      if (before) {
-        window.history.replaceState(null, "", before.address);
-        touched.current = false;
-        setLocalKey(before.localKey);
-      }
+      undoAddress();
     },
   });
 
@@ -214,10 +303,56 @@ export function StudioClient({
       started.current[last.id] = Date.now();
   }, [messages, busy]);
 
-  // Follow the run as it streams.
+  // Follow the run while it grows, only when the reader is at the foot: someone who scrolled
+  // up to look at something stays there (TICKET-051).
   useEffect(() => {
-    if (!empty) bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [messages, status, empty]);
+    const onScroll = () => {
+      const root = document.documentElement;
+      follow.current =
+        root.scrollHeight - window.scrollY - window.innerHeight < 160;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const toFoot = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: follows every change to the run
+  useEffect(() => {
+    if (busy && follow.current) toFoot();
+  }, [messages, status, busy, toFoot]);
+  // media that loads after its part arrives grows the thread too; follow it while the run is
+  // going or has just finished
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `empty` re-attaches once the thread mounts
+  useEffect(() => {
+    const thread = threadRef.current;
+    if (!thread) return;
+    const observer = new ResizeObserver(() => {
+      const recent = Date.now() - finishedAt.current < 15_000;
+      if (follow.current && (busy || recent)) toFoot();
+    });
+    observer.observe(thread);
+    return () => observer.disconnect();
+  }, [busy, toFoot, empty]);
+  // A saved session opens at the start of its last run, not at the foot of its last clip.
+  useEffect(() => {
+    if (opened.current || busy || messages.length === 0) return;
+    opened.current = true;
+    const all = document.querySelectorAll("[data-run]");
+    if (all.length > 1) all[all.length - 1]?.scrollIntoView({ block: "start" });
+  }, [messages.length, busy]);
+
+  // Esc stops a run from anywhere, unless it is closing a dialog or a menu (design §4).
+  useEffect(() => {
+    if (!busy) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (document.querySelector('[role="dialog"], [role="menu"]')) return;
+      stop();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [busy, stop]);
 
   // `/` focuses the composer from anywhere that is not a field.
   useEffect(() => {
@@ -260,10 +395,14 @@ export function StudioClient({
         still?: { url: string; mediaType: string };
         aspect?: Aspect;
         scene?: string;
+        /** A piece made again carries its own parameters (TICKET-051). */
+        params?: Partial<ModeParams>;
       }
     ) => {
       if (busy || limit || inFlight.current) return;
       inFlight.current = true;
+      opened.current = true;
+      follow.current = true;
       clearError();
       let list: FileList | undefined;
       if (attached.length) {
@@ -273,8 +412,8 @@ export function StudioClient({
         list = dt.files;
       }
       // A still sent in Video mode is animated in its own shape (TICKET-039).
-      let sent = params;
-      if (extra?.aspect) sent = { ...params, aspect: extra.aspect };
+      let sent = { ...params, ...extra?.params };
+      if (extra?.aspect) sent = { ...sent, aspect: extra.aspect };
       else if (chosen === "video") {
         const image = attached.find((f) => f.type.startsWith("image/"));
         if (image)
@@ -359,8 +498,24 @@ export function StudioClient({
     if (!last || busy) return;
     touched.current = true;
     clearError();
+    follow.current = true;
     void regenerate({ body: sentWith(last) });
   }, [messages, busy, clearError, regenerate]);
+
+  // One piece of a run made again, as a run of its own, in its direct mode: the pieces that
+  // worked stay where they are (TICKET-051).
+  const retryPiece = useCallback(
+    (part: ToolPart) => {
+      const {
+        prompt,
+        mode: pieceMode,
+        params: pieceParams,
+      } = pieceRequest(part);
+      if (!prompt) return;
+      void send(prompt, pieceMode, [], { params: pieceParams });
+    },
+    [send]
+  );
 
   // Animate a still: a Video request carrying the image, in the image's own shape.
   const animate = useCallback(
@@ -434,6 +589,11 @@ export function StudioClient({
     }
   };
 
+  const lastRun = runs[runs.length - 1];
+  const failure = error
+    ? describeFailure(error, Boolean(lastRun?.assistant?.parts.length))
+    : null;
+
   const composer = (
     <Composer
       inputRef={composerRef}
@@ -445,6 +605,13 @@ export function StudioClient({
       onStop={stop}
       busy={busy}
       disabled={limit !== null}
+      placeholder={
+        limit === "free"
+          ? "You have used your free generations."
+          : limit === "demo"
+            ? "The guest session has reached its limit."
+            : undefined
+      }
       files={files}
       onFilesChange={setFiles}
       params={
@@ -509,6 +676,15 @@ export function StudioClient({
                   <m.div layoutId="composer" className="mt-8">
                     {composer}
                   </m.div>
+                  {/* a brief sent back to shorten lands here, with the reason (TICKET-051) */}
+                  {failure && !limit && (
+                    <p
+                      role="alert"
+                      className="mt-3 text-center text-[13px] text-fg-2"
+                    >
+                      {failure.text}
+                    </p>
+                  )}
                   <ul className="mt-4 flex flex-wrap justify-center gap-2">
                     {EXAMPLES.map((example) => (
                       <li key={example}>
@@ -529,14 +705,16 @@ export function StudioClient({
               </div>
             ) : (
               <>
-                <div className="flex-1 px-6 pb-6 pt-8">
+                <div ref={threadRef} className="flex-1 px-6 pb-6 pt-8">
                   <div className="mx-auto max-w-[760px] space-y-10">
                     {runs.map((run, i) => {
                       const last = i === runs.length - 1;
                       return (
                         <div
                           key={run.user.id}
+                          data-run
                           className={cn(
+                            "scroll-mt-20",
                             i > 0 && "border-t border-border pt-10"
                           )}
                         >
@@ -552,20 +730,30 @@ export function StudioClient({
                             }
                             onReusePrompt={reuse}
                             onRetry={last && !busy ? retry : undefined}
+                            onRetryPiece={
+                              last && !busy && !limit ? retryPiece : undefined
+                            }
                           />
                         </div>
                       );
                     })}
-                    {error && !limit && (
+                    {error && !limit && failure && (
                       <div className="flex items-center justify-between gap-4 rounded-media border border-border bg-surface p-4 text-[13px]">
-                        <span className="text-fg-2">
-                          {error.message.includes("too long")
-                            ? "The brief is too long. Shorten it and send again."
-                            : "The run stopped before it finished."}
-                        </span>
-                        <Button variant="secondary" size="sm" onClick={retry}>
-                          Try again
-                        </Button>
+                        <span className="text-fg-2">{failure.text}</span>
+                        {failure.action === "retry" && (
+                          <Button variant="secondary" size="sm" onClick={retry}>
+                            Try again
+                          </Button>
+                        )}
+                        {failure.action === "reload" && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => window.location.reload()}
+                          >
+                            Reload
+                          </Button>
+                        )}
                       </div>
                     )}
                     {limit && (
