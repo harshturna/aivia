@@ -12,6 +12,10 @@ because they capture each screen once, fresh, at two sizes. Add the states where
 were, so the next one fails a check instead of reaching the live site.
 
 ## Context
+- The live site deploys from GitHub through Railway (commit status "Railway is deploying",
+  response header `server: railway-hikari`), not Vercel as CLAUDE.md's Deploys section says.
+  Correct CLAUDE.md here, and the comments that assume Vercel's 4.5 MB request limit
+  (`components/studio/cut.tsx` KEEP_BYTES, `app/api/cuts/route.ts`); owner agreed 2026-10-11.
 - `scripts/shots.mjs`, `tests/e2e/screens.spec.ts`; TICKET-050 "Why the earlier audits missed
   these".
 - The states: a long seeded thread scrolled to the end, a short window (1440x600), phone-width
