@@ -7,6 +7,10 @@ export type ChangelogEntry = { date: string; text: string };
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "2026-10-11",
+    text: "Edit any image from your library: restore it, remove the background, recolor, remove or extend.",
+  },
+  {
+    date: "2026-10-11",
     text: "Everything you make lands in your library, searchable by the words that made it.",
   },
   {

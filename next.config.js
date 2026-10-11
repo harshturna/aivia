@@ -24,6 +24,11 @@ const nextConfig = {
       { source: "/image", destination: "/studio?mode=image", permanent: true },
       { source: "/video", destination: "/studio?mode=video", permanent: true },
       { source: "/music", destination: "/studio?mode=music", permanent: true },
+      {
+        source: "/transformations/:tool",
+        destination: "/edit?tool=:tool",
+        permanent: true,
+      },
     ];
   },
   images: {

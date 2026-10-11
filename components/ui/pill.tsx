@@ -17,7 +17,12 @@ const Pill = React.forwardRef<HTMLButtonElement, PillProps>(
     <button
       ref={ref}
       type={type}
-      aria-pressed={props["aria-pressed"] ?? (on ? true : undefined)}
+      // A toggle by default; a tab or a radio states its own selection.
+      aria-pressed={
+        props.role
+          ? undefined
+          : (props["aria-pressed"] ?? (on ? true : undefined))
+      }
       className={cn(
         "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-medium leading-none transition-colors duration-150 disabled:opacity-40 [&_svg]:size-3.5",
         on

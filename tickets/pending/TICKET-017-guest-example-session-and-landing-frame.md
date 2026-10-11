@@ -19,12 +19,15 @@ replay.
   transcript so it can be restored.
 - The landing frame (`app/(landing)/_landing/studio-demo.tsx`) replays that transcript
   through `components/studio/run.tsx` on a timer; `components/studio/run-demo.tsx` goes.
+- Also the landing's Edit panel (design §11.6, from TICKET-009) and Characters strip
+  (§11.7, from TICKET-010): a real before and after made with Edit, three portraits.
 - Cost: one run with a 6 s clip, about $0.30.
 
 ## Plan
 - [ ] Make the run, record the transcript to `lib/example-run.json`, seed it pinned.
 - [ ] The guest's `/studio` opens on it with the composer beneath.
 - [ ] The landing frame replays it with the real component; delete `run-demo.tsx`.
+- [ ] The landing's Edit panel with a real before and after, and the Characters strip.
 - [ ] Verify: `npm run verify`; screenshots at 1440 and 390.
 
 ## Progress log

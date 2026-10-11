@@ -6,6 +6,7 @@ import {
   Heart,
   MessageSquare,
   Trash2,
+  Wand2,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -236,6 +237,13 @@ export function Lightbox({
             <Heart className={cn(favorite && "fill-current")} />
             {favorite ? "Favourite" : "Add to favourites"}
           </Button>
+          {asset.kind === "image" && (
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/edit?asset=${asset.id}`}>
+                <Wand2 /> Edit
+              </Link>
+            </Button>
+          )}
           {asset.sessionId && (
             <Button asChild variant="secondary" size="sm">
               <Link href={`/studio/${asset.sessionId}`}>

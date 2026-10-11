@@ -7,8 +7,7 @@ import {
 } from "lucide-react";
 
 /**
- * The sidebar's sections (design §4). Edit points at the transformations until TICKET-009
- * renames them.
+ * The sidebar's sections (design §4).
  */
 export type NavItem = {
   label: string;
@@ -20,12 +19,7 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { label: "Studio", href: "/studio", icon: Sparkles, match: "/studio" },
   { label: "Library", href: "/library", icon: LayoutGrid, match: "/library" },
-  {
-    label: "Edit",
-    href: "/transformations/restore",
-    icon: Wand2,
-    match: "/transformations",
-  },
+  { label: "Edit", href: "/edit", icon: Wand2, match: "/edit" },
   {
     label: "Characters",
     href: "/characters",
