@@ -19,11 +19,13 @@ export default async function NewSessionPage({
   searchParams: Promise<{
     prompt?: string;
     mode?: string;
+    /** From the landing's composer: send the prompt on arrival (TICKET-055). */
+    send?: string;
     animate?: string;
     local?: string;
   }>;
 }) {
-  const { prompt, mode, animate, local } = await searchParams;
+  const { prompt, mode, animate, local, send } = await searchParams;
   // From the library: a still to animate as the Studio opens (TICKET-039)
   const user = animate ? await getUser("SERVER_COMPONENT") : null;
   const still = user && animate ? await getAsset(user.id, animate) : null;
@@ -51,6 +53,7 @@ export default async function NewSessionPage({
       isNew
       isGuest={guest}
       initialPrompt={prompt ?? ""}
+      sendOnArrival={send === "1" && Boolean(prompt?.trim()) && !localId}
       initialAnimate={initialAnimate}
       localId={localId}
       initialMode={initialMode}

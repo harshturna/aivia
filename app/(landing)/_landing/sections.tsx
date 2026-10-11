@@ -48,6 +48,7 @@ export function Modes() {
             caption={track.prompt}
           >
             <AudioRow
+              downloadable={false}
               src={track.src}
               title={track.title}
               subtitle={
@@ -84,19 +85,6 @@ function Plate({
   );
 }
 
-/** Pricing (design §11.7): the line and nothing else (TICKET-036). */
-export function Pricing() {
-  return (
-    <section id="pricing" className={cn(WRAP, "scroll-mt-20")}>
-      <h2 className={H2}>Start free.</h2>
-      <p className={LEDE}>
-        Five generations in every mode to begin. Go Pro when one sentence turns
-        into a habit.
-      </p>
-    </section>
-  );
-}
-
 /**
  * The close (design §11.9): one line over a clip, the button. The clip fades out at both
  * edges with a mask, not a painted gradient, so it melts into whatever page is behind it.
@@ -107,7 +95,12 @@ export function Close({
   media?: { src: string; poster: string };
 }) {
   return (
-    <section className="relative isolate overflow-hidden py-56">
+    // pricing lives here, above the button, rather than as a lone block before a second
+    // closing line (TICKET-055); the nav's Pricing link lands on it
+    <section
+      id="pricing"
+      className="relative isolate scroll-mt-20 overflow-hidden py-56"
+    >
       <div
         aria-hidden
         className="absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,transparent_0%,rgb(0_0_0/.12)_14%,rgb(0_0_0/.45)_30%,black_50%,rgb(0_0_0/.45)_70%,rgb(0_0_0/.12)_86%,transparent_100%)]"
@@ -122,9 +115,13 @@ export function Close({
         <h2 className="mx-auto font-display text-[clamp(40px,5.4vw,80px)] font-medium leading-[1] tracking-[-0.015em]">
           Begin with one sentence.
         </h2>
+        <p className={cn(LEDE, "mx-auto")}>
+          Five free generations to start. Pro is $20 a month, for when one
+          sentence turns into a habit.
+        </p>
         <Link
           href="/get-started"
-          className={cn(buttonVariants({ size: "lg" }), "mt-12")}
+          className={cn(buttonVariants({ size: "lg" }), "mt-10")}
         >
           Start making
         </Link>
@@ -134,10 +131,10 @@ export function Close({
 }
 
 /** The footer (design §11.9): the wordmark and the links a visitor uses, in one row. */
+// the app's pages ask a signed-out visitor to sign in; the Studio goes through the guest
+// start instead (TICKET-055)
 const FOOTER_LINKS: Array<[string, string]> = [
-  ["Studio", "/studio"],
-  ["Library", "/library"],
-  ["Edit", "/edit"],
+  ["Studio", "/get-started"],
   ["Pricing", "#pricing"],
   ["Sign in", "/login"],
   ["Create account", "/signup"],

@@ -12,14 +12,15 @@ export const metadata: Metadata = { title: "Opening the Studio" };
 export default async function GetStartedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ prompt?: string; mode?: string }>;
+  searchParams: Promise<{ prompt?: string; mode?: string; send?: string }>;
 }) {
   const user = await getUser("SERVER_COMPONENT");
   if (user) {
-    const { prompt, mode } = await searchParams;
+    const { prompt, mode, send } = await searchParams;
     const next = new URLSearchParams();
     if (prompt) next.set("prompt", prompt);
     if (mode) next.set("mode", mode);
+    if (send === "1" && prompt) next.set("send", "1");
     const query = next.toString();
     redirect(`/studio${query ? `?${query}` : ""}`);
   }

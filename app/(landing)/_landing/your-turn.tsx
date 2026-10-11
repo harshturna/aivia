@@ -20,11 +20,13 @@ export function YourTurn() {
   const [text, setText] = useState("");
   const start = (prompt: string, m: ComposerMode) => {
     window.lynq?.track("Hero prompt");
-    const params = new URLSearchParams({ prompt, mode: m });
+    // send=1: the Studio sends it on arrival, as the send button promised (TICKET-055)
+    const params = new URLSearchParams({ prompt, mode: m, send: "1" });
     router.push(`/get-started?${params.toString()}`);
   };
   return (
-    <section className={cn(WRAP, "text-center")}>
+    // above the hero's pinned stage, which it overlaps as the stage lets go
+    <section className={cn(WRAP, "relative z-10 text-center")}>
       <h2 className="font-display text-[clamp(40px,5.4vw,80px)] font-medium leading-[0.95] tracking-[-0.015em]">
         Now write yours.
       </h2>

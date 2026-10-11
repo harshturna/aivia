@@ -62,7 +62,15 @@ function VideoTile({ clip, ratio }: { clip: LandingClip; ratio: string }) {
   );
 }
 
-function ImageTile({ still, ratio }: { still: LandingStill; ratio: string }) {
+function ImageTile({
+  still,
+  ratio,
+  eager = false,
+}: {
+  still: LandingStill;
+  ratio: string;
+  eager?: boolean;
+}) {
   return (
     <figure
       className="group relative overflow-hidden rounded-media bg-surface"
@@ -73,6 +81,7 @@ function ImageTile({ still, ratio }: { still: LandingStill; ratio: string }) {
         alt={still.prompt}
         width={still.width}
         height={still.height}
+        loading={eager ? "eager" : "lazy"}
         sizes="(max-width: 768px) 50vw, 300px"
         className="size-full object-cover"
       />
@@ -94,11 +103,10 @@ export function Wall() {
     <section className={WRAP}>
       <h2 className={H2}>Every one of these was a sentence first.</h2>
       <p className={LEDE}>
-        Nothing retouched, nothing stitched together afterwards. Each one shows
-        the line that made it.
+        Nothing retouched. Point at any of them to read the line that made it.
       </p>
       <div className="mt-12 space-y-3">
-        {ROWS.map((row) => (
+        {ROWS.map((row, r) => (
           <div
             key={row.ratio}
             className={cn(
@@ -112,7 +120,12 @@ export function Wall() {
               tile.kind === "video" ? (
                 <VideoTile key={tile.src} clip={tile} ratio={row.ratio} />
               ) : (
-                <ImageTile key={tile.src} still={tile} ratio={row.ratio} />
+                <ImageTile
+                  key={tile.src}
+                  still={tile}
+                  ratio={row.ratio}
+                  eager={r === 0}
+                />
               )
             )}
           </div>

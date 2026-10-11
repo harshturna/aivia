@@ -205,6 +205,7 @@ export function StudioClient({
   isGuest = false,
   initialAnimate,
   localId,
+  sendOnArrival = false,
 }: {
   id: string;
   initialMessages?: UIMessage[];
@@ -223,6 +224,8 @@ export function StudioClient({
   };
   /** A guest session kept in this browser, to reopen (TICKET-041). */
   localId?: string;
+  /** The landing's composer was sent: send its prompt once, on arrival (TICKET-055). */
+  sendOnArrival?: boolean;
 }) {
   const router = useRouter();
   const proModal = userProModal();
@@ -608,6 +611,21 @@ export function StudioClient({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [initialAnimate, animate]);
+
+  // The landing's send, carried here: sent once, the same way, through the same guard. The
+  // address drops the prompt first, so a reload or Back does not send it again.
+  const sentOnArrival = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, on arrival
+  useEffect(() => {
+    if (!sendOnArrival || sentOnArrival.current) return;
+    const timer = window.setTimeout(() => {
+      sentOnArrival.current = true;
+      window.history.replaceState(null, "", "/studio");
+      void send(initialPrompt.trim(), initialMode, []);
+      setInput("");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const reuse = useCallback((prompt: string) => {
     setInput(prompt);

@@ -33,6 +33,7 @@ const Start = () => {
     const mode = params.get("mode");
     if (prompt) next.set("prompt", prompt);
     if (mode) next.set("mode", mode);
+    if (prompt && params.get("send") === "1") next.set("send", "1");
     const query = next.toString();
     guestHandler(`/studio${query ? `?${query}` : ""}`);
   }, [guestHandler, params]);

@@ -124,7 +124,7 @@ function SoundButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       type="button"
       onClick={onToggle}
       aria-pressed={on}
-      aria-label="Sound"
+      aria-label="Play the soundtrack"
       className="grid size-8 place-items-center rounded-full border border-fg/30 bg-bg/40 text-fg transition-colors hover:bg-fg/15"
     >
       {on ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
@@ -693,6 +693,7 @@ export function Hero() {
   // the windows open as their words arrive (the words themselves are CSS, timed from load)
   useEffect(() => {
     if (reduced === null) return;
+    // held still, the windows open at once in their places in the brief
     if (reduced) {
       for (const k of KEYS) open(k);
       return;
@@ -742,7 +743,9 @@ export function Hero() {
       const r = section.getBoundingClientRect();
       // the stage is one screen tall: the scroll it pins for is the rest of the section
       const total = r.height - stage.offsetHeight;
-      const p = reduced ? 0.47 : total > 0 ? clamp01(-r.top / total) : 0;
+      // under reduced motion the hero holds its opening frame, the brief over the forest:
+      // the page says what it is, and the media follows in the sections below (TICKET-055)
+      const p = reduced ? 0 : total > 0 ? clamp01(-r.top / total) : 0;
       if (p > 0.01 && state.current.opened.size < KEYS.length)
         for (const k of KEYS) open(k);
       if (p !== state.current.p) {
@@ -817,7 +820,9 @@ export function Hero() {
   return (
     <section
       ref={sectionRef}
-      className={reduced ? "relative h-svh" : "relative h-[380svh]"}
+      // the timeline ends in the top half of its stage: the next section rises into the
+      // empty half instead of leaving a dead band (TICKET-055)
+      className={reduced ? "relative h-svh" : "relative -mb-[8svh] h-[380svh]"}
     >
       <div
         ref={stageRef}
@@ -887,8 +892,9 @@ export function Hero() {
         </div>
 
         {/* the brief, written over the trunks */}
-        <div className="absolute inset-x-0 top-0 z-10 px-5 pt-[16svh] sm:px-8 sm:pt-[17svh]">
-          <div className="mx-auto w-full max-w-[1240px]">
+        {/* on the page's 1200 px wrap, so it starts where every section below does (TICKET-055) */}
+        <div className="absolute inset-x-0 top-0 z-10 pt-[16svh] sm:pt-[17svh]">
+          <div className="mx-auto w-full max-w-[1200px] px-6 sm:px-8">
             <h1
               ref={sentenceRef}
               aria-label={BRIEF_TEXT}
@@ -945,7 +951,7 @@ export function Hero() {
           ref={k1Ref}
           className="invisible absolute inset-0 z-10 opacity-0 will-change-[opacity]"
         >
-          <div className="mx-auto flex h-full max-w-[1280px] flex-col px-5 pb-6 pt-[72px] sm:px-8 sm:pt-[84px] md:pb-10">
+          <div className="mx-auto flex h-full max-w-[1200px] flex-col px-6 pb-6 pt-[72px] sm:px-8 sm:pt-[84px] md:pb-10">
             {/* where the brief shrinks toward as it fades; nothing is drawn here */}
             <div
               ref={captionRef}
@@ -988,7 +994,7 @@ export function Hero() {
           ref={k2Ref}
           className="invisible absolute inset-0 z-10 opacity-0 will-change-[opacity]"
         >
-          <div className="mx-auto flex h-full max-w-[1280px] flex-col justify-center px-5 pb-10 pt-20 sm:px-8 sm:pt-24 short:pb-3 short:pt-16 sm:short:pt-16">
+          <div className="mx-auto flex h-full max-w-[1200px] flex-col justify-center px-6 pb-10 pt-20 sm:px-8 sm:pt-24 short:pb-3 short:pt-16 sm:short:pt-16">
             <div className="mb-5 flex items-center justify-between gap-4 short:mb-1">
               <p className="font-display text-[19px] italic text-fg sm:text-[22px]">
                 Cut together on one timeline.
@@ -1066,7 +1072,7 @@ export function Hero() {
             }}
             aria-hidden
             data-on="false"
-            className="w-piece pointer-events-none absolute left-0 top-0 z-20 h-16 w-16 overflow-hidden shadow-[0_30px_80px_-24px_rgb(0_0_0/.7)] outline outline-1 -outline-offset-1 outline-fg/20 [contain:strict] will-change-transform"
+            className="w-piece pointer-events-none absolute left-0 top-0 z-20 h-16 w-16 overflow-hidden shadow-float outline outline-1 -outline-offset-1 outline-fg/20 [contain:strict] will-change-transform"
           >
             <PieceBody k={k} videoRef={videoRef} />
           </div>

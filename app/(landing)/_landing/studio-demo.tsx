@@ -8,7 +8,7 @@ import {
   Users,
   Wand2,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Logo from "@/components/Logo";
 import { Composer } from "@/components/studio/composer";
 import { RunDemo } from "@/components/studio/run-demo";
@@ -58,6 +58,7 @@ function useFollow() {
 
 export function StudioDemo() {
   const { area, content } = useFollow();
+  const [done, setDone] = useState(false);
   return (
     <section className={WRAP}>
       <h2 className={H2}>It plans the work, then does it.</h2>
@@ -68,7 +69,8 @@ export function StudioDemo() {
 
       {/* a fixed frame: the run scrolls inside it, so nothing around it grows */}
       <div className="mt-12 h-[620px] overflow-hidden rounded-window border border-border bg-surface shadow-float md:h-[720px]">
-        <div className="grid h-full md:grid-cols-[220px_minmax(0,1fr)]">
+        {/* one explicit column on a phone: the run cannot widen the frame (TICKET-055) */}
+        <div className="grid h-full grid-cols-[minmax(0,1fr)] md:grid-cols-[220px_minmax(0,1fr)]">
           <aside
             aria-hidden
             className="hidden flex-col gap-5 border-r border-border px-3 py-4 text-[13px] md:flex"
@@ -109,7 +111,7 @@ export function StudioDemo() {
                     i === 0 ? "text-fg" : "text-fg-2"
                   )}
                 >
-                  {i === 0 && (
+                  {i === 0 && !done && (
                     <span className="size-3 shrink-0 animate-spin rounded-full border-[1.5px] border-fg border-r-transparent" />
                   )}
                   <span className="truncate">{r}</span>
@@ -119,18 +121,23 @@ export function StudioDemo() {
             <div className="mt-auto space-y-3 px-2">
               <div>
                 <div className="h-1 overflow-hidden rounded-full bg-surface-3">
-                  <div className="h-full w-1/3 bg-fg" />
+                  <div
+                    className={cn(
+                      "h-full bg-fg transition-[width] duration-500",
+                      done ? "w-3/5" : "w-2/5"
+                    )}
+                  />
                 </div>
                 <div className="tabular mt-1.5 text-[12px] text-mute">
-                  34 of 100 generations
+                  {done ? 3 : 2} of 5 generations
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
                 <span className="grid size-6 place-items-center rounded-full bg-fg text-[11px] font-medium text-bg">
-                  H
+                  M
                 </span>
                 <span className="leading-tight">
-                  <span className="block font-medium">harsh</span>
+                  <span className="block font-medium">Maya</span>
                   <span className="block text-[11.5px] text-mute">
                     Free plan
                   </span>
@@ -142,9 +149,11 @@ export function StudioDemo() {
           <div className="relative flex h-full min-h-0 flex-col">
             <div className="flex h-13 items-center gap-3 border-b border-border px-6 text-[15px] font-medium">
               A forest older than memory
-              <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
-                <span className="size-1.5 rounded-full bg-sun" /> Running
-              </span>
+              {!done && (
+                <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
+                  <span className="size-1.5 rounded-full bg-sun" /> Running
+                </span>
+              )}
               <span className="ml-auto text-[13px] font-normal text-mute">
                 Rename
               </span>
@@ -154,7 +163,7 @@ export function StudioDemo() {
               className="min-h-0 flex-1 overflow-hidden px-6 py-6 [mask-image:linear-gradient(to_bottom,transparent,black_28px)] md:px-10"
             >
               <div ref={content}>
-                <RunDemo className="mx-auto max-w-[720px]" />
+                <RunDemo className="mx-auto max-w-[720px]" onDone={setDone} />
               </div>
             </div>
             {/* a picture of the composer, not a working one: out of the tab order */}

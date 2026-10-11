@@ -22,7 +22,7 @@ const PROMPT =
 const STEPS = [
   "Look up old-growth forest photography for reference",
   "Generate the poster, 3:4",
-  "Generate a 10 s clip of a waterfall in a mossy canyon",
+  "Generate a 5 s clip of a waterfall in a mossy canyon",
   "Compose 30 s of slow ambient strings",
   "Write three taglines",
 ];
@@ -39,7 +39,14 @@ const TIMELINE: Array<{ at: number; step: number; outputs: number }> = [
 ];
 const TOTAL = 7200;
 
-export function RunDemo({ className }: { className?: string }) {
+export function RunDemo({
+  className,
+  onDone,
+}: {
+  className?: string;
+  /** Told when the replay reaches its end, and again when it starts over. */
+  onDone?: (done: boolean) => void;
+}) {
   const [phase, setPhase] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [stepsOpen, setStepsOpen] = useState(true);
@@ -104,6 +111,9 @@ export function RunDemo({ className }: { className?: string }) {
 
   const m = TIMELINE[phase];
   const done = phase === TIMELINE.length - 1;
+  // the frame around the replay stops saying "Running" when it ends (TICKET-055)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: on the end and on a replay
+  useEffect(() => onDone?.(done), [done]);
   const doneSteps = m.step < 0 ? 0 : Math.min(m.step, STEPS.length);
 
   return (
@@ -204,7 +214,7 @@ export function RunDemo({ className }: { className?: string }) {
             show={m.outputs >= 2}
             ready={m.outputs >= 3}
             ratio="16/9"
-            label="a waterfall in a mossy canyon, 10 s"
+            label="a waterfall in a mossy canyon, 5 s"
           >
             <AmbientVideo
               src={CLIPS[0].src}
@@ -217,6 +227,7 @@ export function RunDemo({ className }: { className?: string }) {
       {m.outputs >= 3 && (
         <div className="mt-3 animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
           <AudioRow
+            downloadable={false}
             src={TRACKS[0].src}
             title={TRACKS[0].title}
             subtitle={TRACKS[0].prompt}

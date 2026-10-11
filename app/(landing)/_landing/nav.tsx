@@ -44,7 +44,7 @@ export function LandingNav() {
         <div className="ml-auto flex items-center gap-4">
           <Link
             href="/login"
-            className="hidden text-[13.5px] text-fg/80 hover:text-fg sm:inline"
+            className="text-[13.5px] text-fg/80 hover:text-fg"
           >
             Sign in
           </Link>
