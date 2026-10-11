@@ -80,6 +80,9 @@ sections, Handoff on in-progress tickets, Verification and Outcome on done ticke
 - Unreachable code is deleted, not carried. Git is the archive.
 - Keep changes focused. Preserve unrelated work in a dirty tree.
 - Unit tests live next to the code as `*.test.ts(x)`. Add tests with the code they cover.
+- `npm run build` writes `.next` and kills a running `next dev` (which keeps its state in
+  `.next/dev`). Stop the dev server before a build, then start it again; after a build, delete
+  `.next/types` or `tsc` complains about routes that no longer exist.
 
 ## Design
 

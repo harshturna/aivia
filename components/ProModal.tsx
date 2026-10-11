@@ -1,37 +1,36 @@
 "use client";
 
-import { DialogTitle } from "@radix-ui/react-dialog";
-import axios from "axios";
-import { Check, Zap } from "lucide-react";
 import { useState } from "react";
-import toast from "react-hot-toast";
-import { tools } from "@/constants";
 import { userProModal } from "@/hooks/useProModal";
-import { cn } from "@/lib/utils";
-import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Card } from "./ui/card";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogTitle,
 } from "./ui/dialog";
 
+/**
+ * The upgrade dialog (design §5.5): what Pro is in plain words, the price, two buttons.
+ * Opened from the credits meter and from a generation that hit the free limit.
+ */
 const ProModal = () => {
   const proModal = userProModal();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubscribe = async () => {
+  const subscribe = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      const response = await axios.get("/api/stripe");
-
-      window.location.href = response.data.url;
-    } catch (error) {
-      toast.error("Something went wrong");
-    } finally {
+      const response = await fetch("/api/stripe");
+      if (!response.ok) throw new Error("Stripe did not answer");
+      const { url } = (await response.json()) as { url: string };
+      window.location.href = url;
+    } catch {
+      setError("Could not open checkout. Try again in a moment.");
       setLoading(false);
     }
   };
@@ -39,39 +38,22 @@ const ProModal = () => {
   return (
     <Dialog open={proModal.isOpen} onOpenChange={proModal.onClose}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex justify-center items-center flex-col gap-y-4 pb-2">
-            <div className="flex items-center gap-x-2 font-bold py-1">
-              Upgrade to Aivia
-              <Badge className="uppercase text-sm py-1">pro</Badge>
-            </div>
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-[20px] font-medium tracking-[-0.01em]">
+            Aivia Pro
           </DialogTitle>
-          <DialogDescription className="text-center pt-2 space-y-2 text-muted-foreground font-medium">
-            {tools.map((tool) => (
-              <Card
-                key={tool.href}
-                className="p-3 border-border flex items-center justify-between"
-              >
-                <div className="flex items-center gap-x-4">
-                  <div className={cn("p-2 w-fit rounded-md", tool.bgColor)}>
-                    <tool.icon className={cn("w-6 h-6", tool.color)} />
-                  </div>
-                  <div className="font-semibold text-sm">{tool.label}</div>
-                </div>
-                <Check className="text-primary w-5 h-5" />
-              </Card>
-            ))}
+          <DialogDescription className="text-[14px] leading-6 text-fg-2">
+            Unlimited generations in every mode, for $20 a month. Cancel any
+            time from Settings.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-          <Button
-            disabled={loading}
-            size="lg"
-            className="w-full"
-            onClick={onSubscribe}
-          >
-            Upgrade
-            <Zap className="w-4 h-4 ml-2 fill-white" />
+        {error && <p className="text-[13px] text-poor">{error}</p>}
+        <DialogFooter className="gap-2 sm:justify-start">
+          <Button onClick={subscribe} disabled={loading}>
+            {loading ? "Opening…" : "Continue to checkout"}
+          </Button>
+          <Button variant="ghost" onClick={proModal.onClose}>
+            Not now
           </Button>
         </DialogFooter>
       </DialogContent>
