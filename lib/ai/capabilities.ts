@@ -1,4 +1,4 @@
-import { runFal, extractUrl } from "@/lib/ai/fal";
+import { extractUrl, runFal } from "@/lib/ai/fal";
 
 /**
  * The app's media capabilities as plain functions.

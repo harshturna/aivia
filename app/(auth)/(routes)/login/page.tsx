@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Loader from "@/components/SubmitLoader";
-import { useGuestLogin } from "@/hooks/useGuestLogin";
-import { SubmitHandler, useForm } from "react-hook-form";
-import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { FormSchema } from "../constants";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { type SubmitHandler, useForm } from "react-hook-form";
+import type * as z from "zod";
+import Logo from "@/components/Logo";
+import Loader from "@/components/SubmitLoader";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -20,15 +19,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import toast from "react-hot-toast";
-import Logo from "@/components/Logo";
+import { useGuestLogin } from "@/hooks/useGuestLogin";
+import { createClient } from "@/lib/supabase/client";
+import { FormSchema } from "../constants";
 
 const Login = () => {
-  useEffect(() => {
-    router.refresh();
-  }, []);
-
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -41,7 +36,7 @@ const Login = () => {
     formData
   ) => {
     const { email, password } = formData;
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -52,10 +47,10 @@ const Login = () => {
     }
 
     if (!error) {
+      router.refresh();
       router.push("/dashboard");
     }
   };
-
 
   const { guestHandler, isGuestLoading } = useGuestLogin();
 
@@ -83,7 +78,12 @@ const Login = () => {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" autoComplete="email" placeholder="you@example.com" {...field} />
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -96,7 +96,12 @@ const Login = () => {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="current-password" placeholder="••••••••" {...field} />
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -113,11 +118,16 @@ const Login = () => {
         </Button>
         <span className="text-center text-sm text-muted-foreground">
           Dont have an account?{" "}
-          <Link href="/signup" className="font-medium text-foreground underline underline-offset-2">
+          <Link
+            href="/signup"
+            className="font-medium text-foreground underline underline-offset-2"
+          >
             Sign up
           </Link>
         </span>
-        <p className="text-center text-sm font-medium text-muted-foreground">OR</p>
+        <p className="text-center text-sm font-medium text-muted-foreground">
+          OR
+        </p>
         <Button
           type="button"
           onClick={guestHandler}

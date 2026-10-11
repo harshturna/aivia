@@ -1,10 +1,10 @@
 import {
-  Sparkles,
+  Clapperboard,
+  Code,
   ImageIcon,
+  Sparkles,
   UserRound,
   Wand2,
-  Code,
-  Clapperboard,
 } from "lucide-react";
 
 export const heroHeader = {

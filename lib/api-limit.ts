@@ -1,6 +1,6 @@
+import { type ContextType, MAX_FREE_COUNTS } from "@/constants";
 import { getUser } from "./getUser";
 import prismadb from "./prismadb";
-import { MAX_FREE_COUNTS, ContextType } from "@/constants";
 
 export const increaseApiLimit = async (context: ContextType) => {
   const user = await getUser(context);

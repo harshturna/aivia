@@ -1,21 +1,21 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Copy } from "lucide-react";
 import toast from "react-hot-toast";
+import { cn } from "@/lib/utils";
 import { BotAvatar } from "../BotAvatar";
+import { TypingDots } from "../TypingDots";
 import { UserAvatar } from "../UserAvatar";
 import { Button } from "../ui/button";
-import { Copy } from "lucide-react";
-import { TypingDots } from "../TypingDots";
 
 export interface ChatMessageProps {
-  role: "system" | "user";
+  from: "system" | "user";
   content?: string;
   isLoading?: boolean;
   src?: string;
 }
 
-const ChatMessage = ({ role, content, isLoading, src }: ChatMessageProps) => {
+const ChatMessage = ({ from, content, isLoading, src }: ChatMessageProps) => {
   const onCopy = () => {
     if (!content) {
       return;
@@ -25,7 +25,7 @@ const ChatMessage = ({ role, content, isLoading, src }: ChatMessageProps) => {
     toast("Message copied to clipboard");
   };
 
-  const isUser = role === "user";
+  const isUser = from === "user";
 
   return (
     <div

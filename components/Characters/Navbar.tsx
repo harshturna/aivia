@@ -1,6 +1,6 @@
-import MobileSidebar from "./MobileSidebar";
-import LogoutButton from "../LogoutButton";
 import { isGuestUser } from "@/lib/guest-user";
+import LogoutButton from "../LogoutButton";
+import MobileSidebar from "./MobileSidebar";
 
 const Navbar = async () => {
   const guestUser = await isGuestUser("SERVER_COMPONENT");

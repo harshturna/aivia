@@ -1,3 +1,4 @@
+import { anthropic } from "@ai-sdk/anthropic";
 import {
   convertToModelMessages,
   createUIMessageStreamResponse,
@@ -5,18 +6,17 @@ import {
   toUIMessageStream,
   type UIMessage,
 } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
-
-import prismadb from "@/lib/prismadb";
 import { guardGeneration } from "@/lib/ai/guard";
+import prismadb from "@/lib/prismadb";
 
 export const maxDuration = 60;
 
 export async function POST(
   request: Request,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
+    const { chatId } = await params;
     const { messages }: { messages: UIMessage[] } = await request.json();
 
     if (!messages?.length) {
@@ -32,7 +32,7 @@ export async function POST(
     // character and indirectly read its instructions and seed.
     const character = await prismadb.character.findFirst({
       where: {
-        id: params.chatId,
+        id: chatId,
         OR: [{ userId: guard.user.id }, { userId: process.env.GUEST_USER_ID }],
       },
     });

@@ -1,6 +1,6 @@
+import type { ContextType } from "@/constants";
 import { getUser } from "./getUser";
 import prismadb from "./prismadb";
-import { ContextType } from "@/constants";
 
 const DAY_IN_MS = 86_400_000;
 
@@ -31,10 +31,11 @@ export const checkSubscription = async (context: ContextType) => {
     return false;
   }
 
+  const periodEnd = userSubscription.stripeCurrentPeriodEnd?.getTime();
   const isValid =
-    userSubscription.stripePriceId &&
-    userSubscription.stripeCurrentPeriodEnd?.getTime()! + DAY_IN_MS >
-      Date.now();
+    Boolean(userSubscription.stripePriceId) &&
+    periodEnd !== undefined &&
+    periodEnd + DAY_IN_MS > Date.now();
 
-  return !!isValid;
+  return isValid;
 };

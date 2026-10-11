@@ -1,6 +1,5 @@
-import { Avatar, AvatarImage } from "./ui/avatar";
-
 import { Bot } from "lucide-react";
+import { Avatar, AvatarImage } from "./ui/avatar";
 
 interface BotAvatarProps {
   src?: string;

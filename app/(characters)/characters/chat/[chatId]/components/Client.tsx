@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent } from "react";
-import { Character, Message } from "@prisma/client";
 import { useChat } from "@ai-sdk/react";
+import type { Character, Message } from "@prisma/client";
 import { DefaultChatTransport } from "ai";
+import { type ChangeEvent, type FormEvent, useState } from "react";
 import toast from "react-hot-toast";
-
-import ChatHeader from "./ChatHeader";
 import ChatForm from "@/components/Characters/ChatForm";
+import type { ChatMessageProps } from "@/components/Characters/ChatMessage";
 import ChatMessages from "@/components/Characters/ChatMessages";
-import { ChatMessageProps } from "@/components/Characters/ChatMessage";
+import ChatHeader from "./ChatHeader";
 
 interface ChatClientProps {
   character: Character & {
@@ -58,7 +57,7 @@ const ChatClient = ({
   // ChatMessage predates the SDK and models roles as "system" | "user",
   // where "system" means the character's reply.
   const uiMessages: ChatMessageProps[] = messages.map((message) => ({
-    role: message.role === "user" ? "user" : "system",
+    from: message.role === "user" ? "user" : "system",
     content: message.parts
       .filter((part) => part.type === "text")
       .map((part) => (part as { text: string }).text)

@@ -1,9 +1,9 @@
-import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { heroHeader } from "@/config/contents";
+import { cn } from "@/lib/utils";
 
 export default function HeroHeader() {
   return (
@@ -38,9 +38,7 @@ export default function HeroHeader() {
           className="animate-fade-up max-w-xl text-lg text-muted-foreground lg:text-xl"
           style={{ animationDelay: "60ms" }}
         >
-          <span className="text-primary font-display font-semibold">
-            aivia
-          </span>
+          <span className="text-primary font-display font-semibold">aivia</span>
           {heroHeader.subheader}
         </p>
 

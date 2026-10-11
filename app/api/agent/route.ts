@@ -1,12 +1,12 @@
+import { anthropic } from "@ai-sdk/anthropic";
 import {
   convertToModelMessages,
   createUIMessageStreamResponse,
+  stepCountIs,
   streamText,
   toUIMessageStream,
-  stepCountIs,
   type UIMessage,
 } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
 
 import { guardGeneration } from "@/lib/ai/guard";
 import { agentTools } from "@/lib/ai/tools";

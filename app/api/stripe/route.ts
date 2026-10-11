@@ -1,5 +1,5 @@
-import { getUser } from "@/lib/getUser";
 import { NextResponse } from "next/server";
+import { getUser } from "@/lib/getUser";
 
 import prismadb from "@/lib/prismadb";
 import { stripe } from "@/lib/stripe";

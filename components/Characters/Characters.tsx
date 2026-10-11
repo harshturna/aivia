@@ -1,8 +1,8 @@
-import { Character } from "@prisma/client";
+import type { Character } from "@prisma/client";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 import { Card, CardHeader } from "../ui/card";
-import Link from "next/link";
 
 interface CharacterProps {
   data: (Character & {

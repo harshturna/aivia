@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
  * Route-level error boundary. Before this existed, an unhandled render error
  * showed a blank page in production.
  */
-export default function Error({
+export default function ErrorPage({
   error,
   reset,
 }: {

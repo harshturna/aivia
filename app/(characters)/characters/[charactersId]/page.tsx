@@ -1,16 +1,15 @@
+import { redirect } from "next/navigation";
+import { getUser } from "@/lib/getUser";
+import { isGuestUser } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
 import CharacterForm from "./components/CharacterForm";
-import { getUser } from "@/lib/getUser";
-import { redirect } from "next/navigation";
-import { isGuestUser } from "@/lib/guest-user";
 
 interface CharactersIdPageProps {
-  params: {
-    charactersId: string;
-  };
+  params: Promise<{ charactersId: string }>;
 }
 
 const CharactersIdPage = async ({ params }: CharactersIdPageProps) => {
+  const { charactersId } = await params;
   const user = await getUser("SERVER_COMPONENT");
 
   if (!user) {
@@ -21,7 +20,7 @@ const CharactersIdPage = async ({ params }: CharactersIdPageProps) => {
 
   const character = await prismadb.character.findUnique({
     where: {
-      id: params.charactersId,
+      id: charactersId,
       userId: user.id,
     },
   });

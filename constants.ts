@@ -1,13 +1,13 @@
 import {
+  BookText,
   Code,
+  Dna,
   Image,
   MessageSquare,
   Music,
-  Video,
-  Dna,
-  UserRound,
-  BookText,
   Sparkles,
+  UserRound,
+  Video,
 } from "lucide-react";
 
 export const MAX_FREE_COUNTS = 5;

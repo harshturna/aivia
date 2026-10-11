@@ -1,6 +1,6 @@
+import { Settings } from "lucide-react";
 import Heading from "@/components/Heading";
 import SubscriptionButton from "@/components/SubscriptionButton";
-import { Settings } from "lucide-react";
 
 interface SettingsProps {
   isPro: boolean;
@@ -25,8 +25,8 @@ const SettingsComponent = async ({
           {isGuest
             ? "You are logged in as Guest"
             : isPro
-            ? "You are currently on a pro plan."
-            : "You are currently on a free plan"}
+              ? "You are currently on a pro plan."
+              : "You are currently on a free plan"}
         </div>
         <SubscriptionButton isPro={isPro} isGuest={isGuest} />
       </div>

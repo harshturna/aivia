@@ -1,55 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart } from "ai";
 import { Paperclip, Sparkles, Square, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-
-import Heading from "@/components/Heading";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { UserAvatar } from "@/components/UserAvatar";
-import { BotAvatar } from "@/components/BotAvatar";
-import { Markdown } from "@/components/ai/Markdown";
 import { Artifact } from "@/components/ai/Artifact";
+import { Markdown } from "@/components/ai/Markdown";
+import { BotAvatar } from "@/components/BotAvatar";
+import Heading from "@/components/Heading";
+import { UserAvatar } from "@/components/UserAvatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { userProModal } from "@/hooks/useProModal";
-
-/**
- * Merge runs of adjacent text parts into one block, leaving everything else in
- * place.
- *
- * Anthropic's server-side web search cuts the answer into a separate text part
- * at every citation boundary, so a single sentence arrives as several parts:
- * the cited span, then the trailing ".", then the next connective. Rendering
- * each through its own <Markdown> gave every fragment its own <p>, which is
- * why answers came out with stray full stops on their own lines.
- *
- * Non-text parts still act as boundaries, so a tool call or a plan block
- * appears exactly where it happened in the run.
- */
-type Grouped<T> = { kind: "text"; text: string } | { kind: "part"; part: T };
-
-function groupTextParts<T extends { type: string }>(parts: T[]): Grouped<T>[] {
-  const groups: Grouped<T>[] = [];
-
-  for (const part of parts) {
-    if (part.type === "text") {
-      const previous = groups[groups.length - 1];
-      const text = (part as unknown as { text: string }).text ?? "";
-      if (previous?.kind === "text") {
-        previous.text += text;
-      } else {
-        groups.push({ kind: "text", text });
-      }
-      continue;
-    }
-    groups.push({ kind: "part", part });
-  }
-
-  return groups;
-}
+import { groupTextParts } from "@/lib/ai/parts";
+import { cn } from "@/lib/utils";
 
 const EXAMPLES = [
   "Design a logo for a coffee roastery and write three taglines",
@@ -144,11 +109,7 @@ const StudioPage = () => {
                     : "bg-muted"
                 )}
               >
-                {message.role === "user" ? (
-                  <UserAvatar />
-                ) : (
-                  <BotAvatar />
-                )}
+                {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
 
                 {/* Render parts in order so the plan, the tool runs and the
                     closing summary appear as they actually happened. */}

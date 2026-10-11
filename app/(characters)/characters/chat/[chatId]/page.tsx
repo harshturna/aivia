@@ -1,16 +1,15 @@
-import { getUser } from "@/lib/getUser";
-import prismadb from "@/lib/prismadb";
 import { redirect } from "next/navigation";
-import ChatClient from "./components/Client";
+import { getUser } from "@/lib/getUser";
 import { isGuestUser } from "@/lib/guest-user";
+import prismadb from "@/lib/prismadb";
+import ChatClient from "./components/Client";
 
 interface chatIdPageProps {
-  params: {
-    chatId: string;
-  };
+  params: Promise<{ chatId: string }>;
 }
 
 const ChatIdPage = async ({ params }: chatIdPageProps) => {
+  const { chatId } = await params;
   const user = await getUser("SERVER_COMPONENT");
   const isGuest = await isGuestUser("SERVER_COMPONENT");
 
@@ -20,7 +19,7 @@ const ChatIdPage = async ({ params }: chatIdPageProps) => {
 
   const character = await prismadb.character.findUnique({
     where: {
-      id: params.chatId,
+      id: chatId,
     },
 
     include: {

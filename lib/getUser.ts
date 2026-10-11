@@ -1,25 +1,16 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { ContextType } from "@/constants";
+import type { ContextType } from "@/constants";
+import { createClient } from "@/lib/supabase/server";
 
-export async function getUser(context: ContextType) {
-  if (context === "ROUTE_HANDLER") {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data } = await supabase.auth.getSession();
-    return data.session?.user;
-  }
-
-  if (context === "SERVER_COMPONENT") {
-    const supabase = createServerComponentClient({ cookies });
-    const { data } = await supabase.auth.getSession();
-    return data.session?.user;
-  }
-
-  if (context === "CLIENT_COMPONENT") {
-    const supabase = createClientComponentClient();
-    const { data } = await supabase.auth.getSession();
-    return data.session?.user;
-  }
+/**
+ * The signed-in user, or undefined.
+ *
+ * Server components and route handlers share one path now that
+ * `@supabase/ssr` reads cookies the same way in both. The `context` argument
+ * is kept so the many call sites need not change in this ticket; nothing
+ * branches on it any more.
+ */
+export async function getUser(_context?: ContextType) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  return data.user ?? undefined;
 }

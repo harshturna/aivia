@@ -1,5 +1,5 @@
+import type { ContextType } from "@/constants";
 import { getUser } from "./getUser";
-import { ContextType } from "@/constants";
 
 export async function isGuestUser(context: ContextType) {
   const user = await getUser(context);

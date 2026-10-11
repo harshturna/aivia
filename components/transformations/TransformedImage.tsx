@@ -1,8 +1,8 @@
-import { dataUrl, debounce, getImageSize } from "@/lib/utils";
 import { Download, Loader2 } from "lucide-react";
+import type { PlaceholderValue } from "next/dist/shared/lib/get-img-props";
 import { CldImage } from "next-cloudinary";
-import { PlaceholderValue } from "next/dist/shared/lib/get-img-props";
 import toast from "react-hot-toast";
+import { dataUrl, debounce, getImageSize } from "@/lib/utils";
 
 const TransformedImage = ({
   image,
@@ -20,7 +20,11 @@ const TransformedImage = ({
         <h3 className="h3-bold text-foreground">Transformed</h3>
 
         {hasDownload && (
-          <button className="download-btn" onClick={downloadHandler}>
+          <button
+            type="button"
+            className="download-btn"
+            onClick={downloadHandler}
+          >
             <Download width={28} height={28} className="pb-[6px]" />
           </button>
         )}

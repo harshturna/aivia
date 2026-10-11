@@ -41,10 +41,7 @@ export default function Pricing() {
               </h4>
               <div className="h-px flex-auto bg-border" />
             </div>
-            <ul
-              role="list"
-              className="mt-8 grid grid-cols-1 gap-4 text-sm leading-6 text-muted-foreground sm:grid-cols-2 sm:gap-6"
-            >
+            <ul className="mt-8 grid grid-cols-1 gap-4 text-sm leading-6 text-muted-foreground sm:grid-cols-2 sm:gap-6">
               {includedFeatures.map((feature) => (
                 <li key={feature} className="flex gap-x-3">
                   <Check

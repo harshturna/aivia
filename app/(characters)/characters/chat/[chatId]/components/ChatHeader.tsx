@@ -1,5 +1,10 @@
 "use client";
 
+import type { Character, Message } from "@prisma/client";
+import axios from "axios";
+import { ChevronLeft, Edit, MoreVertical, Trash } from "lucide-react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { BotAvatar } from "@/components/BotAvatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,11 +13,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Character, Message } from "@prisma/client";
-import axios from "axios";
-import { ChevronLeft, Edit, MoreVertical, Trash } from "lucide-react";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 
 interface ChatHeaderProps {
   character: Character & {

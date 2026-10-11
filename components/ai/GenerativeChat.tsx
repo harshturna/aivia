@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Paperclip, Square, X, type LucideIcon } from "lucide-react";
+import { type LucideIcon, Paperclip, Square, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-
-import Heading from "@/components/Heading";
-import { Empty } from "@/components/Empty";
-import { Loader } from "@/components/Loader";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { UserAvatar } from "@/components/UserAvatar";
-import { BotAvatar } from "@/components/BotAvatar";
 import { Markdown } from "@/components/ai/Markdown";
+import { BotAvatar } from "@/components/BotAvatar";
+import { Empty } from "@/components/Empty";
+import Heading from "@/components/Heading";
+import { Loader } from "@/components/Loader";
+import { UserAvatar } from "@/components/UserAvatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { userProModal } from "@/hooks/useProModal";
+import { cn } from "@/lib/utils";
 
 interface GenerativeChatProps {
   api: string;
@@ -210,7 +209,9 @@ export const GenerativeChat = ({
                   accept={attachments.accept}
                   multiple
                   className="sr-only"
-                  onChange={(event) => setFiles(event.target.files ?? undefined)}
+                  onChange={(event) =>
+                    setFiles(event.target.files ?? undefined)
+                  }
                 />
                 <label
                   htmlFor="chat-files"

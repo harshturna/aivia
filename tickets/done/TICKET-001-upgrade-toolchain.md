@@ -1,9 +1,9 @@
 # TICKET-001: Upgrade toolchain to Next 16, React 19, Biome, Vitest
 
-**Status:** pending
+**Status:** done
 **Created:** 2026-10-10
-**Started:** —
-**Completed:** —
+**Started:** 2026-10-10
+**Completed:** 2026-10-10
 **Area:** infra
 
 ## Goal
@@ -56,36 +56,80 @@ the way `../lynq` does.
   separate formatter).
 
 ## Plan
-- [ ] Upgrade next, react, react-dom, types, typescript, prisma, @supabase/ssr and
+- [x] Upgrade next, react, react-dom, types, typescript, prisma, @supabase/ssr and
       supabase-js, Radix, lucide, zustand, react-hook-form, resolvers, next-cloudinary; remove
       auth-helpers, eslint, eslint-config-next, `.eslintrc.json`.
-- [ ] Rewrite `lib/getUser.ts` and the five Supabase call sites on `@supabase/ssr`;
+- [x] Rewrite `lib/getUser.ts` and the five Supabase call sites on `@supabase/ssr`;
       `middleware.ts` → `proxy.ts`.
-- [ ] Async `params`, `searchParams`, `headers()` in the files listed above;
+- [x] Async `params`, `searchParams`, `headers()` in the files listed above;
       `next.config.js` images and `agentRules`.
-- [ ] Biome: `biome.json` from lynq's, `npm run lint` and `format`; fix errors, warn on the
+- [x] Biome: `biome.json` from lynq's, `npm run lint` and `format`; fix errors, warn on the
       shadcn-generated rules the revamp replaces.
-- [ ] Vitest 5 + jsdom + testing-library; `vitest.config.ts`; one real test
+- [x] Vitest 3 + jsdom + testing-library; `vitest.config.ts`; one real test
       (`groupTextParts` moved out of the Studio page into `lib/ai/parts.ts`).
-- [ ] Playwright + `scripts/shots.mjs`; `npm run shots`.
-- [ ] `verify` = lint, typecheck, check:tickets, test:unit. `npm run verify` and
+- [x] Playwright + `scripts/shots.mjs`; `npm run shots`.
+- [x] `verify` = lint, typecheck, check:tickets, test:unit. `npm run verify` and
       `npm run build` green; `next start` answers `/`, `/login`, `/dashboard` (307), the guest
       sign-in and `/studio` as the guest.
-- [ ] `.github/workflows/verify.yml`.
+- [x] `.github/workflows/verify.yml`.
 
 ## Progress log
+- 2026-10-10 — Started right after filing; the plan was written from a full read of the files it names.
+- 2026-10-10 — Upgraded: next 16.4.0, react 19.3.0, typescript 7.0.2 (tsconfig modernised:
+  ES2022, bundler resolution, react-jsx), prisma 6.19.3, @supabase/ssr 0.12.7, supabase-js
+  2.117, Radix to React 19 peers, lucide-react 1.55, zustand 5, react-hook-form 7.89,
+  resolvers 5.9, next-cloudinary 6.19, AI SDK current. Removed auth-helpers, eslint. A clean
+  reinstall was needed: npm 10.9's arborist crashed (`edgesOut` of null) resolving vitest 5's
+  peer set, so vitest is 3.2.7 as in lynq.
+- 2026-10-10 — `lib/supabase/{server,client,middleware}.ts` on `@supabase/ssr`; `getUser`
+  keeps its `context` argument so forty call sites did not change; `proxy.ts` refreshes the
+  session and excludes the Stripe webhook. Async params in five pages and routes, async
+  `headers()` in the webhook. `images.domains` → `remotePatterns`.
+- 2026-10-10 — Biome: 144 errors → 0 after `--write` plus by hand: `type="button"` in four
+  places, `app/error.tsx` no longer shadows `Error`, `ChatMessage`'s `role` prop is `from`
+  (Biome reads `role=` as ARIA), the uploader's click target is a button, the subscription
+  check no longer non-null-asserts an optional chain, the icon SVG has a title. `useMediaCaption`
+  off: generated audio and video has no captions. 57 warnings remain (`any`, index keys, `!`)
+  in files the revamp rewrites.
+- 2026-10-10 — `groupTextParts` moved to `lib/ai/parts.ts` with three tests. `scripts/shots.mjs`
+  signs in as the guest and screenshots every route; Playwright's chromium installed.
 - 2026-10-10 — Filed with the ticket system itself (CLAUDE.md, `tickets/`, the two skills,
   `scripts/check-tickets.mjs`).
 
 ## Handoff
 Kept current while the ticket is in progress. Overwrite, do not append.
-- **State:** not started
+Closed. See Outcome.
+- **State:** done
 - **Blocked on:** nothing
-- **Next:** start
-- **Read first:** `lib/getUser.ts`, `middleware.ts`, `package.json`
+- **Next:** TICKET-002 (the revamp design)
+- **Read first:** `lib/supabase/*`, `proxy.ts`
 
 ## Verification
-Filled in on completion. The command that was run, in a code block, and its result.
+```
+npm run verify     # biome: 0 errors, 57 warnings; tsc (7.0.2): clean; ticket check: 1 ticket;
+                   # vitest: 1 file, 3 tests passed
+npm run build      # Next 16.4.0: compiled, 36 routes, "ƒ Proxy (Middleware)" detected, exit 0
+npx next start -p 3005 + curl
+  GET  /                 200
+  GET  /login            200
+  GET  /dashboard        307 -> /login
+  GET  /studio           307 -> /login
+  GET  /api/webhook      405  (proxy leaves it alone; it rejects GET itself)
+  POST /api/auth/guest   200  (session cookie set through @supabase/ssr)
+  GET  /studio, /dashboard, /characters, /transformations/restore with that cookie   200
+npm run shots      # signed in as the guest; studio and characters screenshots reviewed at 1440:
+                   # identical to the pre-upgrade captures (sidebar, header, composer, grid)
+```
+Not tested: Stripe checkout and the webhook (needs a signed event), character create and
+delete, a real generation (costs money; the route code did not change).
 
 ## Outcome
-Filled in on completion: what shipped, what was deliberately left out, follow-up tickets created.
+Shipped: Next 16.4.0, React 19.3.0, TypeScript 7.0.2, Prisma 6, `@supabase/ssr` replacing the
+deprecated auth helpers (`lib/supabase/*`, `proxy.ts`), every React 19 peer bumped, Biome 2
+replacing ESLint, Vitest 3 with the first test, Playwright with `npm run shots`,
+`npm run verify` = lint + typecheck + tickets + unit tests, a CI workflow that runs it.
+
+Left out on purpose: Tailwind 4 (the tokens ticket rewrites `globals.css` and migrates then),
+zod 4, stripe 23 (the webhook reads a subscription shape the new API version changed; its own
+ticket if the plan is ever revisited), the 57 Biome warnings (in files the revamp replaces).
+Follow-up tickets: none; the revamp design is next.

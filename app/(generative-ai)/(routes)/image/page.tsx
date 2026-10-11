@@ -1,22 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import axios from "axios";
-import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-
-import { amountOptions, formSchema, resolutionOptions } from "./constants";
-import Heading from "@/components/Heading";
-import { Empty } from "@/components/Empty";
-import { Loader } from "@/components/Loader";
-import Image from "next/image";
+import axios from "axios";
 import { Download, ImageIcon } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import type * as z from "zod";
+import { Empty } from "@/components/Empty";
+import Heading from "@/components/Heading";
+import { Loader } from "@/components/Loader";
 import { Button } from "@/components/ui/button";
+import { Card, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -24,9 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardFooter } from "@/components/ui/card";
 import { userProModal } from "@/hooks/useProModal";
-import toast from "react-hot-toast";
+import { cn } from "@/lib/utils";
+import { amountOptions, formSchema, resolutionOptions } from "./constants";
 
 const ImagePage = () => {
   const proModal = userProModal();
@@ -58,7 +57,8 @@ const ImagePage = () => {
         proModal.onOpen();
       } else if (error?.response?.status === 429) {
         toast.error(
-          error?.response?.data || "Generation limit reached. Please try again later."
+          error?.response?.data ||
+            "Generation limit reached. Please try again later."
         );
       } else {
         toast.error("Something went wrong");

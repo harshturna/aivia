@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-
-import { guardGeneration } from "@/lib/ai/guard";
 import { generateImages, IMAGE_DEFAULT_EDGE } from "@/lib/ai/capabilities";
+import { guardGeneration } from "@/lib/ai/guard";
 
 export const maxDuration = 60;
 

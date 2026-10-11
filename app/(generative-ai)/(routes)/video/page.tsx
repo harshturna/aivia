@@ -1,22 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import axios from "axios";
-import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-
-import { formSchema } from "./constants";
-import Heading from "@/components/Heading";
-import { Empty } from "@/components/Empty";
-import { Loader } from "@/components/Loader";
+import axios from "axios";
 import { Video } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import type * as z from "zod";
+import { Empty } from "@/components/Empty";
+import Heading from "@/components/Heading";
+import { Loader } from "@/components/Loader";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { userProModal } from "@/hooks/useProModal";
-import toast from "react-hot-toast";
+import { formSchema } from "./constants";
 
 const VideoGeneration = () => {
   const proModal = userProModal();
@@ -44,7 +43,8 @@ const VideoGeneration = () => {
         proModal.onOpen();
       } else if (error?.response?.status === 429) {
         toast.error(
-          error?.response?.data || "Generation limit reached. Please try again later."
+          error?.response?.data ||
+            "Generation limit reached. Please try again later."
         );
       } else {
         toast.error("Something went wrong");

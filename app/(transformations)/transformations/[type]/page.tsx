@@ -1,12 +1,11 @@
+import { redirect } from "next/navigation";
 import Header from "@/components/transformations/Header";
 import TransformationForm from "@/components/transformations/TransformationForm";
 import { transformationTypes } from "@/constants";
 import { getUser } from "@/lib/getUser";
-import { redirect } from "next/navigation";
 
-const AddTransformationPage = async ({
-  params: { type },
-}: SearchParamProps) => {
+const AddTransformationPage = async ({ params }: SearchParamProps) => {
+  const { type } = await params;
   const transformation = transformationTypes[type];
 
   const user = await getUser("SERVER_COMPONENT");

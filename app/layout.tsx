@@ -14,7 +14,9 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://aivia.byharsh.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://aivia.byharsh.com"
+  ),
   title: {
     default: "Aivia — an AI studio",
     template: "%s · Aivia",

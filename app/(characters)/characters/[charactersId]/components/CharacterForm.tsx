@@ -2,12 +2,17 @@
 
 // TODO: Test all three button conditions - pro, guest user and non pro
 
-import * as z from "zod";
-
-import { Category, Character } from "@prisma/client";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import type { Category, Character } from "@prisma/client";
+import axios from "axios";
+import { Wand } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import * as z from "zod";
+import { ImageUpload } from "@/components/Characters/ImageUpload";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -17,8 +22,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Separator } from "@/components/ui/separator";
-import { ImageUpload } from "@/components/Characters/ImageUpload";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -27,12 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Wand } from "lucide-react";
-import toast from "react-hot-toast";
-import axios from "axios";
-import { useRouter } from "next/navigation";
 
 const SEED = `Human: Hi Einstein! What sparked your theory of relativity? 
 
@@ -118,7 +117,9 @@ const CharacterForm = ({
           <div className="space-y-2 w-full">
             <div>
               <h3 className="text-lg font-medium">Your Character</h3>
-              <p className="text-muted-foreground">Information about your Character</p>
+              <p className="text-muted-foreground">
+                Information about your Character
+              </p>
             </div>
             <Separator />
           </div>
@@ -265,22 +266,22 @@ const CharacterForm = ({
               </FormItem>
             )}
           />
-         <div className="w-full flex justify-center">
-          {isGuest && initialData ? (
-            <Button size="lg" type="button" variant="default" disabled={true}>
-              Guest cannot edit characters
-            </Button>
-          ) : isGuest ? (
-            <Button size="lg" type="button" variant="default" disabled={true}>
-              Guest cannot create new characters
-            </Button>
-          ) : (
-            <Button size="lg" disabled={isLoading}>
-              {initialData ? "Edit your character" : "Create your character"}
-              <Wand className="ml-2" />
-            </Button>
-          )}
-        </div>
+          <div className="w-full flex justify-center">
+            {isGuest && initialData ? (
+              <Button size="lg" type="button" variant="default" disabled={true}>
+                Guest cannot edit characters
+              </Button>
+            ) : isGuest ? (
+              <Button size="lg" type="button" variant="default" disabled={true}>
+                Guest cannot create new characters
+              </Button>
+            ) : (
+              <Button size="lg" disabled={isLoading}>
+                {initialData ? "Edit your character" : "Create your character"}
+                <Wand className="ml-2" />
+              </Button>
+            )}
+          </div>
         </form>
       </Form>
     </div>

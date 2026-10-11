@@ -1,9 +1,9 @@
 "use client";
 
+import { Check, Copy } from "lucide-react";
 import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
-import { Check, Copy } from "lucide-react";
 
 import "highlight.js/styles/github-dark.css";
 
@@ -86,11 +86,19 @@ export const Markdown = ({ children }: { children: string }) => (
           />
         );
       },
-      h1: (props) => <h1 className="mb-2 mt-4 text-xl font-semibold" {...props} />,
-      h2: (props) => <h2 className="mb-2 mt-4 text-lg font-semibold" {...props} />,
+      h1: (props) => (
+        <h1 className="mb-2 mt-4 text-xl font-semibold" {...props} />
+      ),
+      h2: (props) => (
+        <h2 className="mb-2 mt-4 text-lg font-semibold" {...props} />
+      ),
       h3: (props) => <h3 className="mb-1 mt-3 font-semibold" {...props} />,
-      ul: (props) => <ul className="my-2 list-disc pl-6 space-y-1" {...props} />,
-      ol: (props) => <ol className="my-2 list-decimal pl-6 space-y-1" {...props} />,
+      ul: (props) => (
+        <ul className="my-2 list-disc pl-6 space-y-1" {...props} />
+      ),
+      ol: (props) => (
+        <ol className="my-2 list-decimal pl-6 space-y-1" {...props} />
+      ),
       p: (props) => <p className="my-2 leading-7" {...props} />,
       a: (props) => (
         <a

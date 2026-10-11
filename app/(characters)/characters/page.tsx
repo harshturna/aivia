@@ -1,17 +1,15 @@
-import SearchInput from "@/components/Characters/SearchInput";
-import Categories from "@/components/Characters/Categories";
-import prismadb from "@/lib/prismadb";
-import Characters from "@/components/Characters/Characters";
-import { getUser } from "@/lib/getUser";
 import { redirect } from "next/navigation";
+import Categories from "@/components/Characters/Categories";
+import Characters from "@/components/Characters/Characters";
+import SearchInput from "@/components/Characters/SearchInput";
+import { getUser } from "@/lib/getUser";
+import prismadb from "@/lib/prismadb";
 
 interface CharactersPageProps {
-  searchParams: {
-    categoryId: string;
-    name: string;
-  };
+  searchParams: Promise<{ categoryId?: string; name?: string }>;
 }
 const CharactersPage = async ({ searchParams }: CharactersPageProps) => {
+  const { categoryId, name } = await searchParams;
   const user = await getUser("SERVER_COMPONENT");
 
   if (!user || !user.id) {
@@ -27,9 +25,9 @@ const CharactersPage = async ({ searchParams }: CharactersPageProps) => {
       userId: {
         in: userIds,
       },
-      categoryId: searchParams.categoryId,
+      categoryId,
       name: {
-        contains: searchParams.name,
+        contains: name,
       },
     },
     orderBy: {

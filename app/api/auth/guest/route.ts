@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Signs the visitor in to the shared demo account.
@@ -22,7 +21,7 @@ export async function POST() {
     return new NextResponse("Guest access is not configured", { status: 503 });
   }
 
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {

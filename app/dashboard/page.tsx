@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-
-import { offerings } from "@/constants";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { offerings } from "@/constants";
 
 /**
  * Tool picker.

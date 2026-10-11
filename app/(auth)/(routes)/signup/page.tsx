@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import Loader from "@/components/SubmitLoader";
-import { useGuestLogin } from "@/hooks/useGuestLogin";
-import { SubmitHandler, useForm } from "react-hook-form";
-import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { FormSchema } from "../constants";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { type SubmitHandler, useForm } from "react-hook-form";
+import type * as z from "zod";
+import Logo from "@/components/Logo";
+import Loader from "@/components/SubmitLoader";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -20,9 +19,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import toast from "react-hot-toast";
-import Logo from "@/components/Logo";
+import { useGuestLogin } from "@/hooks/useGuestLogin";
+import { createClient } from "@/lib/supabase/client";
+import { FormSchema } from "../constants";
 
 const Signup = () => {
   const router = useRouter();
@@ -37,7 +36,7 @@ const Signup = () => {
     formData
   ) => {
     const { email, password } = formData;
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -49,10 +48,10 @@ const Signup = () => {
     }
 
     if (!error) {
-      router.push("/conversation");
+      router.refresh();
+      router.push("/dashboard");
     }
   };
-
 
   const { guestHandler, isGuestLoading } = useGuestLogin();
 
@@ -120,7 +119,10 @@ const Signup = () => {
         </Button>
         <span className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-foreground underline underline-offset-2">
+          <Link
+            href="/login"
+            className="font-medium text-foreground underline underline-offset-2"
+          >
             Log in
           </Link>
         </span>

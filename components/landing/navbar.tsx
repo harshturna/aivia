@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { navLinks } from "@/lib/links";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
+import { navLinks } from "@/lib/links";
 import { cn } from "@/lib/utils";
 import Logo from "../Logo";
 
@@ -68,6 +68,7 @@ export default function Navbar() {
         {/* Mobile */}
         <div className="flex items-center gap-1 md:hidden">
           <button
+            type="button"
             className="rounded-md p-2 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}

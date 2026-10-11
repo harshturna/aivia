@@ -38,7 +38,12 @@ const routes: SidebarRoute[] = [
   { label: "Video Generation", icon: VideoIcon, href: "/video" },
   { label: "Music Generation", icon: MusicIcon, href: "/music" },
   { label: "Code Generation", icon: CodeIcon, href: "/code" },
-  { label: "Documents", icon: BookText, href: "/documents", separatorAfter: true },
+  {
+    label: "Documents",
+    icon: BookText,
+    href: "/documents",
+    separatorAfter: true,
+  },
   { label: "Companion AI", icon: UserRound, href: "/characters" },
   {
     label: "Transformations",

@@ -1,9 +1,9 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { Category } from "@prisma/client";
+import type { Category } from "@prisma/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import qs from "query-string";
+import { cn } from "@/lib/utils";
 
 interface CategoriesProps {
   data: Category[];
@@ -30,6 +30,7 @@ const Categories = ({ data }: CategoriesProps) => {
   return (
     <div className="w-full overflow-x-auto space-x-2 flex p-1">
       <button
+        type="button"
         onClick={() => onClick(undefined)}
         className={cn(
           `
@@ -44,6 +45,7 @@ const Categories = ({ data }: CategoriesProps) => {
       </button>
       {data.map((item) => (
         <button
+          type="button"
           onClick={() => onClick(item.id)}
           key={item.id}
           className={cn(

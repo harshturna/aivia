@@ -1,10 +1,10 @@
-import React from "react";
+import { redirect } from "next/navigation";
+import type React from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { getApiLimitCount } from "@/lib/api-limit";
-import { checkSubscription } from "@/lib/subscription";
 import { getUser } from "@/lib/getUser";
-import { redirect } from "next/navigation";
+import { checkSubscription } from "@/lib/subscription";
 
 const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
   const apiLimitCount = await getApiLimitCount("SERVER_COMPONENT");

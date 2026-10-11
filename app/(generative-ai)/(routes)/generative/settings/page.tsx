@@ -1,6 +1,6 @@
 import SettingsComponent from "@/components/ui/Settings";
-import { checkSubscription } from "@/lib/subscription";
 import { isGuestUser } from "@/lib/guest-user";
+import { checkSubscription } from "@/lib/subscription";
 
 const page = async () => {
   const isPro = await checkSubscription("SERVER_COMPONENT");

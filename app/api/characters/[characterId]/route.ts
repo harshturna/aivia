@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
-import prismadb from "@/lib/prismadb";
 import { isGuestUser } from "@/lib/guest-user";
+import prismadb from "@/lib/prismadb";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { characterId: string } }
+  { params }: { params: Promise<{ characterId: string }> }
 ) {
   try {
+    const { characterId } = await params;
     const body = await req.json();
     const user = await getUser("ROUTE_HANDLER");
     const { src, name, description, instructions, seed, categoryId } = body;
 
-    if (!params.characterId) {
+    if (!characterId) {
       return new NextResponse("Character ID is required", { status: 400 });
     }
 
@@ -41,7 +42,7 @@ export async function PATCH(
 
     const character = await prismadb.character.update({
       where: {
-        id: params.characterId,
+        id: characterId,
         userId: user.id,
       },
       data: {
@@ -65,9 +66,10 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { characterId: string } }
+  { params }: { params: Promise<{ characterId: string }> }
 ) {
   try {
+    const { characterId } = await params;
     const user = await getUser("ROUTE_HANDLER");
     if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -84,7 +86,7 @@ export async function DELETE(
     const character = await prismadb.character.delete({
       where: {
         userId: user.id,
-        id: params.characterId,
+        id: characterId,
       },
     });
     return NextResponse.json(character);

@@ -3,9 +3,9 @@ import { z } from "zod";
 
 import {
   generateImages,
-  generateVideo,
   generateMusic,
   generateSoundEffect,
+  generateVideo,
 } from "@/lib/ai/capabilities";
 
 /**
@@ -85,7 +85,9 @@ export const agentTools = {
     inputSchema: z.object({
       prompt: z
         .string()
-        .describe("A description of the genre, instrumentation, tempo and mood."),
+        .describe(
+          "A description of the genre, instrumentation, tempo and mood."
+        ),
       durationSeconds: z
         .number()
         .int()

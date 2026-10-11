@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
+import { type DynamicToolUIPart, getToolName, type ToolUIPart } from "ai";
 import { AlertTriangle, Loader2, Search } from "lucide-react";
-import { getToolName, type ToolUIPart, type DynamicToolUIPart } from "ai";
+import Image from "next/image";
 
 const LABELS: Record<string, { running: string; done: string }> = {
   generate_image: { running: "Generating image", done: "Image" },
@@ -134,7 +134,8 @@ export const Artifact = ({
   }
 
   const output = part.output as
-    { url?: string; urls?: string[]; prompt?: string } | undefined;
+    | { url?: string; urls?: string[]; prompt?: string }
+    | undefined;
 
   if (!output) return null;
 

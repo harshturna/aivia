@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "./ui/button";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { MoveRight } from "lucide-react";
 import toast from "react-hot-toast";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "./ui/button";
 
 interface LogoutButtonProps {
   isGuestUser: boolean;
@@ -11,7 +11,7 @@ interface LogoutButtonProps {
 
 const LogoutButton = ({ isGuestUser }: LogoutButtonProps) => {
   const logoutHandler = async () => {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const { error } = await supabase.auth.signOut();
     if (!error) {
       window.location.href = "/";
@@ -23,7 +23,7 @@ const LogoutButton = ({ isGuestUser }: LogoutButtonProps) => {
   };
 
   const guestLogout = async () => {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const { error } = await supabase.auth.signOut();
     if (!error) {
       window.location.href = "/login";

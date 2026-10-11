@@ -1,11 +1,10 @@
 "use client";
 
-import { dataUrl, getImageSize } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import toast from "react-hot-toast";
-
+import type { PlaceholderValue } from "next/dist/shared/lib/get-img-props";
 import { CldImage, CldUploadWidget } from "next-cloudinary";
-import { PlaceholderValue } from "next/dist/shared/lib/get-img-props";
+import toast from "react-hot-toast";
+import { dataUrl, getImageSize } from "@/lib/utils";
 
 type MediaUploadProps = {
   onValueChange: (value: string) => void;
@@ -73,12 +72,16 @@ const MediaUploader = ({
               </div>
             </>
           ) : (
-            <div className="media-uploader_cta" onClick={() => open()}>
+            <button
+              type="button"
+              className="media-uploader_cta w-full"
+              onClick={() => open()}
+            >
               <div className="flex items-center justify-center flex-col gap-2">
                 <Plus width={28} height={28} />
-                <p className="font-medium">Click here to uploader image</p>
+                <p className="font-medium">Click here to upload an image</p>
               </div>
-            </div>
+            </button>
           )}
         </div>
       )}

@@ -183,7 +183,7 @@ body,
   }
 
   .input-field {
-    @apply rounded-[16px] border-2 border-border shadow-sm  text-foreground disabled:opacity-100 p-16-semibold h-[50px] md:h-[54px] focus-visible:ring-offset-0 px-4 py-3 focus-visible:ring-ring !important;
+    @apply rounded-[16px] border-2 border-border shadow-sm text-foreground disabled:opacity-100 p-16-semibold h-[50px] md:h-[54px] focus-visible:ring-offset-0 px-4 py-3 focus-visible:ring-ring !important;
   }
 
   .search-field {
@@ -195,11 +195,11 @@ body,
   }
 
   .select-field {
-    @apply w-full border-2 border-border shadow-sm  rounded-[16px] h-[50px] md:h-[54px] text-foreground p-16-semibold disabled:opacity-100 placeholder:text-muted-foreground px-4 py-3 focus:ring-offset-0 focus-visible:ring-ring focus:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
+    @apply w-full border-2 border-border shadow-sm rounded-[16px] h-[50px] md:h-[54px] text-foreground p-16-semibold disabled:opacity-100 placeholder:text-muted-foreground px-4 py-3 focus:ring-offset-0 focus-visible:ring-ring focus:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring !important;
   }
 
   .select-trigger {
-    @apply flex items-center  gap-2 py-5 capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ;
+    @apply flex items-center gap-2 py-5 capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
   }
 
   .select-item {
@@ -250,7 +250,7 @@ body,
   }
 
   .media-uploader_cta-image {
-    @apply rounded-[16px] bg-card  p-5 shadow-sm bg-card;
+    @apply rounded-[16px] bg-card p-5 shadow-sm bg-card;
   }
 
   /* Navbar Component */
@@ -286,7 +286,7 @@ body,
   }
 
   .sidebar-nav_element {
-    @apply flex-center p-16-semibold w-full whitespace-nowrap rounded-full bg-cover  transition-all hover:bg-accent hover:shadow-inner;
+    @apply flex-center p-16-semibold w-full whitespace-nowrap rounded-full bg-cover transition-all hover:bg-accent hover:shadow-inner;
   }
 
   .sidebar-link {

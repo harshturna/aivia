@@ -1,5 +1,5 @@
-import { Avatar } from "./ui/avatar";
 import { User } from "lucide-react";
+import { Avatar } from "./ui/avatar";
 
 /**
  * The old version took a `color` prop and interpolated `text-${color}-500`.
