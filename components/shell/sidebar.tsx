@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, PanelLeft, Plus } from "lucide-react";
+import { ChevronDown, PanelLeft, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -8,6 +8,7 @@ import Logo from "@/components/Logo";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 import { AccountMenu } from "./account-menu";
+import { usePalette } from "./command-palette";
 import { SIDEBAR_COOKIE } from "./constants";
 import { CreditsMeter } from "./credits-meter";
 import { NAV_ITEMS } from "./nav-items";
@@ -115,12 +116,14 @@ export function Sidebar({
           hint={
             <>
               <Kbd>⌘</Kbd>
-              <Kbd>N</Kbd>
+              <Kbd>⇧</Kbd>
+              <Kbd>O</Kbd>
             </>
           }
         >
           New session
         </Item>
+        <SearchItem rail={rail} />
       </div>
 
       <div className="space-y-0.5">
@@ -225,5 +228,30 @@ function Item({
       {!rail && <span className="truncate">{children}</span>}
       {!rail && hint && <span className="ml-auto flex gap-0.5">{hint}</span>}
     </Link>
+  );
+}
+
+function SearchItem({ rail }: { rail: boolean }) {
+  const open = usePalette();
+  return (
+    <button
+      type="button"
+      onClick={open}
+      title={rail ? "Search (⌘K)" : undefined}
+      aria-keyshortcuts="Meta+K"
+      className={cn(
+        "flex h-8 w-full items-center gap-2.5 rounded-control font-medium text-fg-2 transition-colors duration-150 hover:bg-surface-2 hover:text-fg",
+        rail ? "justify-center" : "px-2"
+      )}
+    >
+      <Search className="size-4 shrink-0" />
+      {!rail && <span>Search</span>}
+      {!rail && (
+        <span className="ml-auto flex gap-0.5">
+          <Kbd>⌘</Kbd>
+          <Kbd>K</Kbd>
+        </span>
+      )}
+    </button>
   );
 }

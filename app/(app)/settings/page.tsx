@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ShortcutList } from "@/components/shell/command-palette";
 import { ScreenBody, ScreenHeader } from "@/components/shell/screen";
 import { buttonVariants } from "@/components/ui/button";
 import { MAX_FREE_COUNTS } from "@/constants";
@@ -79,6 +80,14 @@ export default async function SettingsPage() {
                 <ManagePlanButton label="Upgrade to Pro" className="mt-4" />
               </>
             )}
+          </div>
+        </section>
+        <section id="shortcuts">
+          <h2 className="text-[13px] font-medium text-fg-2">
+            Keyboard shortcuts
+          </h2>
+          <div className="mt-3 rounded-panel border border-border bg-surface px-5 py-2">
+            <ShortcutList />
           </div>
         </section>
       </ScreenBody>
