@@ -9,7 +9,7 @@ import {
 } from "ai";
 
 import { guardGeneration } from "@/lib/ai/guard";
-import { agentTools } from "@/lib/ai/tools";
+import { createAgentTools } from "@/lib/ai/tools";
 
 // The agent can chain several media generations in one turn.
 export const maxDuration = 300;
@@ -65,7 +65,9 @@ export async function POST(req: Request) {
       system: SYSTEM_PROMPT,
       messages: await convertToModelMessages(messages),
       tools: {
-        ...agentTools,
+        // Session ids arrive with the Studio rebuild (TICKET-005/006); until then every
+        // asset is recorded against the user with no session.
+        ...createAgentTools({ userId: guard.user.id, sessionId: null }),
         // Server-side: Anthropic runs the search, so there is nothing to
         // execute here and no separate search API key to hold. The _20260209
         // variant filters results before they reach the context window.

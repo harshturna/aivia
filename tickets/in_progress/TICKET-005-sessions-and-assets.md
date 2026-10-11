@@ -8,9 +8,9 @@
       in the database); reload resumes it; a second account cannot read it (curl with the
       wrong session: 404).
 
-**Status:** pending
+**Status:** in-progress
 **Created:** 2026-10-10
-**Started:** —
+**Started:** 2026-10-10
 **Completed:** —
 **Area:** feature
 
@@ -45,13 +45,26 @@ the routes the Studio, the sidebar and the library read from (design §12).
 
 ## Progress log
 - 2026-10-10 — Opened from the revamp design (TICKET-002, `docs/design/revamp.md` §15).
+- 2026-10-10 — Started after TICKET-004. Schema, libraries, the tool factory written; the push blocked on the pooler port; session ended on the owner's usage limit with the work committed as is.
 
 ## Handoff
 Kept current while the ticket is in progress. Overwrite, do not append.
-- **State:** not started
-- **Blocked on:** nothing
-- **Next:** start
-- **Read first:** `docs/design/revamp.md`
+- **State:** written but not applied: the `Session` and `Asset` models are in
+  `prisma/schema.prisma` (validated, NOT pushed: `prisma db push` hangs on the transaction
+  pooler, port 6543 with `pgbouncer=true`; run it with `DATABASE_URL` rewritten to port 5432
+  and without the query string); `lib/sessions.ts`, `lib/assets.ts` and `lib/assets.test.ts`;
+  `lib/ai/tools.ts` is now a factory `createAgentTools({ userId, sessionId })` that records
+  every result as an Asset, and the agent route calls it with no session yet. Prisma client
+  not regenerated, so `tsc` fails on the new models until `npx prisma generate` runs after
+  the push.
+- **Blocked on:** the push (see State); the owner's usage limit ended the session here.
+- **Next:** push through port 5432, `npx prisma generate`, `npm run verify`; then the agent
+  route takes `sessionId` from the body, `ensureSession` + `saveMessages` in `onFinish`
+  (`toUIMessageStream` has `originalMessages` and `onFinish`), the title from
+  `titleFromBrief`; `/api/sessions`, `/api/sessions/[id]`, `/api/assets`, `/api/assets/[id]`;
+  housekeeping; the sidebar's recents; `/studio/[id]`.
+- **Read first:** `docs/design/revamp.md` §12, `prisma/schema.prisma`, `lib/ai/tools.ts`,
+  `app/api/agent/route.ts`
 
 ## Verification
 Filled in on completion. The command that was run, in a code block, and its result.
