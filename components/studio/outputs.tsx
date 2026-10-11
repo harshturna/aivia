@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { AudioRow } from "@/components/studio/audio-row";
+import { RevealImage } from "@/components/studio/reveal-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -201,7 +202,11 @@ function Images({
         )}
       >
         {urls.map((url) => (
-          <RevealImage key={url} url={url} alt={prompt || "Generated image"} />
+          <RevealedImage
+            key={url}
+            url={url}
+            alt={prompt || "Generated image"}
+          />
         ))}
       </div>
       <Caption prompt={prompt} onReusePrompt={onReusePrompt} />
@@ -209,20 +214,14 @@ function Images({
   );
 }
 
-function RevealImage({ url, alt }: { url: string; alt: string }) {
-  const [loaded, setLoaded] = useState(false);
+function RevealedImage({ url, alt }: { url: string; alt: string }) {
   return (
     <div className="group relative overflow-hidden rounded-media bg-surface">
-      {/* biome-ignore lint/performance/noImgElement: fal URLs, any size; next/image would proxy each */}
-      <img
+      <RevealImage
         src={url}
         alt={alt}
         loading="lazy"
-        onLoad={() => setLoaded(true)}
-        className={cn(
-          "block w-full transition-[filter,opacity] duration-500 ease-out",
-          loaded ? "opacity-100 blur-0" : "opacity-0 blur-md"
-        )}
+        className="block w-full"
       />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-[linear-gradient(to_top,rgb(10_10_11/.7),transparent)] p-2 pt-8 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
         <IconLink href={url} label="Open full size">
