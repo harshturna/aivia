@@ -1,9 +1,10 @@
 "use client";
 
 import { Menu } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { claimLocalSessions, isClaimPending } from "@/lib/guest-local";
 import { CommandPalette } from "./command-palette";
 import { ShellMenuContext } from "./menu-button";
 import { type ShellUsage, type ShellUser, Sidebar } from "./sidebar";
@@ -24,6 +25,13 @@ export function Shell({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  // a sign-up confirmed by email brings its guest work on the first signed-in load
+  useEffect(() => {
+    if (user.isGuest || !isClaimPending()) return;
+    void claimLocalSessions().then((id) => {
+      if (id) window.dispatchEvent(new Event("aivia:sessions-changed"));
+    });
+  }, [user.isGuest]);
   return (
     <ShellMenuContext.Provider value={() => setOpen(true)}>
       <CommandPalette>

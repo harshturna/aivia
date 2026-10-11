@@ -106,4 +106,30 @@ describe("readPlan", () => {
     );
     expect(r.notes).toBe("The market opens at six, every Friday.");
   });
+
+  it("keeps a numbered list written after the tools as the answer", () => {
+    const taglines = {
+      type: "text",
+      text: "Three taglines:\n1. Older than memory\n2. Listen to the roots\n3. Still growing",
+    };
+    const r = readPlan(
+      [
+        { type: "text", text: "Making the poster first." },
+        tool("output-available"),
+        taglines,
+      ],
+      true
+    );
+    expect(r.steps).toEqual([]);
+    expect(r.notes).toContain("2. Listen to the roots");
+  });
+
+  it("marks a call the run ended without finishing as failed", () => {
+    const r = readPlan(
+      [plan, tool("output-available"), tool("input-available")],
+      true
+    );
+    expect(r.steps.map((s) => s.status)).toEqual(["done", "failed", "done"]);
+    expect(r.failed).toBe(true);
+  });
 });

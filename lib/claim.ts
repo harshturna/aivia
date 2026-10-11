@@ -12,7 +12,13 @@ type Part = {
   mediaType?: string;
   output?: { url?: unknown; urls?: unknown; prompt?: unknown };
 };
-export type LocalMessage = { id: string; role: string; parts: Part[] };
+export type LocalMessage = {
+  id: string;
+  role: string;
+  parts: Part[];
+  /** What the brief was sent with (mode, parameters), for Retry (TICKET-043). */
+  metadata?: Record<string, unknown>;
+};
 export type LocalSession = {
   id: string;
   title: string;
@@ -47,7 +53,16 @@ export function sanitizeMessages(messages: unknown): LocalMessage[] {
           p.url.startsWith("data:")
         )
     );
-    out.push({ id: String(m.id), role: m.role, parts });
+    const metadata =
+      isObject(m.metadata) && JSON.stringify(m.metadata).length < 2000
+        ? m.metadata
+        : undefined;
+    out.push({
+      id: String(m.id),
+      role: m.role,
+      parts,
+      ...(metadata ? { metadata } : {}),
+    });
   }
   return out;
 }

@@ -28,7 +28,7 @@ import {
 } from "@/lib/ai/direct";
 import { publicImageUrl } from "@/lib/ai/fal";
 import { guardGeneration } from "@/lib/ai/guard";
-import { recordAsset } from "@/lib/assets";
+import { keepAsset } from "@/lib/assets";
 import { isGuestId } from "@/lib/guest-user";
 import {
   ensureSession,
@@ -191,7 +191,7 @@ async function run(
     });
     await Promise.all(
       urls.map((url) =>
-        recordAsset({
+        keepAsset({
           userId,
           sessionId,
           kind: "image",
@@ -213,7 +213,7 @@ async function run(
       prompt: motion,
       aspect,
     });
-    await recordAsset({
+    await keepAsset({
       userId,
       sessionId,
       kind: "video",
@@ -229,7 +229,7 @@ async function run(
   }
   if (mode === "video") {
     const url = await generateVideo(prompt, params.videoSeconds);
-    await recordAsset({
+    await keepAsset({
       userId,
       sessionId,
       kind: "video",
@@ -243,7 +243,7 @@ async function run(
   }
   if (mode === "music") {
     const url = await generateMusic(prompt, params.musicSeconds);
-    await recordAsset({
+    await keepAsset({
       userId,
       sessionId,
       kind: "music",
@@ -257,7 +257,7 @@ async function run(
   }
   const seconds = params.soundSeconds || undefined;
   const url = await generateSoundEffect(prompt, seconds);
-  await recordAsset({
+  await keepAsset({
     userId,
     sessionId,
     kind: "sound",

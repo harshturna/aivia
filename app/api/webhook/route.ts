@@ -46,17 +46,20 @@ export async function POST(req: Request) {
         return new NextResponse("User id is required", { status: 400 });
       }
 
-      // Record does not exist, create it
-      await prismadb.userSubscription.create({
-        data: {
-          userId: session?.metadata?.userId,
-          stripeSubscriptionId: subscription.id,
-          stripeCustomerId: subscription.customer as string,
-          stripePriceId: subscription.items.data[0].price.id,
-          stripeCurrentPeriodEnd: new Date(
-            subscription.current_period_end * 1000
-          ),
-        },
+      // A new subscription. A returning subscriber already has a row (one per user), so it
+      // takes the new subscription; a create would fail and Stripe would retry (TICKET-043).
+      const fields = {
+        stripeSubscriptionId: subscription.id,
+        stripeCustomerId: subscription.customer as string,
+        stripePriceId: subscription.items.data[0].price.id,
+        stripeCurrentPeriodEnd: new Date(
+          subscription.current_period_end * 1000
+        ),
+      };
+      await prismadb.userSubscription.upsert({
+        where: { userId: session.metadata.userId },
+        create: { userId: session.metadata.userId, ...fields },
+        update: fields,
       });
     }
   }

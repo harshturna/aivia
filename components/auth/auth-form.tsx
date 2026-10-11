@@ -2,14 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { ForestPlate } from "@/components/forest-plate";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useGuestLogin } from "@/hooks/useGuestLogin";
-import { claimLocalSessions } from "@/lib/guest-local";
+import {
+  claimLocalSessions,
+  listLocalSessions,
+  setClaimPending,
+} from "@/lib/guest-local";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -28,6 +32,10 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
   }>({});
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  // what this browser made as a guest, and whether it comes along (TICKET-043)
+  const [kept, setKept] = useState(0);
+  const [bring, setBring] = useState(true);
+  useEffect(() => setKept(listLocalSessions().length), []);
   const login = kind === "login";
 
   const submit = async (event: FormEvent) => {
@@ -59,13 +67,15 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
       });
       return;
     }
-    // A sign-up that needs email confirmation returns no session.
+    // A sign-up that needs email confirmation returns no session; the work comes along
+    // on the first signed-in load instead.
     if (!login && !data.session) {
+      setClaimPending(kept > 0 && bring);
       setSent(true);
       return;
     }
     // a guest's work kept in this browser moves into the account (TICKET-041)
-    const claimed = await claimLocalSessions();
+    const claimed = kept > 0 && bring ? await claimLocalSessions() : null;
     router.refresh();
     router.push(claimed ? `/studio/${claimed}` : "/studio");
   };
@@ -145,6 +155,20 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
             </p>
           )}
         </div>
+        {kept > 0 && (
+          <label className="flex items-start gap-2.5 text-[13.5px] leading-5 text-fg-2">
+            <input
+              type="checkbox"
+              checked={bring}
+              onChange={(e) => setBring(e.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-primary"
+            />
+            <span>
+              Bring the {kept === 1 ? "session" : `${kept} sessions`} you made
+              as a guest in this browser
+            </span>
+          </label>
+        )}
         {errors.form && (
           <p role="alert" className="text-[13px] text-poor">
             {errors.form}

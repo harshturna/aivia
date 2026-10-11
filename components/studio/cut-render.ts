@@ -80,10 +80,13 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, max: number) {
 }
 
 export async function renderCut(
-  pieces: CutPieces,
-  onProgress: (fraction: number) => void
+  all: CutPieces,
+  onProgress: (fraction: number) => void,
+  signal?: AbortSignal
 ): Promise<Rendered> {
   const mb = await import("mediabunny");
+  // the stills it draws are the stills it plans: six at most (TICKET-043)
+  const pieces = { ...all, stills: all.stills.slice(0, 6) };
 
   const clips = await Promise.all(
     pieces.clips.map(async (url) => {
@@ -93,18 +96,20 @@ export async function renderCut(
       });
       const track = await input.getPrimaryVideoTrack();
       if (!track) throw new Error("A clip has no picture");
-      return { track, seconds: await input.computeDuration() };
+      // the picture's length, not the longer of picture and sound
+      return { track, seconds: await track.computeDuration() };
     })
   );
   const stills = new Map<string, HTMLImageElement>();
   await Promise.all(
-    pieces.stills.slice(0, 6).map(async (s) => {
+    pieces.stills.map(async (s) => {
       stills.set(s.url, await loadImage(s.url));
     })
   );
 
   const first = clips[0]?.track;
-  const firstStill = stills.values().next().value;
+  // the first still decides the shape, whichever image happened to load first
+  const firstStill = pieces.stills[0] && stills.get(pieces.stills[0].url);
   const { width, height } = first
     ? fitSize(first.displayWidth, first.displayHeight)
     : fitSize(firstStill?.width ?? 1280, firstStill?.height ?? 720);
@@ -117,13 +122,15 @@ export async function renderCut(
       new mb.CanvasSink(c.track, { width, height, fit: "cover", poolSize: 2 })
   );
 
+  // sound is only checked when there is sound: a silent cut needs no audio encoder
+  const sound = Boolean(pieces.track);
   const mp4 =
     (await mb.canEncodeVideo("avc", { width, height })) &&
-    (await mb.canEncodeAudio("aac"));
+    (!sound || (await mb.canEncodeAudio("aac")));
   const webm =
     !mp4 &&
     (await mb.canEncodeVideo("vp9", { width, height })) &&
-    (await mb.canEncodeAudio("opus"));
+    (!sound || (await mb.canEncodeAudio("opus")));
   if (!mp4 && !webm)
     throw new Error(
       "This browser cannot encode video. Try a recent Chrome, Edge or Safari."
@@ -185,6 +192,10 @@ export async function renderCut(
 
   const frames = Math.max(1, Math.round(duration * CUT.fps));
   for (let f = 0; f < frames; f++) {
+    if (signal?.aborted) {
+      await output.cancel();
+      throw new DOMException("The cut was cancelled", "AbortError");
+    }
     const t = f / CUT.fps;
     ctx.globalAlpha = 1;
     ctx.fillStyle = bg;

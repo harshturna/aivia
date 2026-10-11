@@ -25,6 +25,18 @@ export interface RecordAssetInput {
   durationSec?: number | null;
 }
 
+/**
+ * Records a generation that already succeeded (and was paid for). The output still reaches
+ * the person if the library write fails; it is only missing from the library (TICKET-043).
+ */
+export async function keepAsset(input: RecordAssetInput): Promise<void> {
+  try {
+    await recordAsset(input);
+  } catch (error) {
+    console.error("[ASSET_RECORD]", error);
+  }
+}
+
 export async function recordAsset(input: RecordAssetInput): Promise<Asset> {
   if (isGuestId(input.userId))
     return {

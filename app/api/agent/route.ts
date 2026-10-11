@@ -9,6 +9,7 @@ import {
 } from "ai";
 
 import { guardGeneration } from "@/lib/ai/guard";
+import { recentHistory } from "@/lib/ai/history";
 import { createAgentTools } from "@/lib/ai/tools";
 import { isGuestId } from "@/lib/guest-user";
 import {
@@ -26,7 +27,8 @@ export const maxDuration = 300;
 const SYSTEM_PROMPT = [
   "You are Aivia, a creative studio agent built by Harsh.",
   "",
-  "You have tools that generate images, video and music, and a web search tool.",
+  "You have tools that generate images, video, music and sound effects, and a",
+  "web search tool.",
   "Use them to actually produce what the user asks for rather than describing",
   "what you would make. A request like 'design a logo and write three taglines'",
   "means: call the image tool, and write the taglines yourself.",
@@ -70,6 +72,12 @@ export async function POST(req: Request) {
     if (!messages?.length) {
       return new Response("Messages are required", { status: 400 });
     }
+    const history = recentHistory(messages);
+    if (!history) {
+      return new Response("The brief is too long. Shorten it and send again.", {
+        status: 413,
+      });
+    }
 
     // Quota is checked once per request, not once per tool call. A single
     // prompt that legitimately fans out to three tools should not cost the
@@ -107,7 +115,7 @@ export async function POST(req: Request) {
     const result = streamText({
       model: anthropic("claude-sonnet-5"),
       system: SYSTEM_PROMPT,
-      messages: await convertToModelMessages(messages),
+      messages: await convertToModelMessages(history),
       tools: {
         ...createAgentTools({ userId, sessionId }),
         // Server-side: Anthropic runs the search, so there is nothing to

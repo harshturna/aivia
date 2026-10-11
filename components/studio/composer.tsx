@@ -19,6 +19,7 @@ import {
   useState,
 } from "react";
 import { Pill } from "@/components/ui/pill";
+import { ANIMATE_BRIEF } from "@/lib/ai/direct";
 import { cn } from "@/lib/utils";
 
 /**
@@ -146,8 +147,11 @@ export function Composer({
     };
   }, [menuOpen]);
 
+  // In Video mode an attached image is animated as it is: it needs no words (TICKET-043)
+  const stillOnly =
+    mode === "video" && (files ?? []).some((f) => f.type.startsWith("image/"));
   const send = () => {
-    const trimmed = text.trim();
+    const trimmed = text.trim() || (stillOnly ? ANIMATE_BRIEF : "");
     if (!trimmed || busy || disabled) return;
     onSubmit(trimmed, mode, files ?? []);
     setText("");
@@ -298,7 +302,7 @@ export function Composer({
             <button
               type="submit"
               aria-label="Send"
-              disabled={!text.trim() || disabled}
+              disabled={(!text.trim() && !stillOnly) || disabled}
               className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground transition-[opacity,transform] duration-150 active:scale-[.96] disabled:opacity-30"
             >
               <ArrowUp className="size-4" strokeWidth={2} />

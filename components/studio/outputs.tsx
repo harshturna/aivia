@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
 
 interface OutputActions {
+  /** The run is still working; a part left unfinished by a run that ended was stopped. */
+  active?: boolean;
   onReusePrompt?: (prompt: string) => void;
   onRetry?: () => void;
 }
@@ -52,11 +54,21 @@ export function ToolOutput({
 
   if (name === "code_execution") return null;
 
+  const what = RUNNING_LABEL[name]?.replace(/^\w+ing /, "") ?? name;
   if (part.state === "output-error") {
     return (
+      <Failed what={what} reason={part.errorText} onRetry={actions.onRetry} />
+    );
+  }
+  // Stop, a closed tab or a dropped connection leaves a part without its result: say so
+  // rather than showing it as still on its way (TICKET-043)
+  const unfinished =
+    part.state === "input-streaming" || part.state === "input-available";
+  if (unfinished && actions.active === false && name !== "web_search") {
+    return (
       <Failed
-        what={RUNNING_LABEL[name]?.replace(/^\w+ing /, "") ?? name}
-        reason={part.errorText}
+        what={what}
+        headline="Stopped before it finished."
         onRetry={actions.onRetry}
       />
     );
@@ -64,6 +76,7 @@ export function ToolOutput({
 
   if (name === "web_search") {
     if (part.state !== "output-available") {
+      if (actions.active === false) return null;
       return (
         <p className="flex items-center gap-2 text-[13px] text-fg-2">
           <Search className="size-3.5 animate-pulse" /> Searching the web…
@@ -79,8 +92,7 @@ export function ToolOutput({
     return <Sources results={results} />;
   }
 
-  const running =
-    part.state === "input-streaming" || part.state === "input-available";
+  const running = unfinished;
   const prompt =
     (part.output as Output | undefined)?.prompt ?? input?.prompt ?? "";
 
@@ -364,10 +376,12 @@ function Sources({ results }: { results: SearchResult[] }) {
 
 function Failed({
   what,
+  headline,
   reason,
   onRetry,
 }: {
   what: string;
+  headline?: string;
   reason?: string;
   onRetry?: () => void;
 }) {
@@ -375,7 +389,9 @@ function Failed({
     <div className="flex items-start gap-3 rounded-media border border-border bg-surface p-4 text-[13px]">
       <AlertTriangle className="mt-0.5 size-4 shrink-0 text-poor" />
       <div className="min-w-0 flex-1">
-        <p className="text-fg">Could not make {what || "the output"}.</p>
+        <p className="text-fg">
+          {headline ?? `Could not make ${what || "the output"}.`}
+        </p>
         {reason && <p className="mt-1 line-clamp-3 text-mute">{reason}</p>}
       </div>
       {onRetry && (

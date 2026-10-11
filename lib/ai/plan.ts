@@ -3,7 +3,8 @@
  * wrote as numbered steps, each step's status, the outputs, and the notes.
  *
  * The agent is asked to open with its plan as a numbered list. The first text block that
- * holds such a list is the plan; its numbered lines become steps and the rest of the text
+ * holds such a list, before any tool call, is the plan (a list written after the tools, like
+ * three taglines, is part of the answer); its numbered lines become steps and the rest of the text
  * becomes notes. Tool calls are matched to steps by order, which is how the agent works
  * through them; a plan with more steps than tool calls finishes its text-only steps when
  * the run finishes.
@@ -75,10 +76,11 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
   const notes: string[] = [];
   let planFound = false;
   let text = "";
+  const tools: PartLike[] = [];
 
   const flush = () => {
     if (!text) return;
-    if (!planFound) {
+    if (!planFound && tools.length === 0) {
       const split = splitPlan(text);
       if (split.steps.length) {
         planFound = true;
@@ -92,7 +94,6 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
     text = "";
   };
 
-  const tools: PartLike[] = [];
   for (const part of parts) {
     if (part.type === "text") {
       text += part.text ?? "";
@@ -109,9 +110,15 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
   const finishedTools = tools.filter(
     (t) => t.state === "output-available" || t.state === "output-error"
   );
+  // an error, or a call the run ended without finishing (stopped), did not do its step
   const failedAt = new Set(
     tools
-      .map((t, i) => (t.state === "output-error" ? i : -1))
+      .map((t, i) =>
+        t.state === "output-error" ||
+        (finished && t.state !== "output-available")
+          ? i
+          : -1
+      )
       .filter((i) => i >= 0)
   );
 

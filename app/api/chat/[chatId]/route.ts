@@ -7,6 +7,7 @@ import {
   type UIMessage,
 } from "ai";
 import { guardGeneration } from "@/lib/ai/guard";
+import { recentHistory } from "@/lib/ai/history";
 import { isGuestId } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
 import { messageText } from "@/lib/session-text";
@@ -25,6 +26,12 @@ export async function POST(
 
     if (!messages?.length) {
       return new Response("Input is required", { status: 400 });
+    }
+    const history = recentHistory(messages);
+    if (!history) {
+      return new Response("The brief is too long. Shorten it and send again.", {
+        status: 413,
+      });
     }
 
     const guard = await guardGeneration();
@@ -68,7 +75,7 @@ export async function POST(
     const result = streamText({
       model: anthropic("claude-sonnet-5"),
       system,
-      messages: await convertToModelMessages(messages),
+      messages: await convertToModelMessages(history),
       providerOptions: {
         anthropic: {
           // Roleplay wants voice, not deliberation. Disabling thinking was only

@@ -14,6 +14,15 @@ const forest = GUEST_EXAMPLES[0].messages as unknown as LocalMessage[];
 const ID = "11111111-2222-4333-8444-555555555555";
 
 describe("sanitizeMessages", () => {
+  it("keeps what a brief was sent with, and drops oversized metadata", () => {
+    const [kept, dropped] = sanitizeMessages([
+      { id: "a", role: "user", parts: [], metadata: { mode: "image" } },
+      { id: "b", role: "user", parts: [], metadata: { x: "y".repeat(3000) } },
+    ]);
+    expect(kept.metadata).toEqual({ mode: "image" });
+    expect(dropped.metadata).toBeUndefined();
+  });
+
   it("drops pasted data URLs and keeps real addresses", () => {
     const out = sanitizeMessages([
       {

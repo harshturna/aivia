@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Upload } from "lucide-react";
-import { domMax, LazyMotion, m } from "motion/react";
+import { domMax, LazyMotion, MotionConfig, m } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -28,7 +28,6 @@ import { getLocalSession, saveLocalSession } from "@/lib/guest-local";
 import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 
-/** Fired when a run ends so the sidebar's recents can reload. */
 /** A message without pasted (data URL) attachments; real addresses stay. */
 function withoutPastedFiles(message: UIMessage): UIMessage {
   return {
@@ -85,6 +84,16 @@ const EXAMPLES = [
 type Limit = "free" | "demo" | null;
 
 /**
+ * What a brief was sent with, kept on the message itself, so Retry repeats the same request
+ * (an Image or Animate run is not retried by the agent) even after a reload (TICKET-043).
+ */
+type Sent = { mode: ComposerMode; params?: ModeParams; scene?: string };
+function sentWith(message: UIMessage): Sent {
+  const meta = message.metadata as Partial<Sent> | undefined;
+  return meta?.mode ? (meta as Sent) : { mode: "auto" };
+}
+
+/**
  * The Studio (design §5): a new session's empty state, then every exchange as a run, the
  * composer floating at the foot. The chat id is the session id; the agent route saves it.
  */
@@ -127,8 +136,13 @@ export function StudioClient({
   const [title, setTitle] = useState(initialTitle);
   const [dragging, setDragging] = useState(false);
   const started = useRef<Record<string, number>>({});
-  const sentMode = useRef<ComposerMode>("auto");
-  const modes = useRef<Record<string, ComposerMode>>({});
+  // A guest's session is kept in this browser under this id once they send something; an
+  // example they open is forked to a fresh id, so the example itself is never saved and a
+  // reload brings back their own run (TICKET-043).
+  const [localKey, setLocalKey] = useState<string | null>(
+    isGuest ? (localId ?? (isNew ? id : null)) : null
+  );
+  const touched = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -166,8 +180,15 @@ export function StudioClient({
     },
     onError: (err) => {
       const message = err?.message ?? "";
-      if (message.includes("Free trial")) setLimit("free");
-      else if (message.includes("limit reached")) setLimit("demo");
+      const refused = message.includes("Free trial")
+        ? "free"
+        : message.includes("limit reached")
+          ? "demo"
+          : null;
+      if (!refused) return;
+      setLimit(refused);
+      // a refused first send made no session: its address would not reopen
+      if (isNew && !localId) window.history.replaceState(null, "", "/studio");
     },
   });
 
@@ -177,10 +198,8 @@ export function StudioClient({
   // Stamp each new brief with the time it was sent, for the elapsed clock.
   useEffect(() => {
     const last = messages[messages.length - 1];
-    if (busy && last?.role === "user" && !started.current[last.id]) {
+    if (busy && last?.role === "user" && !started.current[last.id])
       started.current[last.id] = Date.now();
-      modes.current[last.id] = sentMode.current;
-    }
   }, [messages, busy]);
 
   // Follow the run as it streams.
@@ -255,10 +274,12 @@ export function StudioClient({
             bitmap.close();
           } catch {}
       }
-      sentMode.current = chosen;
+      touched.current = true;
+      const sentAs: Sent = { mode: chosen, params: sent, scene: extra?.scene };
       sendMessage(
         {
           text,
+          metadata: sentAs,
           files: extra?.still
             ? [
                 {
@@ -269,9 +290,16 @@ export function StudioClient({
               ]
             : list,
         },
-        { body: { mode: chosen, params: sent, scene: extra?.scene } }
+        { body: sentAs }
       );
-      setFiles([]);
+      // an Animate carries its own still; what is attached waits for the next brief
+      if (!extra?.still) setFiles([]);
+      // a guest who adds to an example keeps their own copy under a new id
+      if (isGuest && !localKey) {
+        const fork = crypto.randomUUID();
+        setLocalKey(fork);
+        window.history.replaceState(null, "", `/studio?local=${fork}`);
+      }
       if (messages.length === 0) {
         setTitle(titleFromBrief(text));
         // A new session gets its address on the first send, so a reload resumes it. A guest's
@@ -296,9 +324,20 @@ export function StudioClient({
       messages.length,
       isNew,
       isGuest,
+      localKey,
       id,
     ]
   );
+
+  // Retry repeats the last brief exactly as it was sent: same mode, same parameters.
+  const retry = useCallback(() => {
+    const users = messages.filter((x) => x.role === "user");
+    const last = users[users.length - 1];
+    if (!last || busy) return;
+    touched.current = true;
+    clearError();
+    void regenerate({ body: sentWith(last) });
+  }, [messages, busy, clearError, regenerate]);
 
   // Animate a still: a Video request carrying the image, in the image's own shape.
   const animate = useCallback(
@@ -336,15 +375,15 @@ export function StudioClient({
     setTitle(local.title);
   }, [isGuest, localId, setMessages]);
   useEffect(() => {
-    if (!isGuest || busy || messages.length === 0) return;
+    if (!localKey || !touched.current || busy || messages.length === 0) return;
     saveLocalSession({
-      id,
+      id: localKey,
       title,
       messages: messages as unknown as Parameters<
         typeof saveLocalSession
       >[0]["messages"],
     });
-  }, [isGuest, busy, messages, title, id]);
+  }, [localKey, busy, messages, title]);
 
   // From the library: animate the asset once, on arrival (TICKET-039). Scheduled and
   // cancelled on teardown, so a mount that is torn down at once (React's development double
@@ -355,11 +394,9 @@ export function StudioClient({
     const timer = window.setTimeout(() => {
       animatedOnArrival.current = true;
       animate(initialAnimate);
-      // a guest's run has no address; drop the query so a reload does not spend again
-      if (isGuest) window.history.replaceState(null, "", "/studio");
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [initialAnimate, animate, isGuest]);
+  }, [initialAnimate, animate]);
 
   const reuse = useCallback((prompt: string) => {
     setInput(prompt);
@@ -399,148 +436,150 @@ export function StudioClient({
   return (
     <StudioActionsProvider value={actions}>
       <LazyMotion features={domMax}>
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: the drop target is the page; the composer's button is the keyboard path */}
-        <div
-          className="relative flex min-h-dvh flex-col lg:min-h-dvh"
-          onDragOver={(event) => {
-            if (!event.dataTransfer.types.includes("Files")) return;
-            event.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={(event) => {
-            if (event.currentTarget === event.target) setDragging(false);
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            setDragging(false);
-            setFiles((current) =>
-              acceptFiles(current, Array.from(event.dataTransfer.files))
-            );
-          }}
-        >
-          <ScreenHeader
-            title={
-              <EditableTitle
-                id={id}
-                title={title}
-                onChange={setTitle}
-                enabled={!empty && !isGuest}
-              />
-            }
+        <MotionConfig reducedMotion="user">
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: the drop target is the page; the composer's button is the keyboard path */}
+          <div
+            className="relative flex min-h-dvh flex-col lg:min-h-dvh"
+            onDragOver={(event) => {
+              if (!event.dataTransfer.types.includes("Files")) return;
+              event.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={(event) => {
+              if (event.currentTarget === event.target) setDragging(false);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragging(false);
+              setFiles((current) =>
+                acceptFiles(current, Array.from(event.dataTransfer.files))
+              );
+            }}
           >
-            {busy && (
-              <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
-                <span className="size-1.5 animate-pulse rounded-full bg-sun" />
-                Running
-              </span>
-            )}
-            {!empty && !busy && !isGuest && (
-              <DeleteSession onConfirm={remove} />
-            )}
-          </ScreenHeader>
+            <ScreenHeader
+              title={
+                <EditableTitle
+                  id={id}
+                  title={title}
+                  onChange={setTitle}
+                  enabled={!empty && !isGuest}
+                />
+              }
+            >
+              {busy && (
+                <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
+                  <span className="size-1.5 animate-pulse rounded-full bg-sun" />
+                  Running
+                </span>
+              )}
+              {!empty && !busy && !isGuest && (
+                <DeleteSession onConfirm={remove} />
+              )}
+            </ScreenHeader>
 
-          {empty ? (
-            <div className="flex flex-1 flex-col items-center justify-center px-6 pb-24">
-              <div className="w-full max-w-[720px]">
-                <h2 className="text-center font-display text-[clamp(36px,4vw,54px)] font-medium leading-[1.04] tracking-[-0.01em]">
-                  What are we making?
-                </h2>
-                <m.div layoutId="composer" className="mt-8">
-                  {composer}
-                </m.div>
-                <ul className="mt-4 flex flex-wrap justify-center gap-2">
-                  {EXAMPLES.map((example) => (
-                    <li key={example}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInput(example);
-                          composerRef.current?.focus();
-                        }}
-                        className="rounded-full border border-border px-3 py-1.5 text-[12.5px] leading-[18px] text-fg-2 transition-colors duration-150 hover:border-border-strong hover:text-fg"
-                      >
-                        {example}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="flex-1 px-6 pb-48 pt-8">
-                <div className="mx-auto max-w-[760px] space-y-10">
-                  {runs.map((run, i) => {
-                    const last = i === runs.length - 1;
-                    return (
-                      <div
-                        key={run.user.id}
-                        className={cn(i > 0 && "border-t border-border pt-10")}
-                      >
-                        <Run
-                          user={run.user}
-                          assistant={run.assistant}
-                          active={last && busy}
-                          startedAt={started.current[run.user.id]}
-                          waitingLabel={
-                            (modes.current[run.user.id] ?? "auto") === "auto"
-                              ? "Planning…"
-                              : "Generating…"
-                          }
-                          onReusePrompt={reuse}
-                          onRetry={last ? () => regenerate() : undefined}
-                        />
-                      </div>
-                    );
-                  })}
-                  {isGuest && !busy && runs.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-media border border-border bg-surface p-4 text-[13.5px]">
-                      <span className="max-w-[52ch] text-fg-2">
-                        This lives only in this browser. Create an account to
-                        keep it, and everything you make next.
-                      </span>
-                      <Button asChild size="sm">
-                        <Link href="/signup">Create an account</Link>
-                      </Button>
-                    </div>
-                  )}
-                  {error && !limit && (
-                    <div className="flex items-center justify-between gap-4 rounded-media border border-border bg-surface p-4 text-[13px]">
-                      <span className="text-fg-2">
-                        The run stopped before it finished.
-                      </span>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => regenerate()}
-                      >
-                        Try again
-                      </Button>
-                    </div>
-                  )}
-                  {limit && (
-                    <LimitMessage kind={limit} onUpgrade={proModal.onOpen} />
-                  )}
-                  <div ref={bottomRef} className="scroll-mb-48" />
+            {empty ? (
+              <div className="flex flex-1 flex-col items-center justify-center px-6 pb-24">
+                <div className="w-full max-w-[720px]">
+                  <h2 className="text-center font-display text-[clamp(36px,4vw,54px)] font-medium leading-[1.04] tracking-[-0.01em]">
+                    What are we making?
+                  </h2>
+                  <m.div layoutId="composer" className="mt-8">
+                    {composer}
+                  </m.div>
+                  <ul className="mt-4 flex flex-wrap justify-center gap-2">
+                    {EXAMPLES.map((example) => (
+                      <li key={example}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInput(example);
+                            composerRef.current?.focus();
+                          }}
+                          className="rounded-full border border-border px-3 py-1.5 text-[12.5px] leading-[18px] text-fg-2 transition-colors duration-150 hover:border-border-strong hover:text-fg"
+                        >
+                          {example}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-              <div className="sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10">
-                <m.div layoutId="composer" className="mx-auto max-w-[760px]">
-                  {composer}
-                </m.div>
-              </div>
-            </>
-          )}
+            ) : (
+              <>
+                <div className="flex-1 px-6 pb-48 pt-8">
+                  <div className="mx-auto max-w-[760px] space-y-10">
+                    {runs.map((run, i) => {
+                      const last = i === runs.length - 1;
+                      return (
+                        <div
+                          key={run.user.id}
+                          className={cn(
+                            i > 0 && "border-t border-border pt-10"
+                          )}
+                        >
+                          <Run
+                            user={run.user}
+                            assistant={run.assistant}
+                            active={last && busy}
+                            startedAt={started.current[run.user.id]}
+                            waitingLabel={
+                              sentWith(run.user).mode === "auto"
+                                ? "Planning…"
+                                : "Generating…"
+                            }
+                            onReusePrompt={reuse}
+                            onRetry={last && !busy ? retry : undefined}
+                          />
+                        </div>
+                      );
+                    })}
+                    {localKey && !busy && runs.length > 0 && (
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-media border border-border bg-surface p-4 text-[13.5px]">
+                        <span className="max-w-[52ch] text-fg-2">
+                          This lives only in this browser. Create an account to
+                          keep it, and everything you make next.
+                        </span>
+                        <Button asChild size="sm">
+                          <Link href="/signup">Create an account</Link>
+                        </Button>
+                      </div>
+                    )}
+                    {error && !limit && (
+                      <div className="flex items-center justify-between gap-4 rounded-media border border-border bg-surface p-4 text-[13px]">
+                        <span className="text-fg-2">
+                          {error.message.includes("too long")
+                            ? "The brief is too long. Shorten it and send again."
+                            : "The run stopped before it finished."}
+                        </span>
+                        <Button variant="secondary" size="sm" onClick={retry}>
+                          Try again
+                        </Button>
+                      </div>
+                    )}
+                    {limit && (
+                      <LimitMessage kind={limit} onUpgrade={proModal.onOpen} />
+                    )}
+                    <div ref={bottomRef} className="scroll-mb-48" />
+                  </div>
+                </div>
+                <div className="sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10">
+                  <m.div layoutId="composer" className="mx-auto max-w-[760px]">
+                    {composer}
+                  </m.div>
+                </div>
+              </>
+            )}
 
-          {dragging && (
-            <div className="pointer-events-none absolute inset-3 z-30 grid place-items-center rounded-window border border-dashed border-border-strong bg-bg/80 backdrop-blur-sm">
-              <p className="flex items-center gap-2 text-[14px] text-fg-2">
-                <Upload className="size-4" /> Drop images or a document to
-                attach
-              </p>
-            </div>
-          )}
-        </div>
+            {dragging && (
+              <div className="pointer-events-none absolute inset-3 z-30 grid place-items-center rounded-window border border-dashed border-border-strong bg-bg/80 backdrop-blur-sm">
+                <p className="flex items-center gap-2 text-[14px] text-fg-2">
+                  <Upload className="size-4" /> Drop images or a document to
+                  attach
+                </p>
+              </div>
+            )}
+          </div>
+        </MotionConfig>
       </LazyMotion>
     </StudioActionsProvider>
   );

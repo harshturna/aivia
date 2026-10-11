@@ -63,6 +63,27 @@ export function clearLocalSessions() {
   } catch {}
 }
 
+const PENDING = "aivia:claim-pending";
+
+/**
+ * A sign-up confirmed by email lands in the app without the form, so the choice to bring
+ * this browser's work is kept here and honoured on the first signed-in load (TICKET-043).
+ */
+export function setClaimPending(pending: boolean) {
+  try {
+    if (pending) window.localStorage.setItem(PENDING, "1");
+    else window.localStorage.removeItem(PENDING);
+  } catch {}
+}
+
+export function isClaimPending() {
+  try {
+    return window.localStorage.getItem(PENDING) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /** After sign-in or sign-up: move this browser's guest work into the account. */
 export async function claimLocalSessions(): Promise<string | null> {
   const sessions = listLocalSessions();
@@ -76,6 +97,7 @@ export async function claimLocalSessions(): Promise<string | null> {
     if (!res.ok) return null;
     const { ids } = (await res.json()) as { ids: string[] };
     clearLocalSessions();
+    setClaimPending(false);
     return ids[0] ?? null;
   } catch {
     return null;

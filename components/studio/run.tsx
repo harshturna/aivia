@@ -149,6 +149,7 @@ export function Run({
             <ToolOutput
               key={part.toolCallId}
               part={part}
+              active={active}
               onReusePrompt={onReusePrompt}
               onRetry={onRetry}
             />

@@ -32,7 +32,12 @@ export function Recents({
       setLocal(listLocalSessions().map((s) => ({ id: s.id, title: s.title })));
     read();
     window.addEventListener(LOCAL_CHANGED, read);
-    return () => window.removeEventListener(LOCAL_CHANGED, read);
+    // another tab saved or claimed: storage events fire only in the other tabs
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener(LOCAL_CHANGED, read);
+      window.removeEventListener("storage", read);
+    };
   }, [isGuest]);
 
   const load = useCallback(async () => {

@@ -11,7 +11,7 @@ import {
   SFX_MODEL,
   VIDEO_MODEL,
 } from "@/lib/ai/capabilities";
-import { recordAsset } from "@/lib/assets";
+import { keepAsset } from "@/lib/assets";
 
 /**
  * The agent's toolset, built per request so each tool knows whose session it is writing
@@ -67,7 +67,7 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
         const urls = await generateImages({ prompt, amount });
         await Promise.all(
           urls.map((url) =>
-            recordAsset({
+            keepAsset({
               userId,
               sessionId,
               kind: "image",
@@ -101,7 +101,7 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
       execute: async ({ prompt, durationSeconds }) => {
         spend(1);
         const url = await generateVideo(prompt, durationSeconds);
-        await recordAsset({
+        await keepAsset({
           userId,
           sessionId,
           kind: "video",
@@ -140,7 +140,7 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
       execute: async ({ prompt, durationSeconds }) => {
         spend(1);
         const url = await generateMusic(prompt, durationSeconds);
-        await recordAsset({
+        await keepAsset({
           userId,
           sessionId,
           kind: "music",
@@ -176,7 +176,7 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
       execute: async ({ prompt, durationSeconds }) => {
         spend(1);
         const url = await generateSoundEffect(prompt, durationSeconds);
-        await recordAsset({
+        await keepAsset({
           userId,
           sessionId,
           kind: "sound",

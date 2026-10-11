@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Download, Film, Scissors } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -85,6 +85,9 @@ function CutBody({
     },
     [url]
   );
+  // closing the dialog stops a cut in progress (TICKET-043)
+  const running = useRef<AbortController | null>(null);
+  useEffect(() => () => running.current?.abort(), []);
 
   const lanes = useMemo(
     () =>
@@ -100,7 +103,7 @@ function CutBody({
           pieces.clips.length ? "End card" : "Stills",
           pieces.clips.length
             ? `The poster${pieces.lines[1] ? `, “${pieces.lines[1]}”` : ""}`
-            : `${pieces.stills.length} stills, slowly moving`,
+            : `${Math.min(pieces.stills.length, 6)} stills, slowly moving`,
         ],
         pieces.track && [
           pieces.track.kind === "music" ? "Score" : "Sound",
@@ -111,20 +114,29 @@ function CutBody({
   );
 
   const render = async () => {
+    if (running.current) return;
+    const controller = new AbortController();
+    running.current = controller;
     setSaved("no");
     setState({ at: "rendering", progress: 0 });
     try {
       const { renderCut } = await import("./cut-render");
-      const result = await renderCut(pieces, (progress) =>
-        setState({ at: "rendering", progress })
+      const result = await renderCut(
+        pieces,
+        (progress) => setState({ at: "rendering", progress }),
+        controller.signal
       );
+      if (controller.signal.aborted) return;
       setState({ at: "done", result, url: URL.createObjectURL(result.blob) });
     } catch (error) {
+      if (controller.signal.aborted) return;
       setState({
         at: "failed",
         message:
           error instanceof Error ? error.message : "The cut could not be made.",
       });
+    } finally {
+      if (running.current === controller) running.current = null;
     }
   };
 
