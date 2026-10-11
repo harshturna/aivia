@@ -84,6 +84,12 @@ export async function renderCut(
   onProgress: (fraction: number) => void,
   signal?: AbortSignal
 ): Promise<Rendered> {
+  // browsers offer their video encoder only on a secure page: over plain http on a network
+  // address it is missing, whatever the browser (TICKET-059)
+  if (!window.isSecureContext)
+    throw new Error(
+      "Cutting needs a secure page. Open Aivia over https, or on localhost, and try again."
+    );
   const mb = await import("mediabunny");
   // the stills it draws are the stills it plans: six at most (TICKET-043)
   const pieces = { ...all, stills: all.stills.slice(0, 6) };
