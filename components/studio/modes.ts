@@ -25,8 +25,9 @@ export const MODES: Array<{
   {
     id: "video",
     label: "Video",
-    hint: "A short clip, six seconds and up",
-    placeholder: "Describe the scene and the motion…",
+    hint: "A short clip, or attach a still to bring it to life",
+    placeholder:
+      "Describe the scene and the motion, or attach a still to animate…",
   },
   {
     id: "music",

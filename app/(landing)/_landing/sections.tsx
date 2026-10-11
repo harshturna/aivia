@@ -17,7 +17,7 @@ export function Modes() {
       <h2 className={H2}>Need just one thing? Ask for just that.</h2>
       <p className={LEDE}>
         Switch to Image, Video, Music or Sound and Aivia makes exactly that,
-        with no plan in between.
+        with no plan in between. Give Video a still and it comes to life.
       </p>
       <div className="mt-12 grid gap-x-4 gap-y-8 md:grid-cols-2">
         <Plate title="Image" caption={still.prompt}>

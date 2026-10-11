@@ -306,6 +306,15 @@ Image, Video, Music and Sound skip the planner: the brief and the parameters go 
 back. The run renders the same way with no Plan section. This is cheaper and deterministic,
 and it is what the old per-tool pages did, now inside a session.
 
+**Animate (TICKET-039).** Video mode with a still attached animates the still instead of
+generating from text: five seconds at 720p in the still's own shape (16:9, 9:16 or square),
+gentle natural motion with a steady camera, $0.15 a clip, charged as one generation. Three
+ways in: the Animate control on any image in a run (on hover, beside open and download), the
+Animate button in the library's lightbox (opens a new session and animates on arrival), and
+attaching a photo in Video mode. The brief reads "Animate this still"; the still's own prompt
+travels as the scene, so the motion keeps it. The clip keeps the still as its poster and
+shows in its own shape.
+
 ### 5.5 Limits and errors
 
 At the free limit the composer is disabled and the run column ends with an inline message:

@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   Download,
+  Film,
   Heart,
   MessageSquare,
   Trash2,
@@ -240,6 +241,13 @@ export function Lightbox({
             >
               <Heart className={cn(favorite && "fill-current")} />
               {favorite ? "Favourite" : "Add to favourites"}
+            </Button>
+          )}
+          {asset.kind === "image" && (
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/studio?animate=${asset.id}`}>
+                <Film /> Animate
+              </Link>
             </Button>
           )}
           {asset.kind === "image" && (

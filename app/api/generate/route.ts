@@ -5,6 +5,9 @@ import {
   type UIMessage,
 } from "ai";
 import {
+  ANIMATE_MODEL,
+  ANIMATE_SECONDS,
+  animateImage,
   generateImages,
   generateMusic,
   generateSoundEffect,
@@ -16,10 +19,14 @@ import {
 } from "@/lib/ai/capabilities";
 import {
   ASPECT_SIZES,
+  animateAspect,
+  animatePrompt,
   costOf,
   DirectRequest,
+  imageInBrief,
   TOOL_FOR_MODE,
 } from "@/lib/ai/direct";
+import { publicImageUrl } from "@/lib/ai/fal";
 import { guardGeneration } from "@/lib/ai/guard";
 import { recordAsset } from "@/lib/assets";
 import { isGuestId } from "@/lib/guest-user";
@@ -47,6 +54,8 @@ export async function POST(req: Request) {
       messages?: UIMessage[];
       mode?: unknown;
       params?: unknown;
+      /** An Animate action's still prompt, so the motion keeps the scene (TICKET-039). */
+      scene?: unknown;
     };
     const messages = body.messages ?? [];
     const parsed = DirectRequest.safeParse({
@@ -55,13 +64,22 @@ export async function POST(req: Request) {
     });
     const last = messages[messages.length - 1];
     const prompt = last?.role === "user" ? messageText(last).trim() : "";
-    if (!parsed.success || !prompt) {
+    // a still attached in Video mode needs no words: it is animated as it is (TICKET-039)
+    const stillOnly =
+      body.mode === "video" && last && imageInBrief(last.parts) !== null;
+    if (!parsed.success || (!prompt && !stillOnly)) {
       return new Response("A mode and a description are required", {
         status: 400,
       });
     }
     const request = parsed.data;
     const cost = costOf(request);
+    // Video with a still attached animates the still (TICKET-039)
+    const still =
+      request.mode === "video" && last ? imageInBrief(last.parts) : null;
+    const origin = new URL(req.url).origin;
+    const scene =
+      typeof body.scene === "string" ? body.scene.slice(0, 1000) : undefined;
 
     const guard = await guardGeneration("ROUTE_HANDLER", cost);
     if (!guard.ok) return guard.response;
@@ -87,7 +105,12 @@ export async function POST(req: Request) {
           request.mode === "image"
             ? { prompt, amount: params.count, aspect: params.aspect }
             : request.mode === "video"
-              ? { prompt, durationSeconds: params.videoSeconds }
+              ? still
+                ? {
+                    prompt: animatePrompt(prompt, scene),
+                    animate: true,
+                  }
+                : { prompt, durationSeconds: params.videoSeconds }
               : request.mode === "music"
                 ? { prompt, durationSeconds: params.musicSeconds }
                 : { prompt, durationSeconds: params.soundSeconds || undefined };
@@ -101,7 +124,11 @@ export async function POST(req: Request) {
           input,
         });
         try {
-          const output = await run(request, prompt, userId, sessionId);
+          const output = await run(request, prompt, userId, sessionId, {
+            still,
+            origin,
+            scene,
+          });
           writer.write({ type: "tool-output-available", toolCallId, output });
           succeeded = true;
         } catch (error) {
@@ -139,7 +166,12 @@ async function run(
   { mode, params }: DirectRequest,
   prompt: string,
   userId: string,
-  sessionId: string | null
+  sessionId: string | null,
+  {
+    still,
+    origin,
+    scene,
+  }: { still: string | null; origin: string; scene?: string }
 ) {
   if (mode === "image") {
     const size = ASPECT_SIZES[params.aspect];
@@ -163,6 +195,28 @@ async function run(
       )
     );
     return { urls, prompt, aspect: params.aspect };
+  }
+  if (mode === "video" && still) {
+    const motion = animatePrompt(prompt, scene);
+    const aspect = animateAspect(params.aspect);
+    const url = await animateImage({
+      image: await publicImageUrl(still, origin),
+      prompt: motion,
+      aspect,
+    });
+    await recordAsset({
+      userId,
+      sessionId,
+      kind: "video",
+      url,
+      // the still it came from, when it is a real address (not a pasted data URL)
+      posterUrl: still.startsWith("data:") ? null : still,
+      prompt: motion,
+      model: ANIMATE_MODEL,
+      params: { aspect, animated: true },
+      durationSec: ANIMATE_SECONDS,
+    });
+    return { url, prompt: motion };
   }
   if (mode === "video") {
     const url = await generateVideo(prompt, params.videoSeconds);

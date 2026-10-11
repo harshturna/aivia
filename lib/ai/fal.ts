@@ -117,3 +117,16 @@ export function extractUrl(value: unknown): string | null {
 
   return null;
 }
+
+/**
+ * A URL fal can fetch for an image (TICKET-039). http(s) and data URLs pass through; a
+ * site-relative path (the guest examples live in public/landing) is fetched from this site's
+ * own origin and uploaded to fal's storage, since fal cannot reach localhost or a preview.
+ */
+export async function publicImageUrl(url: string, origin: string) {
+  if (/^(https?:|data:)/.test(url)) return url;
+  if (!url.startsWith("/")) throw new Error("Not an image URL");
+  const res = await fetch(new URL(url, origin));
+  if (!res.ok) throw new Error(`Could not read the image (${res.status})`);
+  return fal.storage.upload(await res.blob());
+}

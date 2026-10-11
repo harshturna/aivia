@@ -38,6 +38,14 @@ export const VIDEO_DURATION_SECONDS = 6;
 // fal-ai/minimax-music/v2.6, which was $0.15 flat per generation — 15x more —
 // and rejected every call this app made: it requires either non-empty
 // `lyrics` or `is_instrumental: true`, and we sent a bare prompt.
+/**
+ * Animate a still (TICKET-039): $0.15 per clip, flat (fal model page, checked 2026-10-11).
+ * 121 frames at 24 fps is five seconds at 720p. Charged as one generation, like a video.
+ */
+export const ANIMATE_MODEL = "fal-ai/wan/v2.2-5b/image-to-video";
+export const ANIMATE_SECONDS = 5;
+export type AnimateAspect = "16:9" | "9:16" | "1:1";
+
 export const MUSIC_MODEL = "cassetteai/music-generator";
 export const MUSIC_DURATION_SECONDS = 30;
 
@@ -132,5 +140,33 @@ export async function generateSoundEffect(
     throw new Error("Sound effect generation returned no audio");
   }
 
+  return url;
+}
+
+/**
+ * Brings a still to life: gentle motion from one image. `image` must be a URL fal can fetch
+ * (an http(s) or data URL; see `publicImageUrl`). The aspect is explicit because the
+ * endpoint's "auto" rejects some sizes.
+ */
+export async function animateImage({
+  image,
+  prompt,
+  aspect,
+}: {
+  image: string;
+  prompt: string;
+  aspect: AnimateAspect;
+}): Promise<string> {
+  const url = extractUrl(
+    await runFal(ANIMATE_MODEL, {
+      image_url: image,
+      prompt,
+      resolution: "720p",
+      aspect_ratio: aspect,
+      num_frames: ANIMATE_SECONDS * 24 + 1,
+      frames_per_second: 24,
+    })
+  );
+  if (!url) throw new Error("Animation returned no video");
   return url;
 }

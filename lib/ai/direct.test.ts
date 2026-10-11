@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { ASPECT_SIZES, costOf, DirectRequest } from "./direct";
+import {
+  ANIMATE_BRIEF,
+  ASPECT_SIZES,
+  animateAspect,
+  animatePrompt,
+  aspectOfSize,
+  costOf,
+  DirectRequest,
+  imageInBrief,
+} from "./direct";
 
 describe("DirectRequest", () => {
   it("fills defaults", () => {
@@ -36,5 +45,38 @@ describe("ASPECT_SIZES", () => {
       expect(width % 32).toBe(0);
       expect(height % 32).toBe(0);
     }
+  });
+});
+
+describe("animate", () => {
+  it("finds the first attached image in a brief", () => {
+    expect(
+      imageInBrief([
+        { type: "text" },
+        { type: "file", mediaType: "application/pdf", url: "a.pdf" },
+        { type: "file", mediaType: "image/png", url: "b.png" },
+        { type: "file", mediaType: "image/jpeg", url: "c.jpg" },
+      ])
+    ).toBe("b.png");
+    expect(imageInBrief([{ type: "text" }])).toBeNull();
+  });
+
+  it("maps any aspect to one the model takes", () => {
+    expect(animateAspect("4:3")).toBe("16:9");
+    expect(animateAspect("3:4")).toBe("9:16");
+    expect(animateAspect("1:1")).toBe("1:1");
+    expect(aspectOfSize(1600, 893)).toBe("16:9");
+    expect(aspectOfSize(1211, 1600)).toBe("9:16");
+    expect(aspectOfSize(1000, 1050)).toBe("1:1");
+  });
+
+  it("keeps the scene and asks for gentle motion", () => {
+    expect(animatePrompt(ANIMATE_BRIEF, "A fox asleep on moss.")).toBe(
+      "A fox asleep on moss. Gentle, natural motion brings the scene to life; the camera holds steady."
+    );
+    expect(animatePrompt("Leaves drifting down")).toMatch(
+      /^Leaves drifting down\. Gentle/
+    );
+    expect(animatePrompt(ANIMATE_BRIEF)).toMatch(/^Gentle, natural motion/);
   });
 });

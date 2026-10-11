@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { type ComposerMode, MODES } from "@/components/studio/modes";
+import { getAsset } from "@/lib/assets";
+import { getUser } from "@/lib/getUser";
 import { isGuestUser } from "@/lib/guest-user";
 import { StudioClient } from "./studio-client";
 
@@ -13,9 +15,21 @@ export const metadata: Metadata = { title: "Studio" };
 export default async function NewSessionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ prompt?: string; mode?: string }>;
+  searchParams: Promise<{ prompt?: string; mode?: string; animate?: string }>;
 }) {
-  const { prompt, mode } = await searchParams;
+  const { prompt, mode, animate } = await searchParams;
+  // From the library: a still to animate as the Studio opens (TICKET-039)
+  const user = animate ? await getUser("SERVER_COMPONENT") : null;
+  const still = user && animate ? await getAsset(user.id, animate) : null;
+  const initialAnimate =
+    still?.kind === "image"
+      ? {
+          url: still.url,
+          prompt: still.prompt,
+          width: still.width ?? 1,
+          height: still.height ?? 1,
+        }
+      : undefined;
   const initialMode = MODES.some((m) => m.id === mode)
     ? (mode as ComposerMode)
     : "auto";
@@ -27,6 +41,7 @@ export default async function NewSessionPage({
       isNew
       isGuest={await isGuestUser("SERVER_COMPONENT")}
       initialPrompt={prompt ?? ""}
+      initialAnimate={initialAnimate}
       initialMode={initialMode}
     />
   );

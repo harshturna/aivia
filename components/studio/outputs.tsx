@@ -4,11 +4,13 @@ import { type DynamicToolUIPart, getToolName, type ToolUIPart } from "ai";
 import {
   AlertTriangle,
   Download,
+  Film,
   Maximize2,
   RotateCcw,
   Search,
 } from "lucide-react";
 import { useState } from "react";
+import { useStudioActions } from "@/components/studio/actions";
 import { AudioRow } from "@/components/studio/audio-row";
 import { RevealImage } from "@/components/studio/reveal-image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -147,7 +149,8 @@ export function ToolOutput({
           playsInline
           preload="metadata"
           src={urls[0]}
-          className="aspect-video w-full rounded-media bg-surface"
+          // in its own shape: an animated portrait still stays portrait (TICKET-039)
+          className="max-h-[70vh] w-auto max-w-full rounded-media bg-surface"
         />
         <Caption prompt={prompt} onReusePrompt={actions.onReusePrompt} />
       </figure>
@@ -206,6 +209,7 @@ function Images({
             key={url}
             url={url}
             alt={prompt || "Generated image"}
+            prompt={prompt}
           />
         ))}
       </div>
@@ -214,7 +218,16 @@ function Images({
   );
 }
 
-function RevealedImage({ url, alt }: { url: string; alt: string }) {
+function RevealedImage({
+  url,
+  alt,
+  prompt,
+}: {
+  url: string;
+  alt: string;
+  prompt: string;
+}) {
+  const { animate } = useStudioActions();
   return (
     <div className="group relative overflow-hidden rounded-media bg-surface">
       <RevealImage
@@ -224,6 +237,27 @@ function RevealedImage({ url, alt }: { url: string; alt: string }) {
         className="block w-full"
       />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-linear-to-t from-bg/70 to-transparent p-2 pt-8 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+        {animate && (
+          <button
+            type="button"
+            aria-label="Animate"
+            title="Animate"
+            onClick={(event) => {
+              const img = event.currentTarget
+                .closest(".group")
+                ?.querySelector("img");
+              animate({
+                url,
+                prompt,
+                width: img?.naturalWidth || 1,
+                height: img?.naturalHeight || 1,
+              });
+            }}
+            className="inline-flex h-8 items-center gap-1.5 rounded-control bg-bg/60 px-2.5 text-[12.5px] font-medium text-fg backdrop-blur transition-colors hover:bg-bg/80 [&_svg]:size-4"
+          >
+            <Film /> Animate
+          </button>
+        )}
         <IconLink href={url} label="Open full size">
           <Maximize2 />
         </IconLink>
