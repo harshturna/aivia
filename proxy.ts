@@ -8,8 +8,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything but static assets, image optimisation, the icon, the landing media,
-    // the Stripe webhook (a signature, not a session) and the cron (a secret).
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|api/webhook|api/housekeeping|landing/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Everything but static assets, image optimisation, the icon, the landing media
+    // and the Stripe webhook (a signature, not a session).
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|api/webhook|landing/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
