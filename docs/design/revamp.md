@@ -124,8 +124,10 @@ cubic-bezier(.32, .72, 0, 1)` for sheets. Never ease-in; never `transition: all`
 | hero clips | crossfade every 9 s between three clips, 1.2 s, paused under reduced motion and when the tab is hidden |
 | media tiles on the wall | hover plays the clip (`preload="none"`, poster), 1.02 scale over 600 ms |
 
-**The landing hero (D-004)** is one scroll-pinned sequence over 380svh: the brief types once
-(about 3 s, a pause at each noun while its window opens), then scroll drives the windows
+**The landing hero (D-004)** is one scroll-pinned sequence over 380svh: the brief's fifteen words
+rise out of the fog once (CSS: opacity, a third of an em upward and a soft blur resolving,
+75 ms apart from 0.45 s, landed by about 2.3 s; each noun's underline draws and its window
+opens as it arrives; TICKET-026 replaced a typewriter that took about 5 s), then scroll drives the windows
 from their slots in the sentence to the triptych and on to the timeline; the brief shrinks
 and fades as its windows leave it, so the triptych and the timeline have the screen to
 themselves (TICKET-025). Ambient life: light shafts breathe (9 s), motes rise (14 to 30 s), fog drifts

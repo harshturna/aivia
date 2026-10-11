@@ -2,7 +2,7 @@
 
 import { Pause, Play } from "lucide-react";
 import Image, { getImageProps } from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { SCORE_PEAKS } from "./score-peaks";
 
@@ -67,17 +67,25 @@ const BRIEF: Tok[] = [
   { w: " for a forest older than memory." },
 ];
 export const BRIEF_TEXT = BRIEF.map((t) => t.w).join("");
-const TOTAL = BRIEF_TEXT.length;
-const NOUN_END = (() => {
-  const out = {} as Record<Key, number>;
-  let i = 0;
+/**
+ * The brief as words, each rising out of the fog on its own delay (CSS, so it runs before
+ * any script). A noun's window opens as its word arrives.
+ */
+const WORD_START = 0.45;
+const WORD_STEP = 0.075;
+const WORDS = (() => {
+  const out: Array<{ text: string; noun?: Key }> = [];
   for (const t of BRIEF) {
-    i += t.w.length;
-    if ("n" in t) out[t.n] = i;
+    if ("n" in t) out.push({ text: t.w, noun: t.n });
+    else for (const w of t.w.split(" ").filter(Boolean)) out.push({ text: w });
   }
-  return out;
+  return out.map((w, i) => ({ ...w, delay: WORD_START + i * WORD_STEP }));
 })();
-const ENDS = new Set(Object.values(NOUN_END));
+const LAST_WORD = WORDS[WORDS.length - 1].delay;
+/** When each window opens, in ms from load: a beat after its word starts rising. */
+const OPEN_AT = Object.fromEntries(
+  WORDS.filter((w) => w.noun).map((w) => [w.noun, (w.delay + 0.3) * 1000])
+) as Record<Key, number>;
 
 const TAGLINES: Array<{ text: string; from: number; to: number }> = [
   { text: "Older than every map.", from: 0.04, to: 0.28 },
@@ -413,7 +421,6 @@ export function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const pieceRefs = useRef<Partial<Record<Key, HTMLDivElement | null>>>({});
   const slotRefs = useRef<Partial<Record<Key, HTMLSpanElement | null>>>({});
-  const lineRefs = useRef<Partial<Record<Key, HTMLSpanElement | null>>>({});
   const geo = useRef<Geo | null>(null);
   const parts = useRef<{
     strip?: HTMLElement;
@@ -428,7 +435,7 @@ export function Hero() {
   }>({ hi: [] });
   const state = useRef({
     p: -1,
-    typed: 0,
+    opened: new Set<Key>(),
     inView: true,
     teaserOpen: false,
     raf: 0,
@@ -488,30 +495,17 @@ export function Hero() {
     else v.pause();
   }, []);
 
-  // --- the brief, written straight into the DOM ---
-  const showTo = useCallback(
-    (n: number) => {
+  // --- a noun's window opens ---
+  const open = useCallback(
+    (k: Key) => {
       const st = state.current;
-      const sentence = sentenceRef.current;
-      if (!sentence || n <= st.typed) return;
-      const chars = sentence.querySelectorAll<HTMLElement>("[data-ch]");
-      for (let i = st.typed; i < n; i++) chars[i]?.classList.add("on");
-      st.typed = n;
-      const caret = caretRef.current;
-      if (caret && chars[n - 1]) chars[n - 1].after(caret);
-      for (const k of KEYS) {
-        if (n < NOUN_END[k]) continue;
-        lineRefs.current[k]?.classList.add("on");
-        pieceRefs.current[k]?.setAttribute("data-on", "true");
-        if (k === "teaser" && !st.teaserOpen) {
-          st.teaserOpen = true;
-          if (videoRef.current) videoRef.current.preload = "auto";
-          syncVideo();
-        }
-      }
-      if (n >= TOTAL) {
-        caret?.classList.add("w-blink");
-        cueRef.current?.classList.add("on");
+      if (st.opened.has(k)) return;
+      st.opened.add(k);
+      pieceRefs.current[k]?.setAttribute("data-on", "true");
+      if (k === "teaser") {
+        st.teaserOpen = true;
+        if (videoRef.current) videoRef.current.preload = "auto";
+        syncVideo();
       }
     },
     [syncVideo]
@@ -718,28 +712,21 @@ export function Hero() {
     setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
-  // the brief writes itself; a noun pauses as its window opens
+  // the windows open as their words arrive (the words themselves are CSS, timed from load)
   useEffect(() => {
     if (reduced === null) return;
     if (reduced) {
-      showTo(TOTAL);
+      for (const k of KEYS) open(k);
       return;
     }
-    let id: ReturnType<typeof setTimeout>;
-    const step = () => {
-      const n = state.current.typed + 1;
-      if (n > TOTAL) return;
-      showTo(n);
-      if (n >= TOTAL) return;
-      const ch = BRIEF_TEXT[n - 1];
-      id = setTimeout(
-        step,
-        ENDS.has(n) ? 380 : ch === "," ? 150 : 32 + Math.random() * 36
-      );
+    const since = performance.now();
+    const ids = KEYS.map((k) =>
+      setTimeout(() => open(k), Math.max(0, OPEN_AT[k] - since))
+    );
+    return () => {
+      for (const id of ids) clearTimeout(id);
     };
-    id = setTimeout(step, 1100);
-    return () => clearTimeout(id);
-  }, [reduced, showTo]);
+  }, [reduced, open]);
 
   // geometry, scroll (one read and the writes per frame), visibility
   useEffect(() => {
@@ -747,15 +734,14 @@ export function Hero() {
     const section = sectionRef.current;
     const stage = stageRef.current;
     if (!section || !stage) return;
-    // the script is running: from here the brief is revealed by typing, not by the CSS fallback
-    stage.classList.add("is-live");
     let queued = 0;
     const frame = () => {
       queued = 0;
       const r = section.getBoundingClientRect();
       const total = r.height - window.innerHeight;
       const p = reduced ? 0.47 : total > 0 ? clamp01(-r.top / total) : 0;
-      if (p > 0.01 && state.current.typed < TOTAL) showTo(TOTAL);
+      if (p > 0.01 && state.current.opened.size < KEYS.length)
+        for (const k of KEYS) open(k);
       if (p !== state.current.p) {
         state.current.p = p;
         apply(p);
@@ -791,7 +777,7 @@ export function Hero() {
       cancelAnimationFrame(state.current.raf);
       state.current.raf = 0;
     };
-  }, [reduced, apply, measure, showTo, syncClock, syncVideo]);
+  }, [reduced, apply, measure, open, syncClock, syncVideo]);
 
   const toggle = () => {
     const a = audioRef.current;
@@ -800,7 +786,6 @@ export function Hero() {
     else a.pause();
   };
 
-  let idx = 0;
   return (
     <section
       ref={sectionRef}
@@ -883,48 +868,61 @@ export function Hero() {
               aria-label={BRIEF_TEXT}
               className="max-w-[1180px] origin-top-left font-display text-[clamp(44px,7.4vw,124px)] leading-[0.96] tracking-[-0.015em] text-fg [text-shadow:0_1px_2px_color-mix(in_srgb,var(--color-bg)_35%,transparent),0_4px_40px_color-mix(in_srgb,var(--color-bg)_55%,transparent)] will-change-transform"
             >
-              <span ref={caretRef} className="w-caret will-change-[opacity]" />
-              {BRIEF.map((tok, ti) => {
-                const chars = [...tok.w].map((ch) => {
-                  const i = idx++;
+              {WORDS.map((w, i) => {
+                const gap = i > 0 ? " " : null;
+                const style = {
+                  animationDelay: `${w.delay}s`,
+                } as React.CSSProperties;
+                if (!w.noun)
                   return (
-                    <span key={i} data-ch aria-hidden className="w-ch">
-                      {ch}
-                    </span>
+                    <Fragment key={w.text + w.delay}>
+                      {gap}
+                      <span aria-hidden className="w-word" style={style}>
+                        {w.text}
+                      </span>
+                    </Fragment>
                   );
-                });
-                if (!("n" in tok))
-                  // biome-ignore lint/suspicious/noArrayIndexKey: the sentence is positional
-                  return <span key={ti}>{chars}</span>;
-                const k = tok.n;
+                const k = w.noun;
                 return (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: the sentence is positional
-                  <span key={ti} className="whitespace-nowrap">
-                    <span
-                      ref={(el) => {
-                        slotRefs.current[k] = el;
-                      }}
-                      aria-hidden
-                      className="mx-[0.08em] inline-block h-[0.72em] rounded-t-full align-[-0.04em] opacity-0 will-change-[opacity]"
-                      style={{
-                        width: `${MEDIUM[k].em}em`,
-                        background: MEDIUM[k].tint,
-                      }}
-                    />
-                    <span
-                      ref={(el) => {
-                        lineRefs.current[k] = el;
-                      }}
-                      className="w-u"
-                      style={
-                        { "--tint": MEDIUM[k].tint } as React.CSSProperties
-                      }
-                    >
-                      {chars}
+                  <Fragment key={k}>
+                    {gap}
+                    <span className="whitespace-nowrap">
+                      <span
+                        ref={(el) => {
+                          slotRefs.current[k] = el;
+                        }}
+                        aria-hidden
+                        className="mx-[0.08em] inline-block h-[0.72em] rounded-t-full align-[-0.04em] opacity-0 will-change-[opacity]"
+                        style={{
+                          width: `${MEDIUM[k].em}em`,
+                          background: MEDIUM[k].tint,
+                        }}
+                      />
+                      <span
+                        aria-hidden
+                        className="w-word w-u"
+                        style={
+                          {
+                            animationDelay: `${w.delay}s, ${w.delay + 0.35}s`,
+                            "--tint": MEDIUM[k].tint,
+                          } as React.CSSProperties
+                        }
+                      >
+                        {w.text}
+                      </span>
                     </span>
-                  </span>
+                  </Fragment>
                 );
               })}
+              <span
+                ref={caretRef}
+                className="w-caret will-change-[opacity]"
+                style={
+                  {
+                    "--caret-delay": `${LAST_WORD + 0.7}s`,
+                  } as React.CSSProperties
+                }
+              />
             </h1>
             <p
               ref={cueRef}

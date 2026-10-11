@@ -242,19 +242,10 @@ body:has([data-screen-header]) [data-mobile-bar] {
  * opacity; all of it pauses while the hero is off screen (`.is-still`) and stops under
  * reduced motion.
  */
-.w-ch:not(.on) {
-  color: transparent;
-  text-shadow: none;
-}
-/* if the hero's script never starts (a failed chunk, scripts off), the brief still appears */
-.w-stage:not(.is-live) .w-ch:not(.on) {
-  animation: w-fallback 0.6s var(--ease-out) 1.6s forwards;
-}
-@keyframes w-fallback {
-  to {
-    color: var(--color-fg);
-    text-shadow: inherit;
-  }
+/* the brief's words rise out of the fog, each on its own delay (TICKET-026) */
+.w-word {
+  display: inline-block;
+  animation: w-emerge 1.1s var(--ease-out) both;
 }
 .w-caret {
   display: inline-block;
@@ -266,32 +257,28 @@ body:has([data-screen-header]) [data-mobile-bar] {
 .w-caret::after {
   content: "";
   position: absolute;
-  left: 0.05em;
+  left: 0.12em;
   top: 0;
   width: 0.035em;
   height: 100%;
   background: var(--color-sun);
   border-radius: 2px;
+  animation:
+    w-fade-in 0.5s var(--ease-out) var(--caret-delay, 0s) both,
+    w-blink 1.1s steps(1) calc(var(--caret-delay, 0s) + 0.5s) infinite;
 }
-.w-blink::after {
-  animation: w-blink 1.1s steps(1) infinite;
-}
-.w-u {
+.w-word.w-u {
   background-image: linear-gradient(var(--tint), var(--tint));
   background-repeat: no-repeat;
   background-position: 0 96%;
-  background-size: 0% 0.045em;
-  transition: background-size 1s var(--ease-out);
-}
-.w-u.on {
   background-size: 100% 0.045em;
+  /* the delays come inline: the word's, then the line's a beat later */
+  animation:
+    w-emerge 1.1s var(--ease-out) both,
+    w-underline 0.9s var(--ease-out) both;
 }
 .w-cue-wrap > span {
-  opacity: 0;
-  transition: opacity 1s var(--ease-out);
-}
-.w-cue-wrap.on > span {
-  opacity: 1;
+  animation: w-fade-in 0.8s var(--ease-out) 2.5s both;
 }
 .w-cue {
   transform-origin: left;
@@ -352,7 +339,7 @@ body:has([data-screen-header]) [data-mobile-bar] {
 .is-still .w-shafts,
 .is-still .w-drift,
 .is-still .w-cue,
-.is-still .w-blink::after {
+.is-still .w-caret::after {
   animation-play-state: paused;
 }
 .w-grid {
@@ -371,6 +358,28 @@ body:has([data-screen-header]) [data-mobile-bar] {
     grid-template-rows: 1fr 1fr;
     grid-template-areas: "poster teaser score" "poster teaser words";
     height: min(520px, calc(100svh - 220px));
+  }
+}
+@keyframes w-emerge {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.32em, 0);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes w-underline {
+  from {
+    background-size: 0% 0.045em;
+  }
+}
+@keyframes w-fade-in {
+  from {
+    opacity: 0;
   }
 }
 @keyframes w-blink {
@@ -452,7 +461,10 @@ body:has([data-screen-header]) [data-mobile-bar] {
   .w-mote,
   .w-drift,
   .w-cue,
-  .w-blink::after {
+  .w-word,
+  .w-word.w-u,
+  .w-cue-wrap > span,
+  .w-caret::after {
     animation: none;
   }
   .w-mote {
