@@ -35,12 +35,14 @@ const KIND_LABEL: Record<LibraryAsset["kind"], string> = {
  * and what you can do with it. As a modal it closes back to the library (Esc, the scrim,
  * the close button) and keeps focus inside; as a page it has a link back.
  */
+type View = { asset: LibraryAsset; prev: string | null; next: string | null };
+
 export function Lightbox({
-  asset,
+  asset: initialAsset,
   modal = false,
   readOnly = false,
-  prev = null,
-  next = null,
+  prev: initialPrev = null,
+  next: initialNext = null,
 }: {
   asset: LibraryAsset;
   modal?: boolean;
@@ -51,9 +53,52 @@ export function Lightbox({
   readOnly?: boolean;
 }) {
   const router = useRouter();
+  // the item shown, swapped in place by previous and next: no route change, so no loading
+  // state and no fresh dialog fading in on every step (TICKET-057)
+  const [view, setView] = useState<View>({
+    asset: initialAsset,
+    prev: initialPrev,
+    next: initialNext,
+  });
+  const { asset, prev, next } = view;
+  const known = useRef(new Map<string, View>());
   const [favorite, setFavorite] = useState(asset.favorite);
   const [confirming, setConfirming] = useState(false);
   const [failed, setFailed] = useState(false);
+  // what belongs to one item starts over on the next
+  useEffect(() => {
+    setFavorite(asset.favorite);
+    setConfirming(false);
+    setFailed(false);
+  }, [asset]);
+
+  const load = useCallback(async (id: string) => {
+    const cached = known.current.get(id);
+    if (cached) return cached;
+    const response = await fetch(`/api/assets/${id}`).catch(() => null);
+    if (!response?.ok) return null;
+    const loaded = (await response.json()) as View;
+    known.current.set(id, loaded);
+    return loaded;
+  }, []);
+
+  // the neighbours are fetched, and their pictures loaded, before anyone asks for them
+  // (two deep each way, so stepping quickly never waits)
+  useEffect(() => {
+    const ahead = async (
+      id: string | null,
+      way: "prev" | "next",
+      depth: number
+    ) => {
+      if (!id || depth === 0) return;
+      const v = await load(id);
+      if (!v) return;
+      if (v.asset.kind === "image") new Image().src = v.asset.url;
+      await ahead(v[way], way, depth - 1);
+    };
+    void ahead(prev, "prev", 2);
+    void ahead(next, "next", 2);
+  }, [prev, next, load]);
   const dialog = useRef<HTMLDivElement>(null);
   const opener = useRef<Element | null>(null);
 
@@ -62,10 +107,15 @@ export function Lightbox({
     else router.push("/library");
   }, [modal, router]);
   const go = useCallback(
-    (id: string | null) => {
-      if (id) router.replace(`/library/a/${id}`, { scroll: false });
+    async (id: string | null) => {
+      if (!id) return;
+      const v = await load(id);
+      if (!v) return;
+      setView(v);
+      // the address follows, so a reload or a shared link opens this item
+      window.history.replaceState(null, "", `/library/a/${id}`);
     },
-    [router]
+    [load]
   );
 
   // ← and → step through the library; Esc leaves the page view (the modal handles its own)
@@ -74,8 +124,8 @@ export function Lightbox({
       const t = event.target as HTMLElement;
       if (t.closest("input, textarea, video, audio, [contenteditable=true]"))
         return;
-      if (event.key === "ArrowLeft") go(prev);
-      if (event.key === "ArrowRight") go(next);
+      if (event.key === "ArrowLeft") void go(prev);
+      if (event.key === "ArrowRight") void go(next);
       if (event.key === "Escape" && !modal) close();
     };
     window.addEventListener("keydown", onKey);
@@ -174,7 +224,7 @@ export function Lightbox({
         {prev && (
           <button
             type="button"
-            onClick={() => go(prev)}
+            onClick={() => void go(prev)}
             aria-label="Previous"
             title="Previous (←)"
             className={cn(
@@ -189,7 +239,7 @@ export function Lightbox({
         {next && (
           <button
             type="button"
-            onClick={() => go(next)}
+            onClick={() => void go(next)}
             aria-label="Next"
             title="Next (→)"
             className={cn(
@@ -204,6 +254,7 @@ export function Lightbox({
         {asset.kind === "image" && (
           // biome-ignore lint/performance/noImgElement: generated media at its own size
           <img
+            key={asset.id}
             src={asset.url}
             alt={asset.prompt}
             className="max-h-full max-w-full rounded-media object-contain"
@@ -212,6 +263,7 @@ export function Lightbox({
         {asset.kind === "video" && (
           // biome-ignore lint/a11y/useMediaCaption: generated clips have no speech to caption
           <video
+            key={asset.id}
             src={asset.url}
             controls
             autoPlay
@@ -223,6 +275,7 @@ export function Lightbox({
         )}
         {(asset.kind === "music" || asset.kind === "sound") && (
           <AudioRow
+            key={asset.id}
             className="w-full max-w-[560px]"
             src={asset.url}
             title={titleFrom(asset.prompt) || KIND_LABEL[asset.kind]}

@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
-import { deleteAsset, setFavorite } from "@/lib/assets";
+import { toLibraryAsset } from "@/components/library/types";
+import { deleteAsset, getAsset, getNeighbors, setFavorite } from "@/lib/assets";
 import { getUser } from "@/lib/getUser";
 
 type Params = { params: Promise<{ id: string }> };
+
+/** One asset and the ones either side, for stepping through the lightbox (TICKET-057). */
+export async function GET(_req: Request, { params }: Params) {
+  const user = await getUser("ROUTE_HANDLER");
+  if (!user) return new NextResponse("Unauthorized", { status: 401 });
+  const asset = await getAsset(user.id, (await params).id);
+  if (!asset) return new NextResponse("Not found", { status: 404 });
+  const { prev, next } = await getNeighbors(user.id, asset);
+  return NextResponse.json({ asset: toLibraryAsset(asset), prev, next });
+}
 
 export async function PATCH(req: Request, { params }: Params) {
   const user = await getUser("ROUTE_HANDLER");
