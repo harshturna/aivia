@@ -1,10 +1,10 @@
 import type { User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { ContextType } from "@/constants";
-import { checkApiLimit, increaseApiLimit } from "@/lib/api-limit";
 import { getUser } from "@/lib/getUser";
-import { checkHardLimit, increaseHardLimit } from "@/lib/hard-limit";
+import prismadb from "@/lib/prismadb";
 import { checkSubscription } from "@/lib/subscription";
+import { reserve } from "@/lib/usage";
 
 type GuardDenied = { ok: false; response: NextResponse };
 
@@ -13,26 +13,22 @@ type GuardAllowed = {
   user: User;
   isPro: boolean;
   /**
-   * Record usage against both counters. Call this only after the generation
-   * actually succeeded, so failed requests don't burn a user's quota.
+   * The cost was reserved when the guard passed (TICKET-042). Call this only when the request
+   * made nothing (a failed direct run, an error before streaming), so a failure does not burn
+   * the allowance. A cancelled request keeps its charge: the work still runs and is billed.
    */
-  consume: () => Promise<void>;
+  refund: () => Promise<void>;
 };
 
 export type GuardResult = GuardDenied | GuardAllowed;
 
 /**
- * Single entry point for the auth + quota checks every generation route needs.
- *
- * Replaces the block that was duplicated across the conversation, code, image,
- * music, video and chat routes. Two behavioural notes:
- *
- * - The three checks run concurrently. Previously they ran in sequence and each
- *   one re-fetched the Supabase session internally, so a request paid four
- *   round-trips before doing any work.
- * - The hard limit is a cost cap and applies to everyone, including "Pro". The
- *   guest account is shared by every visitor and `checkSubscription` reports it
- *   as Pro, so exempting Pro here would uncap public spend. See constants.ts.
+ * Single entry point for the auth and quota checks every generation route needs. It reserves
+ * the request's cost atomically up front (`lib/usage.ts`): parallel requests cannot all slip
+ * under a limit, and a client that disconnects cannot skip the charge. The hard limit is a
+ * daily cost cap and applies to everyone, including "Pro": the guest account is shared by
+ * every visitor and `checkSubscription` reports it as Pro, so exempting Pro would uncap public
+ * spend. See constants.ts.
  */
 export async function guardGeneration(
   context: ContextType = "ROUTE_HANDLER",
@@ -40,21 +36,15 @@ export async function guardGeneration(
   cost = 1
 ): Promise<GuardResult> {
   const user = await getUser(context);
-
   if (!user) {
     return {
       ok: false,
       response: new NextResponse("Unauthorized", { status: 401 }),
     };
   }
-
-  const [withinFreeTrial, isPro, withinHardLimit] = await Promise.all([
-    checkApiLimit(context, cost),
-    checkSubscription(context),
-    checkHardLimit(context),
-  ]);
-
-  if (!withinHardLimit) {
+  const isPro = await checkSubscription(context);
+  const reservation = await reserve(prismadb, user.id, cost, isPro);
+  if (!reservation.ok && reservation.reason === "limit") {
     return {
       ok: false,
       response: new NextResponse(
@@ -63,24 +53,12 @@ export async function guardGeneration(
       ),
     };
   }
-
   // 403 is what the client maps to the upgrade modal.
-  if (!withinFreeTrial && !isPro) {
+  if (!reservation.ok) {
     return {
       ok: false,
       response: new NextResponse("Free trial has expired", { status: 403 }),
     };
   }
-
-  return {
-    ok: true,
-    user,
-    isPro,
-    consume: async () => {
-      await Promise.all([
-        isPro ? Promise.resolve() : increaseApiLimit(context, cost),
-        increaseHardLimit(context, cost),
-      ]);
-    },
-  };
+  return { ok: true, user, isPro, refund: reservation.refund };
 }

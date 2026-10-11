@@ -29,6 +29,48 @@ import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 
 /** Fired when a run ends so the sidebar's recents can reload. */
+/** A message without pasted (data URL) attachments; real addresses stay. */
+function withoutPastedFiles(message: UIMessage): UIMessage {
+  return {
+    ...message,
+    parts: message.parts.filter(
+      (p) => !(p.type === "file" && p.url.startsWith("data:"))
+    ),
+  };
+}
+
+/**
+ * A photo is sent at most 1600 px on its long edge, as JPEG, so a phone picture stays a few
+ * hundred kilobytes instead of megabytes (TICKET-042). Other files pass as they are.
+ */
+async function fitImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size < 1_500_000) {
+      bitmap.close();
+      return file;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas
+      .getContext("2d")
+      ?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.86)
+    );
+    if (!blob) return file;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.jpg`, {
+      type: "image/jpeg",
+    });
+  } catch {
+    return file;
+  }
+}
+
 type Aspect = ModeParams["aspect"];
 
 export const SESSIONS_CHANGED = "aivia:sessions-changed";
@@ -108,7 +150,15 @@ export function StudioClient({
       prepareSendMessagesRequest: ({ id: chatId, messages: all, body }) => ({
         api:
           body?.mode && body.mode !== "auto" ? "/api/generate" : "/api/agent",
-        body: { ...body, id: chatId, messages: all },
+        // pasted attachments travel once: earlier messages go without their data URLs, so
+        // one large photo cannot push every later request past the platform limit
+        body: {
+          ...body,
+          id: chatId,
+          messages: all.map((m, i) =>
+            i === all.length - 1 ? m : withoutPastedFiles(m)
+          ),
+        },
       }),
     }),
     onFinish: () => {
@@ -186,7 +236,8 @@ export function StudioClient({
       let list: FileList | undefined;
       if (attached.length) {
         const dt = new DataTransfer();
-        for (const f of attached) dt.items.add(f);
+        for (const f of await Promise.all(attached.map(fitImage)))
+          dt.items.add(f);
         list = dt.files;
       }
       // A still sent in Video mode is animated in its own shape (TICKET-039).

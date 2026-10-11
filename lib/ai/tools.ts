@@ -26,7 +26,22 @@ export interface ToolContext {
   sessionId: string | null;
 }
 
+/**
+ * A run is charged as one generation, so it may make at most this many pieces (TICKET-042).
+ * Whether a run should cost per piece is the owner's call; this cap keeps one brief from
+ * spending dollars meanwhile.
+ */
+export const MAX_RUN_OUTPUTS = 6;
+
 export function createAgentTools({ userId, sessionId }: ToolContext) {
+  let made = 0;
+  const spend = (pieces: number) => {
+    if (made + pieces > MAX_RUN_OUTPUTS)
+      throw new Error(
+        `One brief can make up to ${MAX_RUN_OUTPUTS} pieces. Send another brief for more.`
+      );
+    made += pieces;
+  };
   return {
     generate_image: tool({
       description:
@@ -48,6 +63,7 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
           .describe("How many variations to generate. Prefer 1 unless asked."),
       }),
       execute: async ({ prompt, amount }) => {
+        spend(amount);
         const urls = await generateImages({ prompt, amount });
         await Promise.all(
           urls.map((url) =>
@@ -77,20 +93,13 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
           .string()
           .describe("A detailed description of the scene, motion and camera."),
         durationSeconds: z
-          .union([
-            z.literal(6),
-            z.literal(8),
-            z.literal(10),
-            z.literal(12),
-            z.literal(14),
-            z.literal(16),
-            z.literal(18),
-            z.literal(20),
-          ])
+          // the same lengths as Video mode; longer clips cost more than a run is charged
+          .union([z.literal(6), z.literal(8), z.literal(10)])
           .default(6)
           .describe("Clip length in seconds. Prefer 6; cost scales with this."),
       }),
       execute: async ({ prompt, durationSeconds }) => {
+        spend(1);
         const url = await generateVideo(prompt, durationSeconds);
         await recordAsset({
           userId,
@@ -129,6 +138,7 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
           .describe("Track length in seconds. Prefer 30 unless asked."),
       }),
       execute: async ({ prompt, durationSeconds }) => {
+        spend(1);
         const url = await generateMusic(prompt, durationSeconds);
         await recordAsset({
           userId,
@@ -164,6 +174,7 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
           .describe("Length in seconds. Omit to let the model choose."),
       }),
       execute: async ({ prompt, durationSeconds }) => {
+        spend(1);
         const url = await generateSoundEffect(prompt, durationSeconds);
         await recordAsset({
           userId,

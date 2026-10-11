@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { Skeleton } from "@/components/ui/skeleton";
-import { didLimitReach, incrementLimit } from "@/lib/actions";
 import {
   cloudinaryOptions,
   EDIT_TOOLS,
@@ -115,11 +114,15 @@ export function EditWorkspace({
     if (!source || !isReady(input)) return;
     setStatus("working");
     setMessage("");
-    if (await didLimitReach()) {
-      setStatus("limit");
+    // one generation, spent through the server's guard before the edit is built (TICKET-042)
+    const spend = await fetch("/api/edit/spend", { method: "POST" }).catch(
+      () => null
+    );
+    if (!spend?.ok) {
+      setStatus(spend && spend.status !== 401 ? "limit" : "error");
+      if (!spend) setMessage("The edit could not start. Try again.");
       return;
     }
-    await incrementLimit();
     attempts.current = 0;
     const size = targetSize(input, source);
     setResult(

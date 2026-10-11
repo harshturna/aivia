@@ -152,7 +152,8 @@ export async function renderCut(
   });
   const video = new mb.CanvasSource(canvas, {
     codec: mp4 ? "avc" : "vp9",
-    bitrate: mb.QUALITY_HIGH,
+    // about 2.5 Mbps: a 10 s cut stays well under what the library can keep (TICKET-042)
+    bitrate: 2_500_000,
   });
   output.addVideoTrack(video, { frameRate: CUT.fps });
   const audio = pieces.track

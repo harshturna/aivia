@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   assetsFromMessages,
+  claimedSessionId,
   type LocalMessage,
+  MAX_CLAIM_ASSETS,
   MAX_LOCAL_SESSIONS,
   parseClaim,
   sanitizeMessages,
@@ -80,5 +82,64 @@ describe("parseClaim", () => {
       messages: forest,
     }));
     expect(parseClaim({ sessions: many })).toHaveLength(MAX_LOCAL_SESSIONS);
+  });
+});
+
+describe("hardening (TICKET-042)", () => {
+  it("survives malformed input instead of throwing", () => {
+    expect(sanitizeMessages(null)).toEqual([]);
+    expect(
+      sanitizeMessages([
+        null,
+        3,
+        { role: "user", parts: "x" },
+        { role: "user", parts: [null, { type: 1 }] },
+      ])
+    ).toEqual([{ id: "undefined", role: "user", parts: [] }]);
+    expect(parseClaim({ sessions: [null, "x"] })).toBeNull();
+    expect(
+      assetsFromMessages([
+        {
+          id: "a",
+          role: "assistant",
+          parts: [
+            {
+              type: "tool-generate_image",
+              state: "output-available",
+              output: { urls: { a: 1 } } as never,
+            },
+          ],
+        },
+      ])
+    ).toEqual([]);
+  });
+
+  it("caps the outputs kept per session", () => {
+    const urls = Array.from({ length: 500 }, (_, i) => `https://a.b/${i}`);
+    expect(
+      assetsFromMessages([
+        {
+          id: "a",
+          role: "assistant",
+          parts: [
+            {
+              type: "tool-generate_image",
+              state: "output-available",
+              output: { urls },
+            },
+          ],
+        },
+      ])
+    ).toHaveLength(MAX_CLAIM_ASSETS);
+  });
+
+  it("derives a stable uuid per account and browser id", async () => {
+    const a = await claimedSessionId("user-1", ID);
+    expect(a).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
+    expect(await claimedSessionId("user-1", ID)).toBe(a);
+    expect(await claimedSessionId("user-2", ID)).not.toBe(a);
+    expect(a).not.toBe(ID);
   });
 });

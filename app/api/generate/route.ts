@@ -48,6 +48,8 @@ export const maxDuration = 300;
  * an Auto run, and the session and the asset are saved the same way.
  */
 export async function POST(req: Request) {
+  // the cost is reserved by the guard; anything that fails before a result refunds it
+  let refund: (() => Promise<void>) | undefined;
   try {
     const body = (await req.json()) as {
       id?: string;
@@ -83,18 +85,25 @@ export async function POST(req: Request) {
 
     const guard = await guardGeneration("ROUTE_HANDLER", cost);
     if (!guard.ok) return guard.response;
+    refund = guard.refund;
     const userId = guard.user.id;
 
     // a guest run is never stored: the account is shared (TICKET-038)
-    const sessionId =
+    let sessionId: string | null =
       body.id && isSessionId(body.id) && !isGuestId(userId) ? body.id : null;
+    // an id this user cannot own (a stale link to someone else's session) runs unsaved
+    // rather than failing on the unique key (TICKET-042)
     if (sessionId) {
-      const session = await ensureSession(userId, sessionId, request.mode);
-      if (session.title === "New session")
-        await renameSession(userId, sessionId, titleFromBrief(prompt));
+      try {
+        const session = await ensureSession(userId, sessionId, request.mode);
+        if (session.title === "New session")
+          await renameSession(userId, sessionId, titleFromBrief(prompt));
+      } catch (error) {
+        console.error("[SESSION]", error);
+        sessionId = null;
+      }
     }
 
-    let succeeded = false;
     const stream = createUIMessageStream({
       originalMessages: messages,
       execute: async ({ writer }) => {
@@ -130,9 +139,10 @@ export async function POST(req: Request) {
             scene,
           });
           writer.write({ type: "tool-output-available", toolCallId, output });
-          succeeded = true;
         } catch (error) {
           console.error("[GENERATE_ERROR]", error);
+          // a direct request that failed made nothing, so it costs nothing
+          await guard.refund();
           writer.write({
             type: "tool-output-error",
             toolCallId,
@@ -143,8 +153,6 @@ export async function POST(req: Request) {
         writer.write({ type: "finish" });
       },
       onFinish: async ({ messages: all }) => {
-        // Only a result is charged: a direct request that failed made nothing.
-        if (succeeded) await guard.consume();
         if (sessionId) {
           try {
             await saveMessages(userId, sessionId, all);
@@ -157,6 +165,7 @@ export async function POST(req: Request) {
 
     return createUIMessageStreamResponse({ stream });
   } catch (error) {
+    await refund?.();
     console.error("[GENERATE]", error);
     return new Response("Internal error", { status: 500 });
   }

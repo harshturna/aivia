@@ -60,6 +60,9 @@ const SYSTEM_PROMPT = [
 ].join("\n");
 
 export async function POST(req: Request) {
+  // the cost is reserved by the guard; an error before streaming refunds it. Once the run
+  // streams it keeps the charge, cancelled or not: the work still runs (TICKET-042).
+  let refund: (() => Promise<void>) | undefined;
   try {
     const { id, messages }: { id?: string; messages: UIMessage[] } =
       await req.json();
@@ -73,22 +76,31 @@ export async function POST(req: Request) {
     // user three credits.
     const guard = await guardGeneration();
     if (!guard.ok) return guard.response;
+    refund = guard.refund;
 
     // The chat id the client made is the session id (design §12). A new one becomes a row
     // named after its first brief; anything that is not a uuid runs unsaved, and so does
     // every guest run: the account is shared (TICKET-038).
     const userId = guard.user.id;
-    const sessionId = id && isSessionId(id) && !isGuestId(userId) ? id : null;
+    let sessionId: string | null =
+      id && isSessionId(id) && !isGuestId(userId) ? id : null;
+    // an id this user cannot own (a stale link to someone else's session) runs unsaved
+    // rather than failing on the unique key (TICKET-042)
     if (sessionId) {
-      const session = await ensureSession(userId, sessionId);
-      if (session.title === "New session") {
-        const first = messages.find((m) => m.role === "user");
-        if (first)
-          await renameSession(
-            userId,
-            sessionId,
-            titleFromBrief(messageText(first))
-          );
+      try {
+        const session = await ensureSession(userId, sessionId);
+        if (session.title === "New session") {
+          const first = messages.find((m) => m.role === "user");
+          if (first)
+            await renameSession(
+              userId,
+              sessionId,
+              titleFromBrief(messageText(first))
+            );
+        }
+      } catch (error) {
+        console.error("[SESSION]", error);
+        sessionId = null;
       }
     }
 
@@ -113,9 +125,6 @@ export async function POST(req: Request) {
           thinking: { type: "adaptive", display: "summarized" },
           effort: "medium",
         },
-      },
-      onFinish: async () => {
-        await guard.consume();
       },
     });
 
@@ -146,6 +155,7 @@ export async function POST(req: Request) {
       }),
     });
   } catch (error) {
+    await refund?.();
     console.error("[AGENT_ERROR]", error);
     return new Response("Internal error", { status: 500 });
   }

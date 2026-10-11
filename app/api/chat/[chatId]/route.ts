@@ -17,6 +17,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ chatId: string }> }
 ) {
+  // reserved by the guard; refunded only if nothing streams (TICKET-042)
+  let refund: (() => Promise<void>) | undefined;
   try {
     const { chatId } = await params;
     const { messages }: { messages: UIMessage[] } = await request.json();
@@ -27,6 +29,7 @@ export async function POST(
 
     const guard = await guardGeneration();
     if (!guard.ok) return guard.response;
+    refund = guard.refund;
 
     // Scope the lookup to characters this user is allowed to see: their own,
     // plus the shared demo characters on the guest account. Previously this
@@ -40,6 +43,7 @@ export async function POST(
     });
 
     if (!character) {
+      await guard.refund();
       return new Response("Character not found", { status: 404 });
     }
 
@@ -74,9 +78,6 @@ export async function POST(
           thinking: { type: "disabled" },
           effort: "low",
         },
-      },
-      onFinish: async () => {
-        await guard.consume();
       },
     });
 
@@ -118,6 +119,7 @@ export async function POST(
       }),
     });
   } catch (error) {
+    await refund?.();
     console.error("[CHAT_POST]", error);
     return new Response("Internal Error", { status: 500 });
   }

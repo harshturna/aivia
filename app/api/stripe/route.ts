@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/getUser";
+import { isGuestId } from "@/lib/guest-user";
 
 import prismadb from "@/lib/prismadb";
 import { stripe } from "@/lib/stripe";
 import { absoluteUrl } from "@/lib/utils";
 
-const settingsUrls = absoluteUrl("/generative/settings");
+const settingsUrls = absoluteUrl("/settings");
 
 export async function GET() {
   try {
@@ -13,6 +14,10 @@ export async function GET() {
 
     if (!user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+    // the shared guest cannot subscribe: a payment would attach to every visitor (TICKET-042)
+    if (isGuestId(user.id)) {
+      return new NextResponse("Sign up to subscribe", { status: 403 });
     }
 
     const { id: userId, email: userEmail } = user;

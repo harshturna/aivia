@@ -39,15 +39,17 @@ export default async function NewSessionPage({
   const initialMode = MODES.some((m) => m.id === mode)
     ? (mode as ComposerMode)
     : "auto";
-  // a guest session kept in this browser reopens under its own id (TICKET-041)
-  const localId = local && isSessionId(local) ? local : undefined;
+  // a guest session kept in this browser reopens under its own id (TICKET-041); only the
+  // guest has one, so a stale link after sign-in starts a fresh session (TICKET-042)
+  const guest = await isGuestUser("SERVER_COMPONENT");
+  const localId = guest && local && isSessionId(local) ? local : undefined;
   const id = localId ?? randomUUID();
   return (
     <StudioClient
       key={id}
       id={id}
       isNew
-      isGuest={await isGuestUser("SERVER_COMPONENT")}
+      isGuest={guest}
       initialPrompt={prompt ?? ""}
       initialAnimate={initialAnimate}
       localId={localId}

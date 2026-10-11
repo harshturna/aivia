@@ -5,7 +5,8 @@ import { getUser } from "@/lib/getUser";
 import { isGuestId } from "@/lib/guest-user";
 import { getSession, isSessionId } from "@/lib/sessions";
 
-const MAX_BYTES = 80 * 1024 * 1024;
+/** Vercel caps a function's request body at about 4.5 MB; the dialog keeps cuts under this. */
+const MAX_BYTES = 4 * 1024 * 1024;
 const TYPES = new Set(["video/mp4", "video/webm"]);
 
 /**
@@ -24,7 +25,23 @@ export async function POST(req: Request) {
   if (!(file instanceof Blob) || !TYPES.has(file.type))
     return new NextResponse("A video file is required", { status: 400 });
   if (file.size > MAX_BYTES)
-    return new NextResponse("The cut is too large", { status: 413 });
+    return new NextResponse(
+      "The cut is too large to keep; download it instead",
+      {
+        status: 413,
+      }
+    );
+  // the declared type is the client's word; the first bytes are the file's (TICKET-042)
+  const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const mp4 =
+    String.fromCharCode(head[4], head[5], head[6], head[7]) === "ftyp";
+  const webm =
+    head[0] === 0x1a &&
+    head[1] === 0x45 &&
+    head[2] === 0xdf &&
+    head[3] === 0xa3;
+  if (!mp4 && !webm)
+    return new NextResponse("A video file is required", { status: 400 });
 
   const rawSession = form?.get("sessionId");
   const sessionId =
@@ -34,9 +51,15 @@ export async function POST(req: Request) {
       ? rawSession
       : null;
   const title = String(form?.get("title") ?? "").slice(0, 200) || "A cut";
-  const seconds = Number(form?.get("seconds"));
+  const seconds = Number(form?.get("seconds") ?? Number.NaN);
 
-  const url = await fal.storage.upload(file);
+  let url: string;
+  try {
+    url = await fal.storage.upload(file);
+  } catch (error) {
+    console.error("[CUTS]", error);
+    return new NextResponse("The cut could not be kept", { status: 502 });
+  }
   const asset = await recordAsset({
     userId: user.id,
     sessionId,
@@ -44,7 +67,7 @@ export async function POST(req: Request) {
     url,
     prompt: `Cut: ${title}`,
     model: "aivia/cut",
-    durationSec: Number.isFinite(seconds) ? seconds : null,
+    durationSec: Number.isFinite(seconds) && seconds > 0 ? seconds : null,
   });
   return NextResponse.json({ id: asset.id });
 }

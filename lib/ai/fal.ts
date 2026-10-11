@@ -1,4 +1,5 @@
 import { fal } from "@fal-ai/client";
+import { classifyImageUrl, MAX_IMAGE_BYTES } from "@/lib/ai/image-url";
 
 /**
  * Media generation goes through fal's own client rather than @ai-sdk/fal.
@@ -119,14 +120,22 @@ export function extractUrl(value: unknown): string | null {
 }
 
 /**
- * A URL fal can fetch for an image (TICKET-039). http(s) and data URLs pass through; a
- * site-relative path (the guest examples live in public/landing) is fetched from this site's
- * own origin and uploaded to fal's storage, since fal cannot reach localhost or a preview.
+ * A URL fal can fetch for an image (TICKET-039, TICKET-042). https and image data URLs pass
+ * through; the site's own `/landing/<file>` media are fetched from this site's origin (no
+ * redirects, an image type, at most 10 MB) and uploaded to fal's storage, since fal cannot
+ * reach localhost or a preview. Every other address is refused (`classifyImageUrl`).
  */
 export async function publicImageUrl(url: string, origin: string) {
-  if (/^(https?:|data:)/.test(url)) return url;
-  if (!url.startsWith("/")) throw new Error("Not an image URL");
-  const res = await fetch(new URL(url, origin));
-  if (!res.ok) throw new Error(`Could not read the image (${res.status})`);
-  return fal.storage.upload(await res.blob());
+  const kind = classifyImageUrl(url);
+  if (kind === "remote" || kind === "data") return url;
+  if (kind !== "site") throw new Error("That image cannot be animated");
+  const res = await fetch(new URL(url, origin), { redirect: "error" });
+  const type = res.headers.get("content-type") ?? "";
+  if (!res.ok || !type.startsWith("image/"))
+    throw new Error("Could not read the image");
+  if (Number(res.headers.get("content-length") ?? 0) > MAX_IMAGE_BYTES)
+    throw new Error("The image is too large");
+  const blob = await res.blob();
+  if (blob.size > MAX_IMAGE_BYTES) throw new Error("The image is too large");
+  return fal.storage.upload(blob);
 }

@@ -56,6 +56,9 @@ export function CutAction({
   );
 }
 
+/** What the library route accepts (Vercel's request limit, TICKET-042). */
+const KEEP_BYTES = 4 * 1024 * 1024;
+
 type State =
   | { at: "ready" }
   | { at: "rendering"; progress: number }
@@ -125,16 +128,19 @@ function CutBody({
     }
   };
 
+  const tooLarge = state.at === "done" && state.result.blob.size > KEEP_BYTES;
   const save = async () => {
-    if (state.at !== "done") return;
+    if (state.at !== "done" || tooLarge) return;
     setSaved("saving");
     const form = new FormData();
     form.set("file", state.result.blob, `cut.${state.result.ext}`);
     form.set("title", title);
     form.set("seconds", String(state.result.seconds));
     if (sessionId) form.set("sessionId", sessionId);
-    const res = await fetch("/api/cuts", { method: "POST", body: form });
-    setSaved(res.ok ? "yes" : "failed");
+    const res = await fetch("/api/cuts", { method: "POST", body: form }).catch(
+      () => null
+    );
+    setSaved(res?.ok ? "yes" : "failed");
   };
 
   const slug =
@@ -210,7 +216,12 @@ function CutBody({
                 <Download /> Download
               </a>
             </Button>
-            {canSave && (
+            {canSave && tooLarge && (
+              <span className="text-[13px] text-mute">
+                This cut is too long to keep in the library. Download it.
+              </span>
+            )}
+            {canSave && !tooLarge && (
               <Button
                 variant="secondary"
                 size="sm"
