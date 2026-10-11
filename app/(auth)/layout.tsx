@@ -5,12 +5,10 @@ const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser("SERVER_COMPONENT");
 
   if (user) {
-    redirect("/dashboard");
+    redirect("/studio");
   }
 
-  return (
-    <div className="flex items-center justify-center h-full">{children}</div>
-  );
+  return children;
 };
 
 export default AuthLayout;

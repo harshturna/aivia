@@ -3,11 +3,12 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef } from "react";
 
-import { Loader } from "@/components/Loader";
+import { Spinner } from "@/components/ui/spinner";
 import { useGuestLogin } from "@/hooks/useGuestLogin";
 
 /**
- * Landing CTA target: starts a demo session and forwards to the dashboard.
+ * The landing's way in: starts a guest session and opens the Studio, carrying a prompt
+ * typed on the landing page.
  *
  * Sign-in goes through useGuestLogin, which posts to /api/auth/guest and reads
  * the credentials from server-side env. The previous version called Supabase
@@ -35,16 +36,16 @@ const Start = () => {
   }, [guestHandler, params]);
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center">
-      <Loader description="Starting your demo session…" />
+    <div className="grid min-h-dvh place-items-center">
+      <p className="flex items-center gap-2.5 text-[14px] text-fg-2">
+        <Spinner className="size-4" label="Starting" /> Opening the Studio…
+      </p>
     </div>
   );
 };
 
-const GetStarted = () => (
+export const GuestStart = () => (
   <Suspense>
     <Start />
   </Suspense>
 );
-
-export default GetStarted;
