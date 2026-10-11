@@ -364,7 +364,6 @@ export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const sentenceRef = useRef<HTMLHeadingElement>(null);
-  const cueRef = useRef<HTMLParagraphElement>(null);
   const captionRef = useRef<HTMLDivElement>(null);
   const k1Ref = useRef<HTMLDivElement>(null);
   const k2Ref = useRef<HTMLDivElement>(null);
@@ -515,8 +514,6 @@ export function Hero() {
       }
       if (motesRef.current)
         motesRef.current.style.opacity = (1 - T2).toFixed(3);
-      if (cueRef.current)
-        cueRef.current.style.opacity = clamp01(1 - st * 6).toFixed(3);
       for (const k of KEYS) {
         const slot = slotRefs.current[k];
         if (slot) slot.style.opacity = (T1 * 0.28).toFixed(3);
@@ -890,15 +887,6 @@ export function Hero() {
                 );
               })}
             </h1>
-            <p
-              ref={cueRef}
-              className="w-cue-wrap w-lift mt-8 flex items-center gap-3 text-[14px] text-fg will-change-[opacity]"
-            >
-              <span className="flex items-center gap-3">
-                <span className="w-cue h-px w-8 bg-fg/80" />
-                Scroll, and watch it get made
-              </span>
-            </p>
           </div>
         </div>
 
