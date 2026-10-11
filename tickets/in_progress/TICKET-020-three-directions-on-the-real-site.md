@@ -34,6 +34,8 @@ instead of from a mockup.
 
 ## Progress log
 - 2026-10-11 — Opened from the owner's feedback on D-003.
+- 2026-10-11 — Built `/lab/wonder` (`app/(lab)/lab/wonder/page.tsx`, media in `public/lab/wonder/`). Same sticky stage as unfold; the brief is set in Cormorant across a dawn sky plate over a sea of clouds with a citadel; nouns open round-headed arched windows; the set gathers into a triptych floating on near clouds behind a slowly turning astrolabe ring; the arches flatten into timeline lanes. Near clouds and mist are generated cloud-on-black plates turned into tileable alpha layers that drift; the sky settles in once on load. The dawn palette is laid over the app tokens for this page only, so the reused landing sections show it too. Media: flux-pro v1.1 ultra for the sky, poster, clouds, mist, forest and a waterfall-bridge still (6 x about $0.06); wan 2.2 5b image-to-video for the waterfall teaser (static camera, 5 s, loops) and for the sky (3.4 s push-in, unused: it cannot loop); cassetteai for a 30 s ambient score (about $0.01). Generation scripts stayed in the session scratchpad; prompts to be moved into a repo script if this is chosen. Checked at 1440 and 390 at five scroll points plus the handoff; no console errors.
+- 2026-10-11 — Owner on `/lab/unfold`: "I like the idea but not the current graphic", wants a "wonder" vibe: "medieval, cloud, mountain, nature ... nature and tech in between, like it gives u awe to look at". Next: `/lab/wonder`, the same unfold sequence in a new world. Dawn above a sea of clouds with peaks and a citadel (generated plates, flux-pro ultra, about $0.06 each; an image-to-video loop of the plate on wan 2.2 5b; an ambient score). Arched windows for the nouns, a triptych for the set, flattening into timeline lanes. Cormorant display, gold accent, cloud layers in parallax.
 - 2026-10-11 — Built `/lab/unfold`: one sticky stage over 380svh. The brief types itself in Bricolage; each noun's window opens inline; on scroll the four windows fly to measured slots in a composition (poster, teaser, soundtrack, words), then into lanes on a 30-second timeline with a playhead that lights the score and taglines. Medium colours mark each noun, label and lane. The current landing's sections follow unchanged. Reduced motion shows the composition with no pinning. Checked at 1440 and 390 at five scroll points.
 - 2026-10-11 — Owner: likes all three as better than the site, "feel like it can be a lot a lot more better"; liked the current landing (D-003) but "a bit too generic, just need something that wow's"; "def not the print one". Next study: `/lab/unfold`, D-003's base with one signature sequence: the brief types, its nouns open inline (Rebus), fly out into a full composition, and rearrange into the timeline on scroll (Multitrack).
 - 2026-10-11 — Built `/lab/multitrack`, `/lab/print`, `/lab/rebus` (fonts DM Mono, Archivo
@@ -43,8 +45,8 @@ instead of from a mockup.
   fixed the rebus words window squeezing its text.
 
 ## Handoff
-- **State:** `/lab/unfold` built and reviewed; waiting on the owner.
-- **Blocked on:** the owner's verdict on `/lab/unfold`.
+- **State:** `/lab/wonder` built and reviewed; waiting on the owner.
+- **Blocked on:** the owner's verdict on `/lab/wonder`.
 - **Next:** record the choice as a decision superseding D-003; restyle the landing and the
   app tokens to it; delete the other two studies and `public/lab` files they alone use.
 - **Read first:** the three pages under `app/(lab)/lab/`
