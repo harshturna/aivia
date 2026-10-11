@@ -33,8 +33,8 @@ const RECENT = [
 ];
 
 /**
- * Keeps the newest output in view as the replay adds it, the way a session follows its run,
- * unless the visitor has scrolled up inside the frame.
+ * Keeps the newest output in view as the replay adds it, the way a session follows its run.
+ * The area is not scrollable by hand (TICKET-033): the wheel always belongs to the page.
  */
 function useFollow() {
   const area = useRef<HTMLDivElement>(null);
@@ -44,23 +44,14 @@ function useFollow() {
     const inner = content.current;
     if (!el || !inner) return;
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let pinned = true;
-    const onScroll = () => {
-      pinned = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-    };
     const ro = new ResizeObserver(() => {
-      if (pinned)
-        el.scrollTo({
-          top: el.scrollHeight,
-          behavior: still ? "auto" : "smooth",
-        });
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: still ? "auto" : "smooth",
+      });
     });
-    el.addEventListener("scroll", onScroll, { passive: true });
     ro.observe(inner);
-    return () => {
-      ro.disconnect();
-      el.removeEventListener("scroll", onScroll);
-    };
+    return () => ro.disconnect();
   }, []);
   return { area, content };
 }
@@ -160,7 +151,7 @@ export function StudioDemo() {
             </div>
             <div
               ref={area}
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6 [mask-image:linear-gradient(to_bottom,transparent,black_28px)] [scrollbar-width:none] md:px-10 [&::-webkit-scrollbar]:hidden"
+              className="min-h-0 flex-1 overflow-hidden px-6 py-6 [mask-image:linear-gradient(to_bottom,transparent,black_28px)] md:px-10"
             >
               <div ref={content}>
                 <RunDemo className="mx-auto max-w-[720px]" />
