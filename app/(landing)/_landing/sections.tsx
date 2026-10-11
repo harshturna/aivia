@@ -215,26 +215,41 @@ export function Changelog() {
   );
 }
 
-/** The close (design §11.9): one line over the third clip, the button. */
-export function Close() {
-  const clip = CLIPS[2];
+/**
+ * The close (design §11.9): one line over a clip, the button. The clip fades out at both
+ * edges with a mask, not a painted gradient, so it melts into whatever page is behind it.
+ */
+export function Close({
+  media = CLIPS[2],
+  headingClassName,
+}: {
+  media?: { src: string; poster: string };
+  headingClassName?: string;
+}) {
   return (
-    <section className="relative isolate mt-32 overflow-hidden py-32">
-      <div aria-hidden className="absolute inset-0 -z-10">
+    <section className="relative isolate mt-16 overflow-hidden py-56">
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,transparent_0%,rgb(0_0_0/.12)_14%,rgb(0_0_0/.45)_30%,black_50%,rgb(0_0_0/.45)_70%,rgb(0_0_0/.12)_86%,transparent_100%)]"
+      >
         <AmbientVideo
-          src={clip.src}
-          poster={clip.poster}
-          className="size-full object-cover opacity-40"
+          src={media.src}
+          poster={media.poster}
+          className="size-full object-cover opacity-45"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(10_10_11/1),rgb(10_10_11/.3)_40%,rgb(10_10_11/.3)_60%,rgb(10_10_11/1))]" />
       </div>
       <div className={cn(WRAP, "text-center")}>
-        <h2 className="mx-auto text-[clamp(36px,5vw,64px)] font-medium leading-[1] tracking-[-0.03em]">
+        <h2
+          className={cn(
+            "mx-auto text-[clamp(36px,5vw,64px)] font-medium leading-[1] tracking-[-0.03em]",
+            headingClassName
+          )}
+        >
           Make something today.
         </h2>
         <Link
           href="/get-started"
-          className={cn(buttonVariants({ size: "lg" }), "mt-8")}
+          className={cn(buttonVariants({ size: "lg" }), "mt-12")}
         >
           Start making
         </Link>

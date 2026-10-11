@@ -17,10 +17,10 @@ import { Wall } from "@/app/(landing)/_landing/wall";
 import { Composer, type ComposerMode } from "@/components/studio/composer";
 
 /**
- * Direction study: Wonder (TICKET-020). The unfold sequence set at dawn above a sea of
- * clouds. The brief is written across the sky; each noun opens an arched window onto the
- * thing it became; on scroll the windows gather into a triptych floating on the clouds, then
- * flatten into lanes on one timeline: the old shape becoming the tool.
+ * Direction study: Wonder (TICKET-020). The unfold sequence set in an old forest at first
+ * light. The brief is written over the trunks; each noun opens an arched window onto the
+ * thing it became; on scroll the windows gather into a triptych standing in low fog before a
+ * set of tree rings, then flatten into lanes on one timeline: growth becoming the tool.
  */
 type Key = "poster" | "teaser" | "score" | "words";
 const KEYS: Key[] = ["poster", "teaser", "score", "words"];
@@ -30,28 +30,28 @@ const MEDIUM: Record<
   { tint: string; label: string; meta: string; lane: string; em: number }
 > = {
   poster: {
-    tint: "#f2a68e",
+    tint: "#e9a77c",
     label: "Poster",
     meta: "Image",
     lane: "Picture",
     em: 0.6,
   },
   teaser: {
-    tint: "#a9c3ee",
+    tint: "#8fd0c0",
     label: "Teaser",
     meta: "Video",
     lane: "Clip",
     em: 1.4,
   },
   score: {
-    tint: "#e8b86a",
+    tint: "#e2b962",
     label: "Soundtrack",
     meta: "Music",
     lane: "Score",
     em: 2.0,
   },
   words: {
-    tint: "#cdb9f2",
+    tint: "#c5d6a0",
     label: "Words",
     meta: "Copy",
     lane: "Words",
@@ -69,7 +69,7 @@ const BRIEF: Tok[] = [
   { n: "score", w: "soundtrack" },
   { w: " and the " },
   { n: "words", w: "words" },
-  { w: " for a castle above the clouds." },
+  { w: " for a forest older than memory." },
 ];
 const SENTENCE = BRIEF.map((t) => t.w).join("");
 const TOTAL = SENTENCE.length;
@@ -85,9 +85,9 @@ const NOUN_END = (() => {
 const ENDS = new Set(Object.values(NOUN_END));
 
 const TAGLINES: Array<{ text: string; from: number; to: number }> = [
-  { text: "Where the mountains keep the light.", from: 0.04, to: 0.32 },
-  { text: "Climb at first light.", from: 0.4, to: 0.62 },
-  { text: "Above the clouds, the gates are open.", from: 0.68, to: 0.97 },
+  { text: "Older than every map.", from: 0.04, to: 0.28 },
+  { text: "Walk in before the world wakes.", from: 0.36, to: 0.62 },
+  { text: "The light still finds its way down.", from: 0.68, to: 0.97 },
 ];
 const FRAMES = [0.5, 1.5, 2.5, 3.5, 4.5, 0.5, 1.5, 2.5, 3.5, 4.5];
 const ROT = [-4, 2.5, -2, 3.5];
@@ -135,7 +135,7 @@ function PlayButton({
       type="button"
       onClick={onToggle}
       aria-label={playing ? "Pause the soundtrack" : "Play the soundtrack"}
-      className="grid size-8 place-items-center rounded-full border border-[#f4eedf]/30 bg-[#0c1222]/30 text-[#f4eedf] backdrop-blur transition-colors hover:bg-[#f4eedf]/15"
+      className="grid size-8 place-items-center rounded-full border border-[#f1ecdc]/30 bg-[#0b1410]/30 text-[#f1ecdc] backdrop-blur transition-colors hover:bg-[#f1ecdc]/15"
     >
       {playing ? (
         <Pause className="size-3.5" />
@@ -163,15 +163,15 @@ function PieceBody({ k, peaks }: { k: Key; peaks: number[] }) {
       <img
         src={`${W}/poster.webp`}
         alt=""
-        className="absolute inset-0 size-full object-cover object-[50%_30%]"
+        className="absolute inset-0 size-full object-cover object-[50%_40%]"
       />
     );
   if (k === "teaser")
     return (
       <>
         <video
-          src={`${W}/falls.mp4`}
-          poster={`${W}/falls.webp`}
+          src={`${W}/canyon.mp4`}
+          poster={`${W}/canyon.webp`}
           muted
           loop
           autoPlay
@@ -180,7 +180,7 @@ function PieceBody({ k, peaks }: { k: Key; peaks: number[] }) {
           className="absolute inset-0 size-full object-cover"
         />
         <div
-          className="absolute inset-0 flex bg-[#0c1222]"
+          className="absolute inset-0 flex bg-[#0b1410]"
           style={{ opacity: "var(--b)" }}
         >
           {FRAMES.map((f, i) => (
@@ -188,9 +188,9 @@ function PieceBody({ k, peaks }: { k: Key; peaks: number[] }) {
             <img
               // biome-ignore lint/suspicious/noArrayIndexKey: the strip repeats
               key={i}
-              src={`${W}/falls-${f}.jpg`}
+              src={`${W}/canyon-${f}.jpg`}
               alt=""
-              className="aspect-video h-full shrink-0 border-r border-[#0c1222]/70 object-cover"
+              className="aspect-video h-full shrink-0 border-r border-[#0b1410]/70 object-cover"
             />
           ))}
         </div>
@@ -199,15 +199,15 @@ function PieceBody({ k, peaks }: { k: Key; peaks: number[] }) {
   if (k === "score") {
     const bars = peaks.length ? peaks : Array.from({ length: 120 }, () => 0.3);
     return (
-      <div className="absolute inset-0 bg-[#121a2c] [container-type:size]">
+      <div className="absolute inset-0 bg-[#10201a] [container-type:size]">
         <div
           className="absolute inset-x-5 top-[24%] flex items-baseline justify-center gap-2.5 whitespace-nowrap"
           style={{ opacity: "calc(var(--a) - var(--b))" }}
         >
-          <span className="font-[family-name:var(--font-cormorant)] text-[clamp(12px,8cqw,21px)] font-medium italic leading-none text-[#f4eedf]">
-            Dawn over the citadel
+          <span className="font-[family-name:var(--font-cormorant)] text-[clamp(12px,8cqw,21px)] font-medium italic leading-none text-[#f1ecdc]">
+            First light in the old wood
           </span>
-          <span className="text-[12px] tabular-nums text-[#8d97ab] max-md:hidden">
+          <span className="text-[12px] tabular-nums text-[#8e9984] max-md:hidden">
             0:30
           </span>
         </div>
@@ -223,7 +223,7 @@ function PieceBody({ k, peaks }: { k: Key; peaks: number[] }) {
             <i
               // biome-ignore lint/suspicious/noArrayIndexKey: positional bars
               key={i}
-              className="block min-w-px flex-1 rounded-full bg-[#e8b86a]"
+              className="block min-w-px flex-1 rounded-full bg-[#e2b962]"
               style={{
                 height: `${Math.max(8, p * 100)}%`,
                 opacity: `clamp(0.28, calc((var(--play) * ${bars.length} - ${i}) * 100), 1)`,
@@ -235,12 +235,12 @@ function PieceBody({ k, peaks }: { k: Key; peaks: number[] }) {
     );
   }
   return (
-    <div className="absolute inset-0 bg-[#18172b] [container-type:size]">
+    <div className="absolute inset-0 bg-[#131f17] [container-type:size]">
       <div
         className="absolute inset-0 flex flex-col justify-center px-[clamp(6px,9cqh,22px)] pt-[calc(var(--a)*14%)] text-center"
         style={{ opacity: "calc(1 - var(--b))" }}
       >
-        <p className="font-[family-name:var(--font-cormorant)] text-[clamp(9px,min(26cqh,11cqw),22px)] font-medium italic leading-[1.15] text-[#f4eedf]">
+        <p className="font-[family-name:var(--font-cormorant)] text-[clamp(9px,min(26cqh,11cqw),22px)] font-medium italic leading-[1.15] text-[#f1ecdc]">
           &ldquo;{TAGLINES[0].text}&rdquo;
         </p>
         <div
@@ -261,19 +261,19 @@ function PieceBody({ k, peaks }: { k: Key; peaks: number[] }) {
         {TAGLINES.map((t) => (
           <div
             key={t.text}
-            className="absolute inset-y-1.5 overflow-hidden rounded-[6px] bg-[#cdb9f2]/12 px-2.5"
+            className="absolute inset-y-1.5 overflow-hidden rounded-[6px] bg-[#c5d6a0]/12 px-2.5"
             style={{
               left: `${t.from * 100}%`,
               width: `${(t.to - t.from) * 100}%`,
             }}
           >
             <div
-              className="absolute inset-0 bg-[#cdb9f2]/30"
+              className="absolute inset-0 bg-[#c5d6a0]/30"
               style={{
                 opacity: `clamp(0, calc(min(var(--play) - ${t.from}, ${t.to} - var(--play)) * 9999), 1)`,
               }}
             />
-            <p className="relative truncate pt-1.5 font-[family-name:var(--font-cormorant)] text-[16px] font-medium italic leading-5 text-[#f4eedf] sm:pt-2.5">
+            <p className="relative truncate pt-1.5 font-[family-name:var(--font-cormorant)] text-[16px] font-medium italic leading-5 text-[#f1ecdc] sm:pt-2.5">
               {t.text}
             </p>
           </div>
@@ -283,67 +283,75 @@ function PieceBody({ k, peaks }: { k: Key; peaks: number[] }) {
   );
 }
 
-/** An astrolabe ring: the instrument behind the triptych. */
-function Ring() {
-  const ticks = Array.from({ length: 72 }, (_, i) => i * 5);
+/** Tree rings: growth read as time, the instrument behind the triptych. */
+const RINGS = (() => {
+  const out: string[] = [];
+  for (let r = 0; r < 15; r++) {
+    const radius = 14 + r * 5.6 + (r % 3) * 0.8;
+    const pts: string[] = [];
+    for (let i = 0; i <= 96; i++) {
+      const a = (i / 96) * Math.PI * 2;
+      const wob =
+        1 +
+        0.035 * Math.sin(a * 3 + r * 0.9) +
+        0.02 * Math.sin(a * 7 + r * 1.7) +
+        0.012 * Math.sin(a * 13 + r);
+      const x = Math.cos(a) * radius * wob;
+      const y = Math.sin(a) * radius * wob * 0.97;
+      pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+    }
+    out.push(`M${pts.join("L")}Z`);
+  }
+  return out;
+})();
+
+function Rings() {
+  const ticks = Array.from({ length: 60 }, (_, i) => i * 6);
   return (
     <svg viewBox="-100 -100 200 200" className="size-full" aria-hidden>
-      <circle
-        r="96"
-        fill="none"
-        stroke="#f4eedf"
-        strokeOpacity=".22"
-        strokeWidth=".25"
-      />
-      <circle
-        r="88"
-        fill="none"
-        stroke="#f4eedf"
-        strokeOpacity=".14"
-        strokeWidth=".25"
-        strokeDasharray=".6 1.6"
-      />
-      <circle
-        r="62"
-        fill="none"
-        stroke="#e8b86a"
-        strokeOpacity=".22"
-        strokeWidth=".2"
-      />
+      {RINGS.map((d, i) => (
+        <path
+          key={d.slice(0, 24)}
+          d={d}
+          fill="none"
+          stroke={i % 4 === 3 ? "#e2b962" : "#f1ecdc"}
+          strokeOpacity={i % 4 === 3 ? 0.26 : 0.1 + (i / RINGS.length) * 0.1}
+          strokeWidth={i % 4 === 3 ? 0.3 : 0.22}
+        />
+      ))}
       {ticks.map((d) => (
         <line
           key={d}
           x1="0"
-          y1={d % 30 ? -93 : -90}
+          y1={d % 30 ? -96 : -93}
           x2="0"
-          y2="-96"
-          stroke="#f4eedf"
-          strokeOpacity={d % 30 ? 0.18 : 0.38}
-          strokeWidth=".25"
+          y2="-98"
+          stroke="#f1ecdc"
+          strokeOpacity={d % 30 ? 0.16 : 0.34}
+          strokeWidth=".22"
           transform={`rotate(${d})`}
         />
       ))}
-      <line
-        x1="-96"
-        y1="0"
-        x2="96"
-        y2="0"
-        stroke="#f4eedf"
-        strokeOpacity=".08"
-        strokeWidth=".2"
-      />
-      <line
-        x1="0"
-        y1="-96"
-        x2="0"
-        y2="96"
-        stroke="#f4eedf"
-        strokeOpacity=".08"
-        strokeWidth=".2"
-      />
     </svg>
   );
 }
+
+/** Motes of light drifting up through the shafts; seeded so the server and client agree. */
+const MOTES = (() => {
+  let seed = 7;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  return Array.from({ length: 38 }, () => ({
+    left: 30 + rnd() * 62,
+    size: 1.5 + rnd() * 2.8,
+    dur: 14 + rnd() * 16,
+    delay: -rnd() * 30,
+    sway: 10 + rnd() * 30,
+    alpha: 0.35 + rnd() * 0.55,
+  }));
+})();
 
 function Wonder() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -611,7 +619,7 @@ function Wonder() {
     >
       <div
         ref={stageRef}
-        className="sticky top-0 h-svh min-h-[640px] overflow-hidden bg-[#0c1222]"
+        className="sticky top-0 h-svh min-h-[640px] overflow-hidden bg-[#0b1410]"
         style={
           {
             "--t1": 0,
@@ -625,39 +633,64 @@ function Wonder() {
         <div
           ref={skyRef}
           aria-hidden
-          className="absolute inset-0 origin-[60%_70%]"
+          className="absolute inset-0 origin-[45%_85%]"
         >
           <div className="w-sky w-arrive absolute inset-0" />
+          {/* the light breathes through the canopy */}
+          <div className="w-shafts absolute inset-0 mix-blend-screen" />
         </div>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgb(12_18_34/.7)_0%,rgb(12_18_34/.42)_45%,rgb(12_18_34/.12)_68%,transparent_82%)]"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgb(11_20_16/.66)_0%,rgb(11_20_16/.38)_48%,transparent_80%),linear-gradient(to_bottom,rgb(11_20_16/.55)_0%,transparent_30%)]"
         />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          style={{ opacity: "calc(1 - var(--t2))" }}
+        >
+          {MOTES.map((m) => (
+            <span
+              key={`${m.left}-${m.delay}`}
+              className="w-mote absolute bottom-[-4%] rounded-full bg-[#ffe3a6]"
+              style={
+                {
+                  left: `${m.left}%`,
+                  width: m.size,
+                  height: m.size,
+                  opacity: m.alpha,
+                  animationDuration: `${m.dur}s`,
+                  animationDelay: `${m.delay}s`,
+                  "--sway": `${m.sway}px`,
+                } as React.CSSProperties
+              }
+            />
+          ))}
+        </div>
         <div
           ref={mistRef}
           aria-hidden
-          className="w-drift-slow pointer-events-none absolute inset-x-0 top-[38%] h-[34%] bg-[url(/lab/wonder/mist.webp)] bg-[length:auto_100%] bg-repeat-x opacity-30"
+          className="w-drift-slow pointer-events-none absolute inset-x-0 top-[50%] h-[44%] bg-[url(/lab/wonder/fog.webp)] bg-[length:auto_100%] bg-repeat-x opacity-[.22] [mask-image:linear-gradient(to_bottom,transparent,black_45%,black_75%,transparent)]"
         />
         <div
           ref={veilRef}
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[#0c1222] opacity-0"
+          className="pointer-events-none absolute inset-0 bg-[#0b1410] opacity-0"
         />
         <div
           ref={ringRef}
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-[57%] z-[6] aspect-square w-[min(118vh,150vw)] opacity-0"
         >
-          <Ring />
+          <Rings />
         </div>
 
-        {/* K0: the brief, written across the sky */}
+        {/* K0: the brief, written over the trunks */}
         <div className="absolute inset-x-0 top-0 z-10 px-5 pt-[16svh] sm:px-8 sm:pt-[17svh]">
           <div className="mx-auto w-full max-w-[1240px]">
             <h1
               ref={sentenceRef}
               aria-label={SENTENCE}
-              className="max-w-[1180px] origin-top-left font-[family-name:var(--font-cormorant)] text-[clamp(44px,7.4vw,124px)] font-medium leading-[0.96] tracking-[-0.015em] text-[#f6f0e2] [text-shadow:0_1px_2px_rgb(12_18_34/.35),0_4px_40px_rgb(12_18_34/.55)] will-change-transform"
+              className="max-w-[1180px] origin-top-left font-[family-name:var(--font-cormorant)] text-[clamp(44px,7.4vw,124px)] font-medium leading-[0.96] tracking-[-0.015em] text-[#f3eedf] [text-shadow:0_1px_2px_rgb(11_20_16/.35),0_4px_40px_rgb(11_20_16/.55)] will-change-transform"
             >
               {typed === 0 && <span className="w-caret" />}
               {BRIEF.map((tok, ti) => {
@@ -711,13 +744,13 @@ function Wonder() {
               })}
             </h1>
             <p
-              className={`mt-8 flex items-center gap-3 text-[14px] text-[#f4eedf] transition-opacity duration-1000 ${done ? "" : "opacity-0"}`}
+              className={`mt-8 flex items-center gap-3 text-[14px] text-[#f1ecdc] transition-opacity duration-1000 ${done ? "" : "opacity-0"}`}
             >
               <span
-                className="flex items-center gap-3 rounded-full bg-[#0c1222]/45 py-2 pl-3 pr-4 backdrop-blur-md"
+                className="flex items-center gap-3 rounded-full bg-[#0b1410]/45 py-2 pl-3 pr-4 backdrop-blur-md"
                 style={{ opacity: "calc(1 - var(--st) * 6)" }}
               >
-                <span className="w-cue h-px w-8 bg-[#f4eedf]/80" />
+                <span className="w-cue h-px w-8 bg-[#f1ecdc]/80" />
                 Scroll, and watch it get made
               </span>
             </p>
@@ -729,7 +762,7 @@ function Wonder() {
           <div className="mx-auto flex h-full max-w-[1280px] flex-col px-5 pb-6 pt-[78px] sm:px-8 sm:pt-[92px] md:pb-10">
             <div className="flex items-start justify-between gap-6">
               <div ref={captionRef} className="h-px w-[54%] sm:w-[460px]" />
-              <p className="hidden text-[13px] text-[#f4eedf]/75 sm:block">
+              <p className="hidden text-[13px] text-[#f1ecdc]/75 sm:block">
                 Four things from one line
               </p>
             </div>
@@ -742,8 +775,8 @@ function Wonder() {
                 >
                   <div className="mb-2 flex h-7 items-center gap-2 text-[13px]">
                     <Mark k={k} />
-                    <span className="text-[#f4eedf]">{MEDIUM[k].label}</span>
-                    <span className="text-[#f4eedf]/55">{MEDIUM[k].meta}</span>
+                    <span className="text-[#f1ecdc]">{MEDIUM[k].label}</span>
+                    <span className="text-[#f1ecdc]/55">{MEDIUM[k].meta}</span>
                     {k === "score" && (
                       <span className="ml-auto">
                         <PlayButton playing={playing} onToggle={toggle} />
@@ -768,13 +801,13 @@ function Wonder() {
         <div ref={k2Ref} className="invisible absolute inset-0 z-10 opacity-0">
           <div className="mx-auto flex h-full max-w-[1280px] flex-col justify-center px-5 pb-8 pt-[210px] sm:px-8 sm:pt-[240px]">
             <div className="mb-5 flex items-center justify-between gap-4">
-              <p className="font-[family-name:var(--font-cormorant)] text-[19px] italic text-[#f4eedf] sm:text-[22px]">
+              <p className="font-[family-name:var(--font-cormorant)] text-[19px] italic text-[#f1ecdc] sm:text-[22px]">
                 Cut together on one timeline.
               </p>
               <div className="flex items-center gap-3">
                 <span
                   ref={tcRef}
-                  className="whitespace-nowrap text-[12.5px] tabular-nums text-[#f4eedf]/60"
+                  className="whitespace-nowrap text-[12.5px] tabular-nums text-[#f1ecdc]/60"
                 >
                   0:00 / 0:30
                 </span>
@@ -785,16 +818,16 @@ function Wonder() {
               <span />
               <div
                 data-ruler
-                className="relative h-6 border-b border-[#f4eedf]/20"
+                className="relative h-6 border-b border-[#f1ecdc]/20"
               >
                 {[0, 5, 10, 15, 20, 25, 30].map((s) => (
                   <span
                     key={s}
-                    className={`absolute bottom-0 h-2 w-px bg-[#f4eedf]/35 ${s % 10 ? "max-sm:hidden" : ""}`}
+                    className={`absolute bottom-0 h-2 w-px bg-[#f1ecdc]/35 ${s % 10 ? "max-sm:hidden" : ""}`}
                     style={{ left: `${(s / 30) * 100}%` }}
                   >
                     <span
-                      className={`absolute bottom-2.5 text-[11px] tabular-nums text-[#f4eedf]/45 ${s === 30 ? "-translate-x-full" : s === 0 ? "" : "-translate-x-1/2"}`}
+                      className={`absolute bottom-2.5 text-[11px] tabular-nums text-[#f1ecdc]/45 ${s === 30 ? "-translate-x-full" : s === 0 ? "" : "-translate-x-1/2"}`}
                     >
                       {fmt(s)}
                     </span>
@@ -814,13 +847,13 @@ function Wonder() {
                 ] as const
               ).map(([k, h, pos]) => (
                 <div key={k} className="contents">
-                  <div className="flex items-center gap-2 text-[12.5px] text-[#f4eedf]/80">
+                  <div className="flex items-center gap-2 text-[12.5px] text-[#f1ecdc]/80">
                     <Mark k={k} />
                     {MEDIUM[k].lane}
                   </div>
                   <div
                     data-lane={k}
-                    className={`relative rounded-[7px] bg-[#0c1222]/45 backdrop-blur-md ${h}`}
+                    className={`relative rounded-[7px] bg-[#0b1410]/45 backdrop-blur-md ${h}`}
                   >
                     <div data-k={k} className={`absolute ${pos}`} />
                   </div>
@@ -839,20 +872,20 @@ function Wonder() {
             }}
             aria-hidden
             data-on={typed >= NOUN_END[k]}
-            className="w-piece pointer-events-none absolute left-0 top-0 z-20 overflow-hidden shadow-[0_30px_80px_-24px_rgb(6_10_22/.85)] outline outline-1 -outline-offset-1 outline-[#f4eedf]/20 will-change-transform"
+            className="w-piece pointer-events-none absolute left-0 top-0 z-20 overflow-hidden shadow-[0_30px_80px_-24px_rgb(6_10_22/.85)] outline outline-1 -outline-offset-1 outline-[#f1ecdc]/20 will-change-transform"
             style={{ "--a": 0, "--b": 0 } as React.CSSProperties}
           >
             <PieceBody k={k} peaks={peaks} />
           </div>
         ))}
 
-        {/* the near clouds: they gather under the set, then fall away */}
+        {/* the near fog: it gathers under the set, then sinks away */}
         <div
           ref={cloudsRef}
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[32%] md:h-[46%]"
         >
-          <div className="w-drift absolute inset-0 bg-[url(/lab/wonder/clouds.webp)] bg-[length:auto_100%] bg-repeat-x" />
+          <div className="w-drift absolute inset-0 bg-[url(/lab/wonder/fog.webp)] bg-[length:auto_100%] bg-repeat-x opacity-75 [mask-image:linear-gradient(to_bottom,transparent,black_55%)]" />
         </div>
 
         {/* the playhead rides over every lane */}
@@ -862,15 +895,15 @@ function Wonder() {
           className="pointer-events-none absolute z-30 opacity-0"
         >
           <div
-            className="absolute inset-y-0 w-px bg-[#f6f0e2]"
+            className="absolute inset-y-0 w-px bg-[#f3eedf]"
             style={{ left: "calc(var(--play) * 100%)" }}
           >
-            <span className="absolute -left-[4px] -top-1 h-3 w-[9px] rounded-t-full bg-[#e8b86a]" />
+            <span className="absolute -left-[4px] -top-1 h-3 w-[9px] rounded-t-full bg-[#e2b962]" />
           </div>
         </div>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[26] h-40 bg-gradient-to-t from-[#0c1222] to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[26] h-40 bg-gradient-to-t from-[#0b1410] to-transparent"
           style={{ opacity: "var(--t2)" }}
         />
       </div>
@@ -887,7 +920,7 @@ function Wonder() {
 }
 
 const EXAMPLES = [
-  "A poster, a ten-second teaser and a soundtrack for a castle above the clouds",
+  "A poster, a ten-second teaser and a soundtrack for a forest older than memory",
   "Album art for a quiet piano record, and a name for it",
   "The sound of rain on a tin roof, twenty seconds",
 ];
@@ -934,33 +967,37 @@ function YourTurn() {
   );
 }
 
-/** The dawn palette, laid over the app's tokens for this page only. */
-const DAWN = {
-  "--color-bg": "#0c1222",
-  "--color-surface": "#131b2e",
-  "--color-surface-2": "#1a2339",
-  "--color-surface-3": "#232d46",
-  "--color-border": "rgb(244 238 223 / 0.09)",
-  "--color-border-strong": "rgb(244 238 223 / 0.18)",
-  "--color-fg": "#f4eedf",
-  "--color-fg-2": "#b9c0d0",
-  "--color-mute": "#8d97ab",
-  "--color-glass": "rgb(12 18 34 / 0.72)",
+/** The forest palette, laid over the app's tokens for this page only. */
+const FOREST = {
+  "--color-bg": "#0b1410",
+  "--color-surface": "#121d17",
+  "--color-surface-2": "#18261e",
+  "--color-surface-3": "#203027",
+  "--color-border": "rgb(241 236 220 / 0.09)",
+  "--color-border-strong": "rgb(241 236 220 / 0.18)",
+  "--color-fg": "#f1ecdc",
+  "--color-fg-2": "#b6bfae",
+  "--color-mute": "#8e9984",
+  "--color-glass": "rgb(11 20 16 / 0.72)",
 } as React.CSSProperties;
 
 export default function WonderStudy() {
   return (
-    <div className="min-h-screen overflow-x-clip bg-bg text-fg" style={DAWN}>
+    <div className="min-h-screen overflow-x-clip bg-bg text-fg" style={FOREST}>
       <style>{`
-        .w-sky{background:url(/lab/wonder/sky.webp) 60% 50%/cover no-repeat}
-        @media (max-aspect-ratio:3/4){.w-sky{background-image:url(/lab/wonder/sky-tall.webp);background-position:50% 50%}}
+        .w-sky{background:url(/lab/wonder/forest.webp) 40% 50%/cover no-repeat}
+        @media (max-aspect-ratio:3/4){.w-sky{background-image:url(/lab/wonder/forest-tall.webp);background-position:50% 50%}}
+        .w-shafts{background:conic-gradient(from 196deg at 60% -12%,transparent 0deg,rgb(255 226 160/.16) 3deg,transparent 7deg,transparent 11deg,rgb(255 226 160/.1) 14deg,transparent 19deg,transparent 24deg,rgb(255 226 160/.13) 26deg,transparent 31deg,transparent 360deg);transform-origin:60% -12%;animation:w-breathe 9s ease-in-out infinite}
+        @keyframes w-breathe{0%,100%{opacity:.55;transform:rotate(-1.2deg)}50%{opacity:1;transform:rotate(1.2deg)}}
+        .w-mote{filter:blur(.6px);box-shadow:0 0 6px rgb(255 227 166/.8);animation:w-rise linear infinite}
+        @keyframes w-rise{0%{transform:translate(0,0)}25%{transform:translate(var(--sway),-28vh)}50%{transform:translate(0,-56vh)}75%{transform:translate(calc(var(--sway) * -1),-84vh)}100%{transform:translate(0,-112vh)}}
         .w-arrive{animation:w-arrive 3.2s cubic-bezier(.23,1,.32,1) both}
-        @keyframes w-arrive{from{transform:scale(1.14);filter:brightness(.55) saturate(.8)}to{transform:scale(1.03);filter:none}}
+        @keyframes w-arrive{from{transform:scale(1.12);filter:brightness(.35) saturate(.7)}to{transform:scale(1.03);filter:none}}
         .w-drift{animation:w-drift 140s linear infinite}
         .w-drift-slow{animation:w-drift 200s linear infinite reverse}
         @keyframes w-drift{from{background-position-x:0}to{background-position-x:calc(var(--tile,1800px) * -1)}}
         .w-caret{display:inline-block;position:relative;width:0;height:.74em;vertical-align:-.04em}
-        .w-caret::after{content:"";position:absolute;left:.05em;top:0;width:.035em;height:100%;background:#e8b86a;border-radius:2px}
+        .w-caret::after{content:"";position:absolute;left:.05em;top:0;width:.035em;height:100%;background:#e2b962;border-radius:2px}
         .w-blink::after{animation:w-blink 1.1s steps(1) infinite}
         @keyframes w-blink{50%{opacity:0}}
         .w-cue{transform-origin:left;animation:w-cue 2.4s cubic-bezier(.23,1,.32,1) infinite}
@@ -969,7 +1006,7 @@ export default function WonderStudy() {
         .w-piece[data-on="true"]{clip-path:inset(0 0 0 0)}
         .w-grid{display:grid;width:100%;gap:12px;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr 1fr;grid-template-areas:"teaser teaser" "poster score" "poster words";height:min(500px,calc(100svh - 350px))}
         @media (min-width:768px){.w-grid{gap:18px;grid-template-columns:3.2fr 5.8fr 3fr;grid-template-rows:1fr 1fr;grid-template-areas:"poster teaser score" "poster teaser words";height:min(470px,calc(100svh - 300px))}}
-        @media (prefers-reduced-motion:reduce){.w-piece{transition:none}.w-arrive,.w-drift,.w-drift-slow,.w-blink::after,.w-cue{animation:none}}
+        @media (prefers-reduced-motion:reduce){.w-piece{transition:none}.w-shafts,.w-mote,.w-arrive,.w-drift,.w-drift-slow,.w-blink::after,.w-cue{animation:none}}
       `}</style>
       <LandingNav />
       <main id="main" className="space-y-32">
@@ -981,7 +1018,10 @@ export default function WonderStudy() {
         <LibraryPanel />
         <Pricing />
         <Changelog />
-        <Close />
+        <Close
+          media={{ src: `${W}/valley.mp4`, poster: `${W}/valley.webp` }}
+          headingClassName="font-[family-name:var(--font-cormorant)] text-[clamp(48px,7vw,104px)] tracking-[-0.015em]"
+        />
       </main>
       <LandingFooter />
     </div>
