@@ -56,6 +56,7 @@ export default async function CharacterChatPage({ params }: Params) {
       }}
       initialMessages={history}
       canManage={character.userId === user.id && !isGuest}
+      isGuest={isGuest}
     />
   );
 }

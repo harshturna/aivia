@@ -20,9 +20,29 @@ import { createClient } from "@/lib/supabase/client";
  * Sign in and sign up (design §10): the wordmark, one line, two fields, the button, a link
  * to the other page and a quiet way in as a guest. Errors sit under the field they belong to.
  */
-export function AuthForm({ kind }: { kind: "login" | "signup" }) {
+/** Supabase's words for the cases people hit, in ours, with the next step (TICKET-054). */
+function plainAuthError(message: string, login: boolean) {
+  if (login)
+    return "That email and password do not match. Try again, or create an account.";
+  if (/already registered|already exists/i.test(message))
+    return "There is already an account with this email.";
+  if (/password/i.test(message))
+    return "Choose a longer password, with at least 8 characters.";
+  if (/rate|too many/i.test(message))
+    return "Too many tries in a short time. Wait a minute, then try again.";
+  return "The account was not created. Try again in a moment.";
+}
+
+export function AuthForm({
+  kind,
+  signedInAsGuest = false,
+}: {
+  kind: "login" | "signup";
+  /** The shared guest, already signed in, reached this page from inside the app. */
+  signedInAsGuest?: boolean;
+}) {
   const router = useRouter();
-  const { guestHandler, isGuestLoading } = useGuestLogin();
+  const { guestHandler, isGuestLoading, guestError } = useGuestLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{
@@ -60,11 +80,7 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
       : await supabase.auth.signUp({ email, password });
     setBusy(false);
     if (error) {
-      setErrors({
-        form: login
-          ? "That email and password do not match. Try again, or create an account."
-          : error.message,
-      });
+      setErrors({ form: plainAuthError(error.message, login) });
       return;
     }
     // A sign-up that needs email confirmation returns no session; the work comes along
@@ -124,8 +140,13 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
             autoComplete="email"
             spellCheck={false}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com…"
+            onChange={(e) => {
+              setEmail(e.target.value);
+              // an error is about what was typed: typing again clears it
+              if (errors.email || errors.form)
+                setErrors((x) => ({ ...x, email: undefined, form: undefined }));
+            }}
+            placeholder="you@example.com"
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? "auth-email-error" : undefined}
           />
@@ -145,7 +166,15 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
             type="password"
             autoComplete={login ? "current-password" : "new-password"}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (errors.password || errors.form)
+                setErrors((x) => ({
+                  ...x,
+                  password: undefined,
+                  form: undefined,
+                }));
+            }}
             aria-invalid={Boolean(errors.password)}
             aria-describedby={
               errors.password ? "auth-password-error" : undefined
@@ -174,6 +203,17 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
         {errors.form && (
           <p role="alert" className="text-[13px] text-poor">
             {errors.form}
+            {!login && errors.form.includes("already an account") && (
+              <>
+                {" "}
+                <Link
+                  href="/login"
+                  className="text-fg underline underline-offset-4"
+                >
+                  Sign in instead
+                </Link>
+              </>
+            )}
           </p>
         )}
         <Button type="submit" size="lg" className="w-full" disabled={busy}>
@@ -200,15 +240,29 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
         </Link>
       </p>
       <div className="mt-8 border-t border-border pt-6">
-        <button
-          type="button"
-          onClick={() => guestHandler()}
-          disabled={isGuestLoading}
-          className="inline-flex items-center gap-2 text-[13.5px] text-fg-2 transition-colors hover:text-fg disabled:opacity-60"
-        >
-          {isGuestLoading && <Spinner className="size-3.5" />}
-          Try it as a guest, no account needed
-        </button>
+        {signedInAsGuest ? (
+          <Link
+            href="/studio"
+            className="text-[13.5px] text-fg-2 transition-colors hover:text-fg"
+          >
+            Back to the Studio
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => guestHandler()}
+            disabled={isGuestLoading}
+            className="inline-flex items-center gap-2 text-[13.5px] text-fg-2 transition-colors hover:text-fg disabled:opacity-60"
+          >
+            {isGuestLoading && <Spinner className="size-3.5" />}
+            Try it as a guest, no account needed
+          </button>
+        )}
+        {guestError && (
+          <p role="alert" className="mt-2 text-[13px] text-poor">
+            {guestError}
+          </p>
+        )}
       </div>
     </Shell>
   );

@@ -13,6 +13,7 @@ import {
   Composer,
   type ComposerMode,
 } from "@/components/studio/composer";
+import { LimitMessage } from "@/components/studio/limit-message";
 import type { ToolPart } from "@/components/studio/outputs";
 import {
   costOf,
@@ -807,7 +808,7 @@ export function StudioClient({
                   {/* outside the list, so it adds no gap of its own */}
                   <div ref={bottomRef} className="scroll-mb-48" />
                 </div>
-                <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
+                <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_calc(100%-2.5rem),transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
                   <m.div layoutId="composer" className="mx-auto max-w-[760px]">
                     {composer}
                   </m.div>
@@ -846,42 +847,6 @@ function DeleteSession({ onConfirm }: { onConfirm: () => void }) {
     <Button variant="ghost" size="sm" onClick={() => setAsking(true)}>
       Delete
     </Button>
-  );
-}
-
-function LimitMessage({
-  kind,
-  onUpgrade,
-}: {
-  kind: "free" | "demo";
-  onUpgrade: () => void;
-}) {
-  return (
-    <div className="rounded-media border border-border bg-surface p-5">
-      {kind === "free" ? (
-        <>
-          <p className="text-[15px]">You have used your free generations.</p>
-          <p className="mt-1 text-[13px] text-mute">
-            Pro is unlimited, for $20 a month.
-          </p>
-          <Button className="mt-4" onClick={onUpgrade}>
-            Upgrade to Pro
-          </Button>
-        </>
-      ) : (
-        <>
-          <p className="text-[15px]">
-            The guest session has reached its limit.
-          </p>
-          <p className="mt-1 text-[13px] text-mute">
-            Create an account to keep making things.
-          </p>
-          <Button className="mt-4" asChild>
-            <a href="/signup">Create an account</a>
-          </Button>
-        </>
-      )}
-    </div>
   );
 }
 

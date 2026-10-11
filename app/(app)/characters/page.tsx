@@ -42,11 +42,8 @@ export default async function CharactersPage({
   return (
     <div className="min-h-dvh">
       <ScreenHeader title="Characters">
-        {isGuest ? (
-          <Link href="/signup" className="text-[13px] text-fg-2 hover:text-fg">
-            Create an account to make your own
-          </Link>
-        ) : (
+        {/* a guest is already told about accounts in the sidebar (TICKET-054) */}
+        {!isGuest && (
           <Link
             href="/characters/new"
             className={cn(buttonVariants({ size: "sm" }))}
@@ -67,10 +64,24 @@ export default async function CharactersPage({
       <div className="px-3 pb-16 pt-6 lg:px-6">
         {characters.length === 0 ? (
           <div className="mx-auto max-w-[420px] py-24 text-center">
-            <p className="text-[15px]">No characters match.</p>
-            <p className="mt-1 text-[13px] text-mute">
-              Try another name or another category.
+            <p className="text-[15px]">
+              {name || categoryId
+                ? "No characters match."
+                : "No characters yet."}
             </p>
+            <p className="mt-1 text-[13px] text-mute">
+              {name || categoryId
+                ? "Try another name or another category."
+                : "Characters you make show here."}
+            </p>
+            {(name || categoryId) && (
+              <Link
+                href="/characters"
+                className={cn(buttonVariants({ variant: "secondary" }), "mt-5")}
+              >
+                Clear search
+              </Link>
+            )}
           </div>
         ) : (
           <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

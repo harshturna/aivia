@@ -7,6 +7,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
+/** "Football Player" as "Football player": copy is sentence case (the seed is not). */
+function sentence(name: string) {
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
+
 /** The search field and the category chips, both in the URL. */
 export function CharacterFilters({
   categories,
@@ -64,7 +69,8 @@ export function CharacterFilters({
       </label>
       <nav
         aria-label="Category"
-        className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 md:mx-0 md:px-0 md:pb-0"
+        // room above and below, so a chip's focus ring is not cut by the scroll box
+        className="-mx-3 -my-1 flex gap-1.5 overflow-x-auto px-3 py-1 md:mx-0 md:px-1"
       >
         <Link
           href={href({ categoryId: null })}
@@ -82,7 +88,7 @@ export function CharacterFilters({
             aria-current={c.id === categoryId ? "page" : undefined}
             className={chip(c.id === categoryId)}
           >
-            {c.name}
+            {sentence(c.name)}
           </Link>
         ))}
       </nav>

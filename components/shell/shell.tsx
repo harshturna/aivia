@@ -37,7 +37,7 @@ export function Shell({
       <CommandPalette>
         <a
           href="#main"
-          className="sr-only rounded-control bg-primary px-3 py-2 text-[13px] font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50"
+          className="sr-only rounded-control bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-foreground shadow-float focus:not-sr-only focus:fixed focus:left-3 focus:top-2 focus:z-[60] focus:outline-offset-4"
         >
           Skip to content
         </a>

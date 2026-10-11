@@ -77,8 +77,9 @@ export function Sidebar({
       aria-label="Main"
       data-collapsed={rail || undefined}
       className={cn(
-        "flex h-full flex-col gap-4 bg-surface py-3 text-[13px] transition-[width] duration-200 ease-sheet",
-        rail ? "w-[52px] px-2" : "w-[232px] px-3",
+        "group/nav flex h-full flex-col gap-4 bg-surface py-3 text-[13px] transition-[width] duration-200 ease-sheet",
+        // the phone sheet is 280 px: the list fills it (TICKET-054)
+        inSheet ? "w-full px-3" : rail ? "w-[52px] px-2" : "w-[232px] px-3",
         !inSheet && "border-r border-border"
       )}
     >
@@ -148,13 +149,17 @@ export function Sidebar({
       </div>
 
       {!rail && (
-        // it reads the address's query, which suspends where a page is prerendered
-        <Suspense fallback={null}>
-          <Recents onNavigate={onNavigate} isGuest={user.isGuest} />
-        </Suspense>
+        // its own scroll region: in a short window the list scrolls instead of running over
+        // the footer (TICKET-054). It reads the address's query, which suspends where a page
+        // is prerendered.
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1">
+          <Suspense fallback={null}>
+            <Recents onNavigate={onNavigate} isGuest={user.isGuest} />
+          </Suspense>
+        </div>
       )}
 
-      <div className="mt-auto space-y-3">
+      <div className="mt-auto shrink-0 space-y-3">
         {!user.isPro && !rail && (
           <CreditsMeter count={usage.count} max={usage.max} />
         )}
@@ -236,7 +241,8 @@ function Item({
         "flex h-8 items-center gap-2.5 rounded-control font-medium transition-colors duration-150",
         rail ? "justify-center" : "px-2",
         active
-          ? "bg-surface-3 text-fg"
+          ? // an open session row is the page; the section it is in stays lit, not filled
+            "bg-surface-3 text-fg group-has-[[data-recent-active]]/nav:bg-transparent"
           : "text-fg-2 hover:bg-surface-2 hover:text-fg"
       )}
     >

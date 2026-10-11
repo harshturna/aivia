@@ -170,6 +170,29 @@ export function Composer({
     onFilesChange(acceptFiles(files, pasted));
   };
 
+  const action = busy ? (
+    <button
+      type="button"
+      onClick={onStop}
+      aria-label="Stop"
+      title="Stop (Esc)"
+      className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-[.96]"
+    >
+      <Square className="size-3 fill-current" />
+    </button>
+  ) : (
+    <button
+      type="submit"
+      aria-label="Send"
+      disabled={(!text.trim() && !stillOnly) || disabled}
+      className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-[opacity,transform] duration-150 active:scale-[.96] disabled:opacity-30"
+    >
+      <ArrowUp className="size-4" strokeWidth={2} />
+    </button>
+  );
+  // a composer with nothing in its toolbar (a character chat) is one row: field, then send
+  const compact = !canAttach && !showModes && !params && !cost;
+
   return (
     <form
       onSubmit={(event) => {
@@ -190,121 +213,107 @@ export function Composer({
       <label htmlFor={`${menuId}-field`} className="sr-only">
         {placeholder ?? current.placeholder}
       </label>
-      <textarea
-        ref={ref}
-        id={`${menuId}-field`}
-        rows={1}
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        onKeyDown={onKeyDown}
-        onPaste={onPaste}
-        placeholder={placeholder ?? current.placeholder}
-        disabled={disabled}
-        className="block w-full resize-none bg-transparent px-1.5 py-1 text-[15px] leading-6 text-fg outline-none placeholder:text-mute disabled:cursor-not-allowed"
-      />
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        {canAttach && (
-          <>
-            <input
-              ref={fileInput}
-              type="file"
-              accept={ACCEPT}
-              multiple
-              className="sr-only"
-              tabIndex={-1}
-              aria-hidden
-              onChange={(event) => {
-                onFilesChange(
-                  acceptFiles(files, Array.from(event.target.files ?? []))
-                );
-                event.target.value = "";
-              }}
-            />
-            <Pill
-              aria-label="Attach an image or a document"
-              title="Attach an image or a document"
-              className="w-7 justify-center px-0"
-              onClick={() => fileInput.current?.click()}
-            >
-              <Paperclip />
-            </Pill>
-          </>
-        )}
-        {showModes && (
-          // the Radix menu: arrow keys, a check on the current mode, and it flips or shifts
-          // to stay on screen in a short window (TICKET-052)
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+      <div className={cn(compact && "flex items-end gap-2")}>
+        <textarea
+          ref={ref}
+          id={`${menuId}-field`}
+          rows={1}
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={onKeyDown}
+          onPaste={onPaste}
+          placeholder={placeholder ?? current.placeholder}
+          disabled={disabled}
+          className="block w-full resize-none bg-transparent px-1.5 py-1 text-[15px] leading-6 text-fg outline-none placeholder:text-mute disabled:cursor-not-allowed"
+        />
+        {compact && action}
+      </div>
+      {!compact && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {canAttach && (
+            <>
+              <input
+                ref={fileInput}
+                type="file"
+                accept={ACCEPT}
+                multiple
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden
+                onChange={(event) => {
+                  onFilesChange(
+                    acceptFiles(files, Array.from(event.target.files ?? []))
+                  );
+                  event.target.value = "";
+                }}
+              />
               <Pill
-                aria-label={`Mode: ${current.label}`}
-                className="border-transparent bg-surface-3 text-fg hover:text-fg"
+                aria-label="Attach an image or a document"
+                title="Attach an image or a document"
+                className="w-7 justify-center px-0"
+                onClick={() => fileInput.current?.click()}
               >
-                {current.label}
-                <ChevronDown className="opacity-70" />
+                <Paperclip />
               </Pill>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side="top"
-              align="start"
-              collisionPadding={8}
-              className="w-64"
-              onCloseAutoFocus={(event) => {
-                if (!chose.current) return;
-                chose.current = false;
-                event.preventDefault();
-                ref.current?.focus();
-              }}
-            >
-              <DropdownMenuRadioGroup
-                value={mode}
-                onValueChange={(next) => {
-                  chose.current = true;
-                  onModeChange?.(next as ComposerMode);
+            </>
+          )}
+          {showModes && (
+            // the Radix menu: arrow keys, a check on the current mode, and it flips or shifts
+            // to stay on screen in a short window (TICKET-052)
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Pill
+                  aria-label={`Mode: ${current.label}`}
+                  className="border-transparent bg-surface-3 text-fg hover:text-fg"
+                >
+                  {current.label}
+                  <ChevronDown className="opacity-70" />
+                </Pill>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                align="start"
+                collisionPadding={8}
+                className="w-64"
+                onCloseAutoFocus={(event) => {
+                  if (!chose.current) return;
+                  chose.current = false;
+                  event.preventDefault();
+                  ref.current?.focus();
                 }}
               >
-                {MODES.map((m) => (
-                  <DropdownMenuRadioItem
-                    key={m.id}
-                    value={m.id}
-                    className="flex-col items-start gap-0 focus:bg-surface-3 focus:text-fg"
-                  >
-                    <span className="text-[13px] font-medium text-fg">
-                      {m.label}
-                    </span>
-                    <span className="text-[12px] text-mute">{m.hint}</span>
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        {params}
-        <div className="ml-auto flex items-center gap-3">
-          {cost && (
-            <span className="tabular text-[12px] text-mute">{cost}</span>
+                <DropdownMenuRadioGroup
+                  value={mode}
+                  onValueChange={(next) => {
+                    chose.current = true;
+                    onModeChange?.(next as ComposerMode);
+                  }}
+                >
+                  {MODES.map((m) => (
+                    <DropdownMenuRadioItem
+                      key={m.id}
+                      value={m.id}
+                      className="flex-col items-start gap-0 focus:bg-surface-3 focus:text-fg"
+                    >
+                      <span className="text-[13px] font-medium text-fg">
+                        {m.label}
+                      </span>
+                      <span className="text-[12px] text-mute">{m.hint}</span>
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-          {busy ? (
-            <button
-              type="button"
-              onClick={onStop}
-              aria-label="Stop"
-              title="Stop (Esc)"
-              className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-[.96]"
-            >
-              <Square className="size-3 fill-current" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              aria-label="Send"
-              disabled={(!text.trim() && !stillOnly) || disabled}
-              className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground transition-[opacity,transform] duration-150 active:scale-[.96] disabled:opacity-30"
-            >
-              <ArrowUp className="size-4" strokeWidth={2} />
-            </button>
-          )}
+          {params}
+          <div className="ml-auto flex items-center gap-3">
+            {cost && (
+              <span className="tabular text-[12px] text-mute">{cost}</span>
+            )}
+            {action}
+          </div>
         </div>
-      </div>
+      )}
     </form>
   );
 }

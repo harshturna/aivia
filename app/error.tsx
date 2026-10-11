@@ -20,12 +20,12 @@ export default function ErrorPage({
 
   return (
     <div className="flex h-full min-h-[60vh] flex-col items-center justify-center gap-4 p-8 text-center">
-      <h2 className="font-display text-2xl font-medium">
+      <h1 className="font-display text-[32px] font-medium leading-tight">
         Something went wrong
-      </h2>
-      <p className="max-w-sm text-sm text-muted-foreground">
-        An unexpected error occurred, and it has been logged. Try again, and if
-        it keeps happening, come back a little later.
+      </h1>
+      <p className="max-w-sm text-[14px] leading-6 text-fg-2">
+        The page did not load. Try again, and if it keeps happening, come back a
+        little later.
       </p>
       <Button onClick={reset}>Try again</Button>
     </div>

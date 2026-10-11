@@ -17,6 +17,8 @@ const CharactersIdPage = async ({ params }: CharactersIdPageProps) => {
   }
 
   const isGuest = await isGuestUser("SERVER_COMPONENT");
+  // the shared guest cannot make characters: no disabled form under a note (TICKET-054)
+  if (isGuest) redirect("/characters");
 
   const character = await prismadb.character.findUnique({
     where: {

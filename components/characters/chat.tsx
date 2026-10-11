@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { Markdown } from "@/components/ai/Markdown";
 import { ScreenHeader } from "@/components/shell/screen";
 import { Composer } from "@/components/studio/composer";
+import { LimitMessage } from "@/components/studio/limit-message";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
+import { userProModal } from "@/hooks/useProModal";
 import { messageText } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 
@@ -35,14 +37,19 @@ export function CharacterChat({
   character,
   initialMessages,
   canManage,
+  isGuest = false,
 }: {
   character: CharacterSummary;
   initialMessages: UIMessage[];
   canManage: boolean;
+  /** The shared guest: nothing it says here is kept. */
+  isGuest?: boolean;
 }) {
   const router = useRouter();
+  const proModal = userProModal();
   const [input, setInput] = useState("");
-  const [limit, setLimit] = useState(false);
+  // a spent allowance, told apart the way the Studio does: free account or shared guest
+  const [limit, setLimit] = useState<"free" | "demo" | null>(null);
   const [confirming, setConfirming] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
 
@@ -51,7 +58,9 @@ export function CharacterChat({
     messages: initialMessages,
     transport: new DefaultChatTransport({ api: `/api/chat/${character.id}` }),
     onError: (err) => {
-      if ((err?.message ?? "").includes("limit")) setLimit(true);
+      const message = err?.message ?? "";
+      if (message.includes("Free trial")) setLimit("free");
+      else if (message.includes("limit reached")) setLimit("demo");
     },
   });
   const busy = status === "submitted" || status === "streaming";
@@ -133,6 +142,11 @@ export function CharacterChat({
             who={character}
             text={`Hello, I am ${character.name}. What shall we talk about?`}
           />
+          {isGuest && (
+            <p className="pl-10 text-[12.5px] text-mute">
+              Guest chats are not kept: this one ends when you leave the page.
+            </p>
+          )}
           {messages.map((m) =>
             m.role === "user" ? (
               <p
@@ -142,7 +156,12 @@ export function CharacterChat({
                 {messageText(m)}
               </p>
             ) : (
-              <Line key={m.id} who={character} text={messageText(m)} />
+              <Line
+                key={m.id}
+                who={character}
+                text={messageText(m)}
+                named={false}
+              />
             )
           )}
           {/* the reply is announced as it lands, as the Studio's runs are (TICKET-045) */}
@@ -170,17 +189,12 @@ export function CharacterChat({
               </Button>
             </div>
           )}
-          {limit && (
-            <div className="rounded-media border border-border bg-surface p-4 text-[13px] text-fg-2">
-              The guest session has reached its limit. Create an account to keep
-              talking.
-            </div>
-          )}
+          {limit && <LimitMessage kind={limit} onUpgrade={proModal.onOpen} />}
         </div>
         <div ref={bottom} className="scroll-mb-44" />
       </div>
 
-      <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
+      <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_calc(100%-2.5rem),transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
         <Composer
           className="mx-auto max-w-[680px]"
           showModes={false}
@@ -190,14 +204,23 @@ export function CharacterChat({
           onSubmit={(text) => sendMessage({ text })}
           onStop={stop}
           busy={busy}
-          disabled={limit}
+          disabled={limit !== null}
         />
       </div>
     </div>
   );
 }
 
-function Line({ who, text }: { who: CharacterSummary; text: string }) {
+/** A line from the character; the name shows on the greeting, not over every reply. */
+function Line({
+  who,
+  text,
+  named = true,
+}: {
+  who: CharacterSummary;
+  text: string;
+  named?: boolean;
+}) {
   return (
     <div className="flex gap-3">
       <span className="relative mt-0.5 size-7 shrink-0 overflow-hidden rounded-full bg-surface">
@@ -214,7 +237,9 @@ function Line({ who, text }: { who: CharacterSummary; text: string }) {
           "min-w-0 flex-1 text-[15px] leading-6 text-fg [&_p:first-child]:mt-0"
         )}
       >
-        <div className="text-[12.5px] font-medium text-mute">{who.name}</div>
+        {named && (
+          <div className="text-[12.5px] font-medium text-mute">{who.name}</div>
+        )}
         <Markdown>{text}</Markdown>
       </div>
     </div>

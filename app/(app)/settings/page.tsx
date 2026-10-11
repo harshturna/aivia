@@ -56,9 +56,14 @@ export default async function SettingsPage() {
           <h2 className="text-[13px] font-medium text-fg-2">Plan</h2>
           <div className="mt-3 rounded-panel border border-border bg-surface p-5">
             {isGuest ? (
-              <p className="text-[15px]">
-                The guest session runs on a shared daily allowance.
-              </p>
+              <>
+                <p className="text-[15px]">Shared allowance</p>
+                <p className="mt-1 text-[13px] leading-5 text-mute">
+                  Everyone trying Aivia as a guest draws on one daily allowance.
+                  An account starts with {MAX_FREE_COUNTS} free generations of
+                  its own.
+                </p>
+              </>
             ) : isPro ? (
               <>
                 <p className="text-[15px]">Pro</p>
@@ -83,7 +88,8 @@ export default async function SettingsPage() {
             )}
           </div>
         </section>
-        <section id="shortcuts">
+        {/* keyboard shortcuts mean nothing on a phone (TICKET-054) */}
+        <section id="shortcuts" className="max-lg:hidden">
           <h2 className="text-[13px] font-medium text-fg-2">
             Keyboard shortcuts
           </h2>

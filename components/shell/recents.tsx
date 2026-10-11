@@ -72,6 +72,7 @@ export function Recents({
                     href={`/studio?local=${item.id}`}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
+                    data-recent-active={active || undefined}
                     className={cn(
                       "flex h-8 items-center rounded-control px-2 transition-colors duration-150",
                       active
@@ -102,6 +103,7 @@ export function Recents({
                 href={href}
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
+                data-recent-active={active || undefined}
                 className={cn(
                   "flex h-8 items-center rounded-control px-2 transition-colors duration-150",
                   active

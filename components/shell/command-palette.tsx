@@ -4,7 +4,6 @@ import {
   Image as ImageIcon,
   LayoutGrid,
   type LucideIcon,
-  MessageSquare,
   Music,
   Plus,
   Search,
@@ -27,17 +26,28 @@ import {
 } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
+import { listLocalSessions } from "@/lib/guest-local";
 import { isTyping, SHORTCUTS } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 
 /** Opens the palette from anywhere in the shell (the sidebar's Search item). */
 export const PaletteContext = createContext<() => void>(() => {});
 export const usePalette = () => useContext(PaletteContext);
+/** Opens the keyboard shortcuts from the account menu (TICKET-054). */
+export const ShortcutsContext = createContext<() => void>(() => {});
+export const useShortcuts = () => useContext(ShortcutsContext);
+
+const KIND_LABEL: Record<string, string> = {
+  image: "Image",
+  video: "Video",
+  music: "Music",
+  sound: "Sound",
+};
 
 interface Item {
   id: string;
   label: string;
-  hint?: string;
+  hint?: React.ReactNode;
   icon: LucideIcon;
   group: string;
   run: () => void;
@@ -73,9 +83,11 @@ export function CommandPalette({ children }: { children: React.ReactNode }) {
 
   return (
     <PaletteContext.Provider value={() => setOpen(true)}>
-      {children}
+      <ShortcutsContext.Provider value={() => setHelp(true)}>
+        {children}
+      </ShortcutsContext.Provider>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="top-[18%] max-w-[600px] translate-y-0 gap-0 overflow-hidden p-0 duration-0 data-[state=open]:animate-none data-[state=closed]:animate-none [&>button:last-child]:hidden">
+        <DialogContent className="top-[12%] max-w-[600px] translate-y-0 sm:top-[18%] gap-0 overflow-hidden p-0 duration-0 data-[state=open]:animate-none data-[state=closed]:animate-none [&>button:last-child]:hidden">
           <DialogTitle className="sr-only">Search and commands</DialogTitle>
           {open && <Palette onClose={() => setOpen(false)} />}
         </DialogContent>
@@ -132,6 +144,10 @@ function Palette({ onClose }: { onClose: () => void }) {
     [onClose, router]
   );
 
+  // a guest's own sessions live in this browser: they are found here too (TICKET-054)
+  const [local] = useState(() =>
+    listLocalSessions().map((s) => ({ id: s.id, title: s.title }))
+  );
   useEffect(() => {
     fetch("/api/sessions?limit=30")
       .then((r) => (r.ok ? r.json() : []))
@@ -160,7 +176,13 @@ function Palette({ onClose }: { onClose: () => void }) {
       {
         id: "new",
         label: "New session",
-        hint: "⌘⇧O",
+        hint: (
+          <span className="flex gap-0.5">
+            <Kbd>⌘</Kbd>
+            <Kbd>⇧</Kbd>
+            <Kbd>O</Kbd>
+          </span>
+        ),
         icon: Plus,
         group: "Actions",
         run: () => go("/studio"),
@@ -226,6 +248,16 @@ function Palette({ onClose }: { onClose: () => void }) {
     const match = (s: string) => !q || s.toLowerCase().includes(q);
     return [
       ...actions.filter((a) => match(a.label)),
+      ...local
+        .filter((s) => match(s.title))
+        .slice(0, q ? 5 : 3)
+        .map((s) => ({
+          id: `l-${s.id}`,
+          label: s.title,
+          icon: Sparkles,
+          group: "On this device",
+          run: () => go(`/studio?local=${s.id}`),
+        })),
       ...sessions
         .filter((s) => match(s.title))
         .slice(0, q ? 8 : 5)
@@ -239,7 +271,7 @@ function Palette({ onClose }: { onClose: () => void }) {
       ...assets.map((a) => ({
         id: `a-${a.id}`,
         label: a.prompt,
-        hint: a.kind,
+        hint: KIND_LABEL[a.kind] ?? a.kind,
         icon:
           a.kind === "image"
             ? ImageIcon
@@ -247,12 +279,12 @@ function Palette({ onClose }: { onClose: () => void }) {
               ? Video
               : a.kind === "music"
                 ? Music
-                : MessageSquare,
+                : Volume2,
         group: "Made",
         run: () => go(`/library/a/${a.id}`),
       })),
     ];
-  }, [query, sessions, assets, go]);
+  }, [query, sessions, local, assets, go]);
 
   useEffect(() => setActive(0), [query]);
   useEffect(() => {
@@ -276,7 +308,7 @@ function Palette({ onClose }: { onClose: () => void }) {
 
   let lastGroup = "";
   return (
-    <div>
+    <div className="min-w-0">
       <div className="flex items-center gap-2.5 border-b border-border px-4">
         <Search className="size-4 shrink-0 text-mute" />
         <input
@@ -294,9 +326,17 @@ function Palette({ onClose }: { onClose: () => void }) {
           role="combobox"
           aria-expanded
           autoComplete="off"
-          className="h-12 w-full bg-transparent text-[15px] text-fg outline-none placeholder:text-mute"
+          className="h-12 w-full min-w-0 bg-transparent text-[15px] text-fg outline-none placeholder:text-mute"
         />
-        <Kbd>Esc</Kbd>
+        <Kbd className="max-sm:hidden">Esc</Kbd>
+        {/* a touch screen has no Esc: a word to tap instead (TICKET-054) */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 text-[13px] text-fg-2 transition-colors hover:text-fg sm:hidden"
+        >
+          Cancel
+        </button>
       </div>
       <div
         ref={list}
@@ -307,7 +347,7 @@ function Palette({ onClose }: { onClose: () => void }) {
       >
         {items.length === 0 && (
           <p className="px-3 py-6 text-center text-[13px] text-mute">
-            Nothing matches.
+            Nothing matches “{query.trim()}”. Try fewer words.
           </p>
         )}
         {items.map((item, i) => {
@@ -334,9 +374,9 @@ function Palette({ onClose }: { onClose: () => void }) {
                 )}
               >
                 <item.icon className="size-4 shrink-0" />
-                <span className="truncate">{item.label}</span>
+                <span className="min-w-0 truncate">{item.label}</span>
                 {item.hint && (
-                  <span className="ml-auto shrink-0 text-[11.5px] text-mute">
+                  <span className="ml-auto shrink-0 pl-2 text-[11.5px] text-mute">
                     {item.hint}
                   </span>
                 )}
