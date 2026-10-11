@@ -862,7 +862,7 @@ export function Hero() {
             <h1
               ref={sentenceRef}
               aria-label={BRIEF_TEXT}
-              className="max-w-[1000px] origin-top-left font-display text-[clamp(40px,6.2vw,100px)] leading-[0.98] tracking-[-0.015em] text-fg [text-shadow:0_1px_2px_color-mix(in_srgb,var(--color-bg)_35%,transparent),0_4px_40px_color-mix(in_srgb,var(--color-bg)_55%,transparent)] will-change-transform"
+              className="max-w-[1000px] origin-top-left font-display text-[clamp(40px,6.2vw,100px)] leading-[0.98] tracking-[-0.015em] w-lift text-fg will-change-transform"
             >
               {WORDS.map((w, i) => {
                 const gap = i > 0 ? " " : null;
@@ -904,7 +904,7 @@ export function Hero() {
             </h1>
             <p
               ref={cueRef}
-              className="w-cue-wrap mt-8 flex items-center gap-3 text-[14px] text-fg will-change-[opacity]"
+              className="w-cue-wrap w-lift mt-8 flex items-center gap-3 text-[14px] text-fg will-change-[opacity]"
             >
               <span className="flex items-center gap-3">
                 <span className="w-cue h-px w-8 bg-fg/80" />

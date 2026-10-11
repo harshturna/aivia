@@ -242,6 +242,13 @@ body:has([data-screen-header]) [data-mobile-bar] {
  * opacity; all of it pauses while the hero is off screen (`.is-still`) and stops under
  * reduced motion.
  */
+/* the brief lifts off the forest: a tight edge, depth, and a wide pool of shade (TICKET-029) */
+.w-lift {
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-bg) 60%, transparent),
+    0 6px 18px color-mix(in srgb, var(--color-bg) 55%, transparent),
+    0 18px 60px color-mix(in srgb, var(--color-bg) 65%, transparent);
+}
 /* the brief's words rise out of the fog, each on its own delay (TICKET-026) */
 .w-word {
   display: inline-block;
