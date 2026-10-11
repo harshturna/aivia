@@ -34,6 +34,8 @@ instead of from a mockup.
 
 ## Progress log
 - 2026-10-11 — Opened from the owner's feedback on D-003.
+- 2026-10-11 — Built `/lab/unfold`: one sticky stage over 380svh. The brief types itself in Bricolage; each noun's window opens inline; on scroll the four windows fly to measured slots in a composition (poster, teaser, soundtrack, words), then into lanes on a 30-second timeline with a playhead that lights the score and taglines. Medium colours mark each noun, label and lane. The current landing's sections follow unchanged. Reduced motion shows the composition with no pinning. Checked at 1440 and 390 at five scroll points.
+- 2026-10-11 — Owner: likes all three as better than the site, "feel like it can be a lot a lot more better"; liked the current landing (D-003) but "a bit too generic, just need something that wow's"; "def not the print one". Next study: `/lab/unfold`, D-003's base with one signature sequence: the brief types, its nouns open inline (Rebus), fly out into a full composition, and rearrange into the timeline on scroll (Multitrack).
 - 2026-10-11 — Built `/lab/multitrack`, `/lab/print`, `/lab/rebus` (fonts DM Mono, Archivo
   at 62% width, Bricolage Grotesque, loaded only in `app/(lab)/layout.tsx`). Reviewed at 1440
   and 390: no overflow, no page errors. Tuned the print's misregistration (0.035em read as
@@ -41,8 +43,8 @@ instead of from a mockup.
   fixed the rebus words window squeezing its text.
 
 ## Handoff
-- **State:** the three studies are built and reviewed; waiting on the owner's pick.
-- **Blocked on:** the owner choosing a direction (or a mix).
+- **State:** `/lab/unfold` built and reviewed; waiting on the owner.
+- **Blocked on:** the owner's verdict on `/lab/unfold`.
 - **Next:** record the choice as a decision superseding D-003; restyle the landing and the
   app tokens to it; delete the other two studies and `public/lab` files they alone use.
 - **Read first:** the three pages under `app/(lab)/lab/`
