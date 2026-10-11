@@ -2,6 +2,8 @@
 const nextConfig = {
   // next dev would otherwise append its own block to CLAUDE.md, which is ours.
   agentRules: false,
+  // The owner checks the dev server from another machine on the LAN (TICKET-024).
+  allowedDevOrigins: ["192.168.2.20"],
   // The dashboards, the two settings pages and the per-tool pages are gone (D-002);
   // the tools are modes of the Studio now.
   async redirects() {

@@ -246,6 +246,16 @@ body:has([data-screen-header]) [data-mobile-bar] {
   color: transparent;
   text-shadow: none;
 }
+/* if the hero's script never starts (a failed chunk, scripts off), the brief still appears */
+.w-stage:not(.is-live) .w-ch:not(.on) {
+  animation: w-fallback 0.6s var(--ease-out) 1.6s forwards;
+}
+@keyframes w-fallback {
+  to {
+    color: var(--color-fg);
+    text-shadow: inherit;
+  }
+}
 .w-caret {
   display: inline-block;
   position: relative;

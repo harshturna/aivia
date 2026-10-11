@@ -742,6 +742,8 @@ export function Hero() {
     const section = sectionRef.current;
     const stage = stageRef.current;
     if (!section || !stage) return;
+    // the script is running: from here the brief is revealed by typing, not by the CSS fallback
+    stage.classList.add("is-live");
     let queued = 0;
     const frame = () => {
       queued = 0;
@@ -803,7 +805,7 @@ export function Hero() {
     >
       <div
         ref={stageRef}
-        className="sticky top-0 h-svh min-h-[640px] overflow-hidden bg-bg"
+        className="w-stage sticky top-0 h-svh min-h-[640px] overflow-hidden bg-bg"
       >
         {/* the forest */}
         <div
