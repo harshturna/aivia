@@ -208,15 +208,14 @@ export function Lightbox({
       }
     : {};
 
-  const audio = asset.kind === "music" || asset.kind === "sound";
-
   const body = (
     <div
       ref={dialog}
       {...dialogProps}
       className={cn(
-        // one explicit column on phones, so long text cannot widen it past the screen
-        "relative grid w-full min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-1",
+        // one explicit column on phones, so long text cannot widen it past the screen, and a
+        // fixed split between media and details, so stepping never moves the media (TICKET-058)
+        "relative grid w-full min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,11fr)_minmax(0,9fr)] lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-1",
         modal ? "h-full" : "h-dvh"
       )}
     >
@@ -227,11 +226,8 @@ export function Lightbox({
             onClick={() => void go(prev)}
             aria-label="Previous"
             title="Previous (←)"
-            className={cn(
-              "absolute left-2 z-10 grid size-9 place-items-center rounded-full bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80",
-              // over a sound row they would cover its play button: below it instead
-              audio ? "bottom-3" : "top-1/2 -translate-y-1/2"
-            )}
+            // the same place for every kind: the foot of the pane, clear of a sound's player
+            className="absolute bottom-3 left-3 z-10 grid size-9 place-items-center rounded-full bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80"
           >
             <ChevronLeft className="size-5" />
           </button>
@@ -242,11 +238,8 @@ export function Lightbox({
             onClick={() => void go(next)}
             aria-label="Next"
             title="Next (→)"
-            className={cn(
-              "absolute right-2 z-10 grid size-9 place-items-center rounded-full bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80",
-              // over a sound row they would cover its play button: below it instead
-              audio ? "bottom-3" : "top-1/2 -translate-y-1/2"
-            )}
+            // the same place for every kind: the foot of the pane, clear of a sound's player
+            className="absolute bottom-3 right-3 z-10 grid size-9 place-items-center rounded-full bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80"
           >
             <ChevronRight className="size-5" />
           </button>
@@ -286,7 +279,7 @@ export function Lightbox({
         )}
       </div>
 
-      <aside className="flex min-h-0 flex-col gap-5 overflow-y-auto border-t border-border bg-surface p-5 max-lg:max-h-[55dvh] lg:border-l lg:border-t-0">
+      <aside className="flex min-h-0 flex-col gap-5 overflow-y-auto border-t border-border bg-surface p-5 lg:border-l lg:border-t-0">
         <div className="flex items-center justify-between">
           {modal ? (
             <span className="text-[13px] font-medium text-fg-2">
