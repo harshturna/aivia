@@ -1,0 +1,82 @@
+import { describe, expect, it } from "vitest";
+import { readPlan, splitPlan } from "./plan";
+
+describe("splitPlan", () => {
+  it("takes the numbered list and keeps the rest", () => {
+    const { steps, rest } = splitPlan(
+      "Plan:\n1. Generate the poster, 3:4\n2. Compose 30 s of lo-fi\n\nThen I will write the taglines."
+    );
+    expect(steps).toEqual([
+      "Generate the poster, 3:4",
+      "Compose 30 s of lo-fi",
+    ]);
+    expect(rest).toBe("Then I will write the taglines.");
+  });
+
+  it("accepts 1) and bold markers", () => {
+    expect(
+      splitPlan("1) **Search** for references\n2) Make the image").steps
+    ).toEqual(["Search for references", "Make the image"]);
+  });
+
+  it("does not treat one numbered line as a plan", () => {
+    const text = "1. That is the only thing I need to say.";
+    expect(splitPlan(text)).toEqual({ steps: [], rest: text });
+  });
+
+  it("stops the list at the first prose line", () => {
+    const { steps, rest } = splitPlan(
+      "1. A\n2. B\nDone planning.\n3. Not a step"
+    );
+    expect(steps).toEqual(["A", "B"]);
+    expect(rest).toBe("Done planning.\n3. Not a step");
+  });
+});
+
+describe("readPlan", () => {
+  const plan = {
+    type: "text",
+    text: "1. Make the poster\n2. Make the clip\n3. Write taglines\n",
+  };
+  const tool = (state: string) => ({ type: "tool-generate_image", state });
+
+  it("marks steps by the tool calls that have finished", () => {
+    const r = readPlan(
+      [plan, tool("output-available"), tool("input-available")],
+      false
+    );
+    expect(r.steps.map((s) => s.status)).toEqual(["done", "running", "queued"]);
+    expect(r.done).toBe(1);
+  });
+
+  it("finishes every step when the run has ended", () => {
+    const r = readPlan(
+      [plan, tool("output-available"), { type: "text", text: "Taglines: …" }],
+      true
+    );
+    expect(r.steps.map((s) => s.status)).toEqual(["done", "done", "done"]);
+    expect(r.notes).toBe("Taglines: …");
+  });
+
+  it("shows a failed tool on its step", () => {
+    const r = readPlan([plan, tool("output-error")], true);
+    expect(r.steps[0].status).toBe("failed");
+  });
+
+  it("has no steps and keeps all the text when there is no plan", () => {
+    const r = readPlan([{ type: "text", text: "Here is a poem." }], true);
+    expect(r.steps).toEqual([]);
+    expect(r.notes).toBe("Here is a poem.");
+  });
+
+  it("merges text fragments split by citations before parsing", () => {
+    const r = readPlan(
+      [
+        { type: "text", text: "1. Search\n" },
+        { type: "text", text: "2. Answer\n" },
+      ],
+      false
+    );
+    expect(r.steps.map((s) => s.text)).toEqual(["Search", "Answer"]);
+  });
+});

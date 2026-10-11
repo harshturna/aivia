@@ -1,273 +1,435 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isToolUIPart, type UIMessage } from "ai";
-import { Paperclip, Sparkles, Square, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
-import { Artifact } from "@/components/ai/Artifact";
-import { Markdown } from "@/components/ai/Markdown";
-import { BotAvatar } from "@/components/BotAvatar";
-import Heading from "@/components/Heading";
-import { UserAvatar } from "@/components/UserAvatar";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { Upload } from "lucide-react";
+import { domMax, LazyMotion, m } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ScreenHeader } from "@/components/shell/screen";
+import {
+  acceptFiles,
+  Composer,
+  type ComposerMode,
+} from "@/components/studio/composer";
+import {
+  costOf,
+  DEFAULT_PARAMS,
+  ModeParamPills,
+  type ModeParams,
+} from "@/components/studio/params";
+import { Run } from "@/components/studio/run";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { userProModal } from "@/hooks/useProModal";
-import { groupTextParts } from "@/lib/ai/parts";
+import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
-
-const EXAMPLES = [
-  "Design a logo for a coffee roastery and write three taglines",
-  "Make a 5-second clip of rain on a window, and a lo-fi track to match",
-  "Create album art for a synthwave record and name the album",
-];
 
 /** Fired when a run ends so the sidebar's recents can reload. */
 export const SESSIONS_CHANGED = "aivia:sessions-changed";
 
+const EXAMPLES = [
+  "A poster, a ten-second teaser and a soundtrack for a night market",
+  "Album art for a quiet piano record, and a name for it",
+  "A logo for a coffee roastery with three taglines",
+  "The sound of rain on a tin roof, twenty seconds",
+];
+
+type Limit = "free" | "demo" | null;
+
+/**
+ * The Studio (design §5): a new session's empty state, then every exchange as a run, the
+ * composer floating at the foot. The chat id is the session id; the agent route saves it.
+ */
 export function StudioClient({
   id,
   initialMessages = [],
   initialPrompt = "",
+  initialTitle = "New session",
   isNew,
 }: {
   id: string;
   initialMessages?: UIMessage[];
   initialPrompt?: string;
+  initialTitle?: string;
   isNew: boolean;
 }) {
+  const router = useRouter();
   const proModal = userProModal();
   const [input, setInput] = useState(initialPrompt);
-  const [files, setFiles] = useState<FileList | undefined>(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [mode, setMode] = useState<ComposerMode>("auto");
+  const [params, setParams] = useState<ModeParams>(DEFAULT_PARAMS);
+  const [limit, setLimit] = useState<Limit>(null);
+  const [title, setTitle] = useState(initialTitle);
+  const [dragging, setDragging] = useState(false);
+  const started = useRef<Record<string, number>>({});
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, status, stop } = useChat({
-    id,
-    messages: initialMessages,
-    transport: new DefaultChatTransport({ api: "/api/agent" }),
-    onFinish: () => {
-      window.dispatchEvent(new Event(SESSIONS_CHANGED));
-    },
-    onError: (error) => {
-      const message = error?.message ?? "";
-      if (message.includes("Free trial")) return proModal.onOpen();
-      if (message.includes("limit reached")) {
-        return toast.error(
-          "Demo generation limit reached. Please try again later."
+  const { messages, sendMessage, status, stop, error, regenerate, clearError } =
+    useChat({
+      id,
+      messages: initialMessages,
+      transport: new DefaultChatTransport({ api: "/api/agent" }),
+      onFinish: () => window.dispatchEvent(new Event(SESSIONS_CHANGED)),
+      onError: (err) => {
+        const message = err?.message ?? "";
+        if (message.includes("Free trial")) setLimit("free");
+        else if (message.includes("limit reached")) setLimit("demo");
+      },
+    });
+
+  const busy = status === "submitted" || status === "streaming";
+  const empty = messages.length === 0;
+
+  // Stamp each new brief with the time it was sent, for the elapsed clock.
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (busy && last?.role === "user" && !started.current[last.id])
+      started.current[last.id] = Date.now();
+  }, [messages, busy]);
+
+  // Follow the run as it streams.
+  useEffect(() => {
+    if (!empty) bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [messages, status, empty]);
+
+  // `/` focuses the composer from anywhere that is not a field.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey) return;
+      const t = event.target as HTMLElement;
+      if (t.closest("input, textarea, [contenteditable=true]")) return;
+      event.preventDefault();
+      composerRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const runs = useMemo(() => {
+    const out: Array<{ user: UIMessage; assistant?: UIMessage }> = [];
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      if (msg.role !== "user") continue;
+      const next = messages[i + 1];
+      out.push({
+        user: msg,
+        assistant: next?.role === "assistant" ? next : undefined,
+      });
+    }
+    return out;
+  }, [messages]);
+
+  const lastBrief = useMemo(() => {
+    const users = messages.filter((x) => x.role === "user");
+    return users.length ? messageText(users[users.length - 1]) : undefined;
+  }, [messages]);
+
+  const send = useCallback(
+    (text: string, chosen: ComposerMode, attached: File[]) => {
+      if (busy || limit) return;
+      clearError();
+      let list: FileList | undefined;
+      if (attached.length) {
+        const dt = new DataTransfer();
+        for (const f of attached) dt.items.add(f);
+        list = dt.files;
+      }
+      sendMessage({ text, files: list }, { body: { mode: chosen, params } });
+      setFiles([]);
+      if (messages.length === 0) {
+        setTitle(titleFromBrief(text));
+        // A new session gets its address on the first send, so a reload resumes it.
+        if (isNew) window.history.replaceState(null, "", `/studio/${id}`);
+        setTimeout(
+          () => window.dispatchEvent(new Event(SESSIONS_CHANGED)),
+          1500
         );
       }
-      toast.error("Something went wrong");
     },
-  });
+    [busy, limit, clearError, sendMessage, params, messages.length, isNew, id]
+  );
 
-  const isStreaming = status === "submitted" || status === "streaming";
+  const reuse = useCallback((prompt: string) => {
+    setInput(prompt);
+    composerRef.current?.focus();
+  }, []);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, status]);
-
-  const clearFiles = () => {
-    setFiles(undefined);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const send = (text: string) => {
-    if (!text.trim() || isStreaming) return;
-    // Attached images ride along as file parts; Sonnet 5 reads them natively.
-    sendMessage({ text: text.trim(), files });
-    // A new session gets its own address on the first send, so a reload resumes it.
-    if (isNew && messages.length === 0) {
-      window.history.replaceState(null, "", `/studio/${id}`);
-      setTimeout(() => window.dispatchEvent(new Event(SESSIONS_CHANGED)), 1500);
+  const remove = async () => {
+    const response = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+    if (response.ok || response.status === 404) {
+      window.dispatchEvent(new Event(SESSIONS_CHANGED));
+      router.push("/studio");
     }
-    setInput("");
-    clearFiles();
   };
+
+  const composer = (
+    <Composer
+      inputRef={composerRef}
+      mode={mode}
+      onModeChange={setMode}
+      value={input}
+      onChange={setInput}
+      onSubmit={send}
+      onStop={stop}
+      busy={busy}
+      disabled={limit !== null}
+      files={files}
+      onFilesChange={setFiles}
+      params={
+        <ModeParamPills mode={mode} params={params} onChange={setParams} />
+      }
+      cost={costOf(mode, params)}
+      lastBrief={lastBrief}
+      autoFocus={empty}
+    />
+  );
 
   return (
-    // Column layout with the transcript growing and the composer pinned to the
-    // bottom of the viewport. The composer used to sit above the messages, so
-    // it scrolled out of view as soon as a run got long.
-    <div className="flex min-h-[calc(100dvh-4.5rem)] flex-col">
-      <Heading
-        title="Studio"
-        description="Describe what you want. Aivia plans it and builds it."
-        icon={Sparkles}
-        iconColor="text-primary"
-        bgColor="bg-primary/10"
-      />
+    <LazyMotion features={domMax}>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: the drop target is the page; the composer's button is the keyboard path */}
+      <div
+        className="relative flex min-h-dvh flex-col lg:min-h-dvh"
+        onDragOver={(event) => {
+          if (!event.dataTransfer.types.includes("Files")) return;
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={(event) => {
+          if (event.currentTarget === event.target) setDragging(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragging(false);
+          setFiles((current) =>
+            acceptFiles(current, Array.from(event.dataTransfer.files))
+          );
+        }}
+      >
+        <ScreenHeader
+          title={
+            <EditableTitle
+              id={id}
+              title={title}
+              onChange={setTitle}
+              enabled={!empty}
+            />
+          }
+        >
+          {busy && (
+            <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
+              <span className="size-1.5 animate-pulse rounded-full bg-white" />
+              Running
+            </span>
+          )}
+          {!empty && !busy && <DeleteSession onConfirm={remove} />}
+        </ScreenHeader>
 
-      <div className="flex-1 px-4 lg:px-8">
-        <div className="mt-4 space-y-4">
-          {!messages.length && !isStreaming && (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                One prompt. Aivia decides which tools to use — images, video,
-                music — and runs them for you.
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {empty ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-24">
+            <div className="w-full max-w-[720px]">
+              <h2 className="text-center text-[32px] font-medium leading-tight tracking-[-0.02em]">
+                What are we making?
+              </h2>
+              <m.div layoutId="composer" className="mt-8">
+                {composer}
+              </m.div>
+              <ul className="mt-4 flex flex-wrap justify-center gap-2">
                 {EXAMPLES.map((example) => (
-                  <button
-                    key={example}
-                    type="button"
-                    onClick={() => send(example)}
-                    className="rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary hover:text-foreground"
-                  >
-                    {example}
-                  </button>
+                  <li key={example}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInput(example);
+                        composerRef.current?.focus();
+                      }}
+                      className="rounded-full border border-border px-3 py-1.5 text-[12.5px] leading-[18px] text-fg-2 transition-colors duration-150 hover:border-border-strong hover:text-fg"
+                    >
+                      {example}
+                    </button>
+                  </li>
                 ))}
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 px-6 pb-48 pt-8">
+              <div className="mx-auto max-w-[760px] space-y-10">
+                {runs.map((run, i) => {
+                  const last = i === runs.length - 1;
+                  return (
+                    <div
+                      key={run.user.id}
+                      className={cn(i > 0 && "border-t border-border pt-10")}
+                    >
+                      <Run
+                        user={run.user}
+                        assistant={run.assistant}
+                        active={last && busy}
+                        startedAt={started.current[run.user.id]}
+                        onReusePrompt={reuse}
+                        onRetry={last ? () => regenerate() : undefined}
+                      />
+                    </div>
+                  );
+                })}
+                {error && !limit && (
+                  <div className="flex items-center justify-between gap-4 rounded-media border border-border bg-surface p-4 text-[13px]">
+                    <span className="text-fg-2">
+                      The run stopped before it finished.
+                    </span>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => regenerate()}
+                    >
+                      Try again
+                    </Button>
+                  </div>
+                )}
+                {limit && (
+                  <LimitMessage kind={limit} onUpgrade={proModal.onOpen} />
+                )}
+                <div ref={bottomRef} className="scroll-mb-48" />
               </div>
             </div>
-          )}
+            <div className="sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10">
+              <m.div layoutId="composer" className="mx-auto max-w-[760px]">
+                {composer}
+              </m.div>
+            </div>
+          </>
+        )}
 
-          <div className="flex flex-col gap-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "character-grid grid w-full items-start gap-x-8 rounded-lg p-8",
-                  message.role === "user"
-                    ? "border border-border bg-card"
-                    : "bg-muted"
-                )}
-              >
-                {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
-
-                {/* Render parts in order so the plan, the tool runs and the
-                    closing summary appear as they actually happened. */}
-                <div className="min-w-0 text-sm">
-                  {groupTextParts(message.parts).map((group, index) => {
-                    if (group.kind === "text") {
-                      return <Markdown key={index}>{group.text}</Markdown>;
-                    }
-
-                    const part = group.part;
-
-                    if (part.type === "reasoning") {
-                      const text = (part as { text: string }).text?.trim();
-                      if (!text) return null;
-                      return (
-                        <details
-                          key={index}
-                          className="mb-3 rounded-md border border-border bg-muted/50"
-                        >
-                          <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
-                            Plan
-                          </summary>
-                          <div className="whitespace-pre-wrap px-3 pb-3 text-xs leading-6 text-muted-foreground">
-                            {text}
-                          </div>
-                        </details>
-                      );
-                    }
-
-                    // Images the user attached, echoed back into the transcript.
-                    if (part.type === "file") {
-                      const file = part as { url: string; mediaType: string };
-                      if (!file.mediaType?.startsWith("image")) return null;
-                      return (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          key={index}
-                          src={file.url}
-                          alt="Attached"
-                          className="mb-2 max-h-48 rounded-md border border-border"
-                        />
-                      );
-                    }
-
-                    if (isToolUIPart(part)) {
-                      return <Artifact key={index} part={part} />;
-                    }
-
-                    return null;
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div ref={bottomRef} className="scroll-mb-28" />
-        </div>
-      </div>
-
-      <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 px-4 py-3 backdrop-blur lg:px-8">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            send(input);
-          }}
-          className="grid w-full grid-cols-12 gap-2 rounded-lg border bg-card p-2 focus-within:shadow-sm"
-        >
-          <div className="col-span-12 flex items-center gap-2 lg:col-span-10">
-            <label htmlFor="studio-prompt" className="sr-only">
-              What should Aivia make?
-            </label>
-            <Input
-              id="studio-prompt"
-              className="border-0 focus-visible:ring-1 focus-visible:ring-ring"
-              disabled={isStreaming}
-              placeholder="Design a logo for a coffee roastery and write three taglines"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-            />
-            <input
-              ref={fileInputRef}
-              id="studio-files"
-              type="file"
-              accept="image/*"
-              multiple
-              className="sr-only"
-              onChange={(event) => setFiles(event.target.files ?? undefined)}
-            />
-            <label
-              htmlFor="studio-files"
-              title="Attach images"
-              className="shrink-0 cursor-pointer rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-within:ring-2 focus-within:ring-ring"
-            >
-              <Paperclip className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only">Attach images</span>
-            </label>
-          </div>
-          {isStreaming ? (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={stop}
-              className="col-span-12 w-full lg:col-span-2"
-            >
-              <Square className="mr-2 h-4 w-4" aria-hidden="true" />
-              Stop
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              className="col-span-12 w-full lg:col-span-2"
-              disabled={!input.trim()}
-            >
-              Build it
-            </Button>
-          )}
-        </form>
-
-        {files && files.length > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <Paperclip className="h-3 w-3" aria-hidden="true" />
-            <span>
-              {files.length} image{files.length > 1 ? "s" : ""} attached
-            </span>
-            <button
-              type="button"
-              onClick={clearFiles}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-muted"
-            >
-              <X className="h-3 w-3" aria-hidden="true" />
-              <span className="sr-only">Remove attached images</span>
-            </button>
+        {dragging && (
+          <div className="pointer-events-none absolute inset-3 z-30 grid place-items-center rounded-window border border-dashed border-border-strong bg-bg/80 backdrop-blur-sm">
+            <p className="flex items-center gap-2 text-[14px] text-fg-2">
+              <Upload className="size-4" /> Drop images or a document to attach
+            </p>
           </div>
         )}
       </div>
+    </LazyMotion>
+  );
+}
+
+/** Delete asks once more before it acts: a session cannot be brought back. */
+function DeleteSession({ onConfirm }: { onConfirm: () => void }) {
+  const [asking, setAsking] = useState(false);
+  useEffect(() => {
+    if (!asking) return;
+    const id = setTimeout(() => setAsking(false), 4000);
+    return () => clearTimeout(id);
+  }, [asking]);
+  return asking ? (
+    <Button variant="destructive" size="sm" onClick={onConfirm} autoFocus>
+      Delete this session
+    </Button>
+  ) : (
+    <Button variant="ghost" size="sm" onClick={() => setAsking(true)}>
+      Delete
+    </Button>
+  );
+}
+
+function LimitMessage({
+  kind,
+  onUpgrade,
+}: {
+  kind: "free" | "demo";
+  onUpgrade: () => void;
+}) {
+  return (
+    <div className="rounded-media border border-border bg-surface p-5">
+      {kind === "free" ? (
+        <>
+          <p className="text-[15px]">You have used your free generations.</p>
+          <p className="mt-1 text-[13px] text-mute">
+            Pro is unlimited, for $20 a month.
+          </p>
+          <Button className="mt-4" onClick={onUpgrade}>
+            Upgrade to Pro
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className="text-[15px]">
+            The guest session has reached its limit.
+          </p>
+          <p className="mt-1 text-[13px] text-mute">
+            Create an account to keep making things.
+          </p>
+          <Button className="mt-4" asChild>
+            <a href="/signup">Create an account</a>
+          </Button>
+        </>
+      )}
     </div>
+  );
+}
+
+/** The session title in the header; click to rename once the session exists. */
+function EditableTitle({
+  id,
+  title,
+  onChange,
+  enabled,
+}: {
+  id: string;
+  title: string;
+  onChange: (t: string) => void;
+  enabled: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(title);
+
+  const commit = async () => {
+    setEditing(false);
+    const next = draft.trim();
+    if (!next || next === title) return;
+    onChange(next);
+    await fetch(`/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: next }),
+    });
+    window.dispatchEvent(new Event(SESSIONS_CHANGED));
+  };
+
+  if (!enabled) return <span>{title}</span>;
+  if (editing) {
+    return (
+      <input
+        // biome-ignore lint/a11y/noAutofocus: entering rename mode is the user's action
+        autoFocus
+        aria-label="Session name"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") {
+            setDraft(title);
+            setEditing(false);
+          }
+        }}
+        className="w-[min(480px,60vw)] rounded-control bg-surface px-2 py-0.5 text-[15px] font-medium outline-none ring-1 ring-border-strong"
+      />
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setDraft(title);
+        setEditing(true);
+      }}
+      title="Rename"
+      className="max-w-[60vw] truncate rounded-control px-1 -mx-1 text-left transition-colors hover:bg-surface-2"
+    >
+      {title}
+    </button>
   );
 }

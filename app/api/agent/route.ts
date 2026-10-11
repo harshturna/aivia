@@ -40,8 +40,12 @@ const SYSTEM_PROMPT = [
   "fragments, and do not list sources inline — the interface already shows",
   "every source it used.",
   "",
-  "Before doing multi-step work, state your plan in one or two short sentences",
-  "so the user can follow along. Then execute it.",
+  "When the work takes more than one step, open your reply with the plan as a",
+  "numbered list, one short line per step, in the order you will do them, with",
+  "nothing before it. Then do the steps in that order. One step needs no plan.",
+  "",
+  "When the user attaches a document, answer from it: quote or paraphrase the",
+  "passage you rely on, and say so plainly when the document does not cover it.",
   "",
   "When a tool returns, do not repeat the URL back in your text. The interface",
   "renders the result already. Briefly say what you made and why it fits.",
@@ -54,10 +58,28 @@ const SYSTEM_PROMPT = [
   "tell from an error message why a model rejected a request.",
 ].join("\n");
 
+/**
+ * The composer's direct modes, until they get their own route (TICKET-007): the agent is
+ * told to call the one tool with the user's words and nothing else.
+ */
+const MODE_HINTS: Record<string, string> = {
+  image:
+    "The user chose Image mode: call generate_image once with their description, with no plan and no other tools, then say in one sentence what you made.",
+  video:
+    "The user chose Video mode: call generate_video once with their description, with no plan and no other tools, then say in one sentence what you made.",
+  music:
+    "The user chose Music mode: call generate_music once with their description, with no plan and no other tools, then say in one sentence what you made.",
+  sound:
+    "The user chose Sound mode: call generate_sound_effect once with their description, with no plan and no other tools, then say in one sentence what you made.",
+};
+
 export async function POST(req: Request) {
   try {
-    const { id, messages }: { id?: string; messages: UIMessage[] } =
-      await req.json();
+    const {
+      id,
+      messages,
+      mode,
+    }: { id?: string; messages: UIMessage[]; mode?: string } = await req.json();
 
     if (!messages?.length) {
       return new Response("Messages are required", { status: 400 });
@@ -88,7 +110,10 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model: anthropic("claude-sonnet-5"),
-      system: SYSTEM_PROMPT,
+      system:
+        mode && MODE_HINTS[mode]
+          ? `${SYSTEM_PROMPT}\n\n${MODE_HINTS[mode]}`
+          : SYSTEM_PROMPT,
       messages: await convertToModelMessages(messages),
       tools: {
         ...createAgentTools({ userId, sessionId }),

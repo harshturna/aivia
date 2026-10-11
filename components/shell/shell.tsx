@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/Logo";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { ShellMenuContext } from "./menu-button";
 import { type ShellUsage, type ShellUser, Sidebar } from "./sidebar";
 
 /**
@@ -23,37 +24,42 @@ export function Shell({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex h-full min-h-dvh bg-bg text-fg">
-      <div className="hidden h-dvh shrink-0 lg:sticky lg:top-0 lg:block">
-        <Sidebar user={user} usage={usage} collapsed={collapsed} />
-      </div>
-      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
-        <header className="flex h-13 shrink-0 items-center gap-3 border-b border-border px-3 lg:hidden">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Open the menu"
-            className="grid size-9 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
+    <ShellMenuContext.Provider value={() => setOpen(true)}>
+      <div className="flex h-full min-h-dvh bg-bg text-fg">
+        <div className="hidden h-dvh shrink-0 lg:sticky lg:top-0 lg:block">
+          <Sidebar user={user} usage={usage} collapsed={collapsed} />
+        </div>
+        <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
+          <header
+            data-mobile-bar
+            className="flex h-13 shrink-0 items-center gap-3 border-b border-border px-3 lg:hidden"
           >
-            <Menu className="size-5" />
-          </button>
-          <Logo className="text-[18px]" />
-        </header>
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="left" className="w-[280px]">
-            <SheetTitle className="sr-only">Menu</SheetTitle>
-            <Sidebar
-              user={user}
-              usage={usage}
-              inSheet
-              onNavigate={() => setOpen(false)}
-            />
-          </SheetContent>
-        </Sheet>
-        <main id="main" className="min-h-0 flex-1">
-          {children}
-        </main>
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="Open the menu"
+              className="grid size-9 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
+            >
+              <Menu className="size-5" />
+            </button>
+            <Logo className="text-[18px]" />
+          </header>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetContent side="left" className="w-[280px]">
+              <SheetTitle className="sr-only">Menu</SheetTitle>
+              <Sidebar
+                user={user}
+                usage={usage}
+                inSheet
+                onNavigate={() => setOpen(false)}
+              />
+            </SheetContent>
+          </Sheet>
+          <main id="main" className="min-h-0 flex-1">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </ShellMenuContext.Provider>
   );
 }

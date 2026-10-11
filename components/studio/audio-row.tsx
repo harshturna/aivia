@@ -59,12 +59,14 @@ export function AudioRow({
   src: string;
   title: string;
   subtitle?: string;
-  seconds: number;
+  /** Known length; read from the file when absent. */
+  seconds?: number;
   className?: string;
 }) {
   const audio = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState<number | undefined>(seconds);
   const peaks = useWaveform(src);
 
   const toggle = () => {
@@ -91,6 +93,13 @@ export function AudioRow({
         ref={audio}
         src={src}
         preload="metadata"
+        onLoadedMetadata={(event) => {
+          if (
+            seconds === undefined &&
+            Number.isFinite(event.currentTarget.duration)
+          )
+            setDuration(event.currentTarget.duration);
+        }}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setProgress(0)}
@@ -139,7 +148,7 @@ export function AudioRow({
         ))}
       </div>
       <span className="tabular w-9 shrink-0 text-right text-[12px] text-mute">
-        {format(seconds)}
+        {duration === undefined ? "" : format(duration)}
       </span>
       <a
         href={src}

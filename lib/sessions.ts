@@ -2,19 +2,14 @@ import type { Prisma, Session } from "@prisma/client";
 import type { UIMessage } from "ai";
 import prismadb from "@/lib/prismadb";
 
+export { isSessionId, messageText, titleFromBrief } from "@/lib/session-text";
+
 /**
  * Sessions (design §12): a Studio conversation, its messages as the AI SDK's UIMessage[]
  * in one JSON column. Every read and write is scoped by the owner's user id; a row that is
  * not the caller's reads as absent.
  */
 export const GUEST_WINDOW_MS = 24 * 60 * 60 * 1000;
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** The client makes session ids with `crypto.randomUUID()`; nothing else is stored. */
-export function isSessionId(id: string) {
-  return UUID.test(id);
-}
 
 export type SessionSummary = Pick<
   Session,
@@ -100,23 +95,4 @@ export async function deleteSession(userId: string, id: string) {
     where: { id, userId, pinned: false },
   });
   return count;
-}
-
-/**
- * A title from the first brief: the brief itself, trimmed to a line. The cheap-model
- * naming (design §12) is a follow-up; a brief is a good enough name on day one.
- */
-export function titleFromBrief(text: string) {
-  const line = text.replace(/\s+/g, " ").trim();
-  if (!line) return "New session";
-  const cut = line.length > 60 ? `${line.slice(0, 57).trimEnd()}…` : line;
-  return cut.charAt(0).toUpperCase() + cut.slice(1);
-}
-
-/** The text of a UIMessage, for naming and for the listing. */
-export function messageText(message: UIMessage): string {
-  return message.parts
-    .filter((part) => part.type === "text")
-    .map((part) => (part as { text: string }).text)
-    .join("");
 }

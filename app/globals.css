@@ -181,3 +181,8 @@
 .hero-settle {
   animation: settle 600ms var(--ease-out) both;
 }
+
+/* one header on a phone: the shell's bar steps aside for a screen header (TICKET-006) */
+body:has([data-screen-header]) [data-mobile-bar] {
+  display: none;
+}

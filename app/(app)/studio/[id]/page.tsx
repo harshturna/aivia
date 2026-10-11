@@ -28,6 +28,7 @@ export default async function SessionPage({ params }: Params) {
       id={session.id}
       isNew={false}
       initialMessages={session.messages}
+      initialTitle={session.title}
     />
   );
 }

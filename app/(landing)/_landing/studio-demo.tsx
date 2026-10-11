@@ -131,7 +131,6 @@ export function StudioDemo() {
                 className="mx-auto max-w-[720px]"
                 onSubmit={() => {}}
                 cost="1 generation"
-                attachments
               />
             </div>
           </div>

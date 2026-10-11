@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { MenuButton } from "./menu-button";
 
 /**
  * A screen's header (design §4): 52 px, the title at 15 px 500 on the left, the screen's
@@ -15,11 +16,13 @@ export function ScreenHeader({
 }) {
   return (
     <div
+      data-screen-header
       className={cn(
-        "sticky top-0 z-10 flex h-13 shrink-0 items-center gap-3 border-b border-border bg-bg/80 px-6 text-[15px] font-medium backdrop-blur",
+        "sticky top-0 z-10 flex h-13 shrink-0 items-center gap-3 border-b border-border bg-bg/80 px-3 text-[15px] font-medium backdrop-blur lg:px-6",
         className
       )}
     >
+      <MenuButton />
       <h1 className="truncate text-[15px] font-medium">{title}</h1>
       {children && (
         <div className="ml-auto flex items-center gap-2 text-[13px] font-normal text-fg-2">
