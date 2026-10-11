@@ -1,17 +1,13 @@
 "use client";
 
-// TODO: Test all three button conditions - pro, guest user and non pro
-
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import type { Category, Character } from "@prisma/client";
-import axios from "axios";
-import { Wand } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
 import * as z from "zod";
-import { ImageUpload } from "@/components/Characters/ImageUpload";
+import { ImageUpload } from "@/components/characters/ImageUpload";
+import { ScreenHeader } from "@/components/shell/screen";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -30,50 +26,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
-const SEED = `Human: Hi Einstein! What sparked your theory of relativity? 
+const SEED = `Human: Hi Einstein! What sparked your theory of relativity?
 
-Albert Einstein: Good question! I was curious about light and time, so I imagined riding a light beam. This led me to rethink time and space, inspiring my theory.
+Albert Einstein: I was curious about light and time, so I imagined riding a light beam. That led me to rethink time and space.
 
-Human: Why do you think imagination is important in science?
+Human: Why do you think imagination matters in science?
 
-Albert Einstein: Imagination lets us explore beyond current knowledge. It's the key to unlocking new scientific ideas and understanding the mysteries of the universe.`;
-
-interface CharacterFormProps {
-  initialData: Character | null;
-  categories: Category[];
-  isGuest: boolean;
-}
+Albert Einstein: Imagination lets us explore beyond what we know. It is the key to new ideas.`;
 
 const formSchema = z.object({
-  name: z.string().min(1, {
-    message: "Name is required",
-  }),
-  description: z.string().min(1, {
-    message: "Description is required",
-  }),
+  name: z.string().min(1, { message: "Give the character a name." }),
+  description: z
+    .string()
+    .min(1, { message: "Describe the character in a few words." }),
   instructions: z.string().min(200, {
-    message: "Instructions must be at least 200 characters",
+    message: "Write at least 200 characters, so the character has a voice.",
   }),
   seed: z.string().min(200, {
-    message: "Seed must be at least 200 characters",
+    message: "Write at least 200 characters of example conversation.",
   }),
-  src: z.string().min(1, {
-    message: "Image is required",
-  }),
-  categoryId: z.string().min(1, {
-    message: "Category is required",
-  }),
+  src: z.string().min(1, { message: "Add a portrait." }),
+  categoryId: z.string().min(1, { message: "Choose a category." }),
 });
 
+/** The character form (design §8): one column, the same fields and rules as before. */
 const CharacterForm = ({
   categories,
   initialData,
   isGuest = true,
-}: CharacterFormProps) => {
+}: {
+  initialData: Character | null;
+  categories: Category[];
+  isGuest: boolean;
+}) => {
   const router = useRouter();
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -85,205 +74,210 @@ const CharacterForm = ({
       categoryId: undefined,
     },
   });
-
   const isLoading = form.formState.isSubmitting;
+  const locked = isGuest || isLoading;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      if (initialData) {
-        // update
-        await axios.patch(`/api/characters/${initialData.id}`, values);
-      } else {
-        // create
-        await axios.post("/api/characters", values);
+    setSubmitError(null);
+    const response = await fetch(
+      initialData ? `/api/characters/${initialData.id}` : "/api/characters",
+      {
+        method: initialData ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
       }
-
-      toast.success("Success");
-      router.refresh();
-      router.push("/characters");
-    } catch (error) {
-      toast.error("Something went wrong");
-      console.log("SOMETHING WENT WRONG", error);
+    );
+    if (!response.ok) {
+      setSubmitError(
+        "Could not save the character. Check the fields and try again."
+      );
+      return;
     }
+    const saved = (await response.json()) as { id: string };
+    router.push(`/characters/c/${saved.id}`);
+    router.refresh();
   };
 
   return (
-    <div className="h-full p-4 space-y-2 max-w-3xl mx-auto">
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-8 pb-10"
-        >
-          <div className="space-y-2 w-full">
-            <div>
-              <h3 className="text-lg font-medium">Your Character</h3>
-              <p className="text-muted-foreground">
-                Information about your Character
-              </p>
-            </div>
-            <Separator />
-          </div>
-          <FormField
-            name="src"
-            render={({ field }) => (
-              <FormItem className="flex flex-col items-center justify-center space-y-4">
-                <FormControl>
-                  <ImageUpload
-                    disabled={isLoading}
-                    onChange={field.onChange}
-                    value={field.value}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="min-h-dvh">
+      <ScreenHeader
+        title={initialData ? `Edit ${initialData.name}` : "New character"}
+      />
+      <div className="mx-auto max-w-[560px] px-6 pb-20 pt-8">
+        {isGuest && (
+          <p className="mb-8 rounded-media border border-border bg-surface p-4 text-[13px] text-fg-2">
+            Guests can talk to the shared characters. Create an account to make
+            your own.
+          </p>
+        )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
-              name="name"
+              name="src"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel className="text-[13px] text-fg-2">
+                    Portrait
+                  </FormLabel>
                   <FormControl>
-                    <Input
-                      disabled={isLoading}
-                      placeholder="Albert Einstein"
-                      {...field}
+                    <ImageUpload
+                      disabled={locked}
+                      onChange={field.onChange}
+                      value={field.value}
                     />
                   </FormControl>
-                  <FormDescription className="text-xs">
-                    Your Character&#39;s Name
-                  </FormDescription>
-                  <FormMessage />
+                  <FormMessage className="text-[12.5px] text-poor" />
                 </FormItem>
               )}
             />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                name="name"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[13px] text-fg-2">
+                      Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        disabled={locked}
+                        placeholder="Albert Einstein…"
+                        autoComplete="off"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-[12.5px] text-poor" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="categoryId"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[13px] text-fg-2">
+                      Category
+                    </FormLabel>
+                    <Select
+                      disabled={locked}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-10 rounded-control border-border bg-surface text-[14px]">
+                          <SelectValue placeholder="Choose one" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="rounded-media border-border bg-surface-2">
+                        {categories.map((c) => (
+                          <SelectItem
+                            key={c.id}
+                            value={c.id}
+                            className="text-[13px]"
+                          >
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-[12.5px] text-poor" />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               name="description"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel className="text-[13px] text-fg-2">
+                    Description
+                  </FormLabel>
                   <FormControl>
                     <Input
-                      disabled={isLoading}
-                      placeholder="Theoretical physicist "
+                      disabled={locked}
+                      placeholder="Theoretical physicist…"
+                      autoComplete="off"
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription className="text-xs">
-                    Describe your Character
+                  <FormDescription className="text-[12px] text-mute">
+                    One line, shown under the portrait.
                   </FormDescription>
-                  <FormMessage />
+                  <FormMessage className="text-[12.5px] text-poor" />
                 </FormItem>
               )}
             />
             <FormField
-              name="categoryId"
+              name="instructions"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select
-                    disabled={isLoading}
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="bg-background">
-                        <SelectValue
-                          defaultValue={field.value}
-                          placeholder="Select a category"
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription className="text-xs">
-                    Select a category
+                  <FormLabel className="text-[13px] text-fg-2">
+                    Who they are
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      rows={5}
+                      disabled={locked}
+                      placeholder="A theoretical physicist known for curiosity. Explains hard ideas with thought experiments and a dry sense of humour…"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-[12px] text-mute">
+                    Their background, their voice, what they care about.
                   </FormDescription>
-                  <FormMessage />
+                  <FormMessage className="text-[12.5px] text-poor" />
                 </FormItem>
               )}
             />
-          </div>
-          <div className="space-y-2 w-full">
-            <div>
-              <h3 className="text-lg font-medium">Configuration</h3>
-              <p className="text-muted-foreground">
-                Detailed instructions for Character&#39;s behaviour
-              </p>
+            <FormField
+              name="seed"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[13px] text-fg-2">
+                    An example conversation
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      rows={9}
+                      disabled={locked}
+                      placeholder={SEED}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-[12px] text-mute">
+                    A few lines in their voice, so replies sound like them.
+                  </FormDescription>
+                  <FormMessage className="text-[12.5px] text-poor" />
+                </FormItem>
+              )}
+            />
+            {submitError && (
+              <p className="text-[13px] text-poor">{submitError}</p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button type="submit" disabled={locked}>
+                {isLoading
+                  ? "Saving…"
+                  : initialData
+                    ? "Save changes"
+                    : "Create the character"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => router.back()}
+              >
+                Cancel
+              </Button>
             </div>
-            <Separator />
-          </div>
-          <FormField
-            name="instructions"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Instructions</FormLabel>
-                <FormControl>
-                  <Textarea
-                    rows={5}
-                    disabled={isLoading}
-                    placeholder="Embody Albert Einstein: Be a theoretical physicist known for curiosity and profound understanding of the universe. Use thought experiments to explore relativity and quantum mechanics, and communicate complex ideas with clarity and imagination."
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription className="text-xs">
-                  Describe relevant details of your character
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="seed"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Example Conversation</FormLabel>
-                <FormControl>
-                  <Textarea
-                    rows={10}
-                    disabled={isLoading}
-                    placeholder={SEED}
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription className="text-xs">
-                  An Example of a conversation with your Character
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="w-full flex justify-center">
-            {isGuest && initialData ? (
-              <Button size="lg" type="button" variant="default" disabled={true}>
-                Guest cannot edit characters
-              </Button>
-            ) : isGuest ? (
-              <Button size="lg" type="button" variant="default" disabled={true}>
-                Guest cannot create new characters
-              </Button>
-            ) : (
-              <Button size="lg" disabled={isLoading}>
-                {initialData ? "Edit your character" : "Create your character"}
-                <Wand className="ml-2" />
-              </Button>
-            )}
-          </div>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

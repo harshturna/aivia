@@ -51,6 +51,10 @@ export interface ComposerProps {
   onFilesChange?: (files: File[]) => void;
   /** The current mode's parameter pills. */
   params?: React.ReactNode;
+  /** Hide the mode pill: a character chat has one mode. */
+  showModes?: boolean;
+  /** Override the mode's placeholder. */
+  placeholder?: string;
   cost?: string;
   /** The last brief, recalled with ↑ in an empty field. */
   lastBrief?: string;
@@ -84,6 +88,8 @@ export function Composer({
   files,
   onFilesChange,
   params,
+  showModes = true,
+  placeholder,
   cost,
   lastBrief,
   autoFocus = false,
@@ -189,7 +195,7 @@ export function Composer({
         />
       )}
       <label htmlFor={`${menuId}-field`} className="sr-only">
-        {current.placeholder}
+        {placeholder ?? current.placeholder}
       </label>
       <textarea
         ref={ref}
@@ -199,7 +205,7 @@ export function Composer({
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}
         onPaste={onPaste}
-        placeholder={current.placeholder}
+        placeholder={placeholder ?? current.placeholder}
         aria-keyshortcuts="/"
         className="block w-full resize-none bg-transparent px-1.5 py-1 text-[15px] leading-6 text-fg outline-none placeholder:text-mute"
       />
@@ -231,46 +237,48 @@ export function Composer({
             </Pill>
           </>
         )}
-        <div ref={menuRef} className="relative">
-          <Pill
-            on
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            aria-controls={menuId}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            {current.label}
-            <ChevronDown className="opacity-70" />
-          </Pill>
-          {menuOpen && (
-            <div
-              id={menuId}
-              role="menu"
-              className="absolute bottom-full left-0 z-20 mb-2 w-64 rounded-media border border-border bg-surface-2 p-1 shadow-float animate-in fade-in-0 zoom-in-95 duration-150"
+        {showModes && (
+          <div ref={menuRef} className="relative">
+            <Pill
+              on
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-controls={menuId}
+              onClick={() => setMenuOpen((open) => !open)}
             >
-              {MODES.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={m.id === mode}
-                  onClick={() => {
-                    onModeChange?.(m.id);
-                    setMenuOpen(false);
-                    ref.current?.focus();
-                  }}
-                  className={cn(
-                    "flex w-full flex-col items-start rounded-control px-2.5 py-1.5 text-left transition-colors hover:bg-surface-3",
-                    m.id === mode ? "text-fg" : "text-fg-2"
-                  )}
-                >
-                  <span className="text-[13px] font-medium">{m.label}</span>
-                  <span className="text-[12px] text-mute">{m.hint}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+              {current.label}
+              <ChevronDown className="opacity-70" />
+            </Pill>
+            {menuOpen && (
+              <div
+                id={menuId}
+                role="menu"
+                className="absolute bottom-full left-0 z-20 mb-2 w-64 rounded-media border border-border bg-surface-2 p-1 shadow-float animate-in fade-in-0 zoom-in-95 duration-150"
+              >
+                {MODES.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={m.id === mode}
+                    onClick={() => {
+                      onModeChange?.(m.id);
+                      setMenuOpen(false);
+                      ref.current?.focus();
+                    }}
+                    className={cn(
+                      "flex w-full flex-col items-start rounded-control px-2.5 py-1.5 text-left transition-colors hover:bg-surface-3",
+                      m.id === mode ? "text-fg" : "text-fg-2"
+                    )}
+                  >
+                    <span className="text-[13px] font-medium">{m.label}</span>
+                    <span className="text-[12px] text-mute">{m.hint}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {params}
         <div className="ml-auto flex items-center gap-3">
           {cost && (

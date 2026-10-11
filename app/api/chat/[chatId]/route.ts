@@ -8,6 +8,7 @@ import {
 } from "ai";
 import { guardGeneration } from "@/lib/ai/guard";
 import prismadb from "@/lib/prismadb";
+import { messageText } from "@/lib/session-text";
 
 export const maxDuration = 60;
 
@@ -50,6 +51,7 @@ export async function POST(
       "Speak in the first person, as the character, always.",
       `Never prefix your reply with "${character.name}:" or any other name or label.`,
       "Reply with at least one complete sentence. Stay in character at all times.",
+      "Reply with speech only: no stage directions, no actions in asterisks or italics.",
       "",
       "Background about you:",
       character.instructions,
@@ -77,8 +79,40 @@ export async function POST(
       },
     });
 
+    // The exchange is kept (TICKET-010): the brief that was just sent and the reply, as two
+    // rows of the character's history for this user.
+    const brief = messages[messages.length - 1];
+    const briefText = brief?.role === "user" ? messageText(brief).trim() : "";
+
     return createUIMessageStreamResponse({
-      stream: toUIMessageStream({ stream: result.stream }),
+      stream: toUIMessageStream({
+        stream: result.stream,
+        originalMessages: messages,
+        onFinish: async ({ responseMessage, isAborted }) => {
+          const reply = messageText(responseMessage).trim();
+          if (!briefText || !reply || isAborted) return;
+          try {
+            await prismadb.message.createMany({
+              data: [
+                {
+                  role: "user",
+                  content: briefText,
+                  characterId: character.id,
+                  userId: guard.user.id,
+                },
+                {
+                  role: "system",
+                  content: reply,
+                  characterId: character.id,
+                  userId: guard.user.id,
+                },
+              ],
+            });
+          } catch (error) {
+            console.error("[CHAT_SAVE]", error);
+          }
+        },
+      }),
     });
   } catch (error) {
     console.error("[CHAT_POST]", error);

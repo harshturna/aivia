@@ -29,6 +29,11 @@ const nextConfig = {
         destination: "/edit?tool=:tool",
         permanent: true,
       },
+      {
+        source: "/characters/chat/:id",
+        destination: "/characters/c/:id",
+        permanent: true,
+      },
     ];
   },
   images: {
