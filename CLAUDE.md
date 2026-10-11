@@ -83,6 +83,9 @@ sections, Handoff on in-progress tickets, Verification and Outcome on done ticke
 - `npm run build` writes `.next` and kills a running `next dev` (which keeps its state in
   `.next/dev`). Stop the dev server before a build, then start it again; after a build, delete
   `.next/types` or `tsc` complains about routes that no longer exist.
+- Stop this project's dev server by its own PID or port (`lsof -ti tcp:3005 | xargs kill`),
+  never with a pattern like `pkill -f "next dev"`: other projects on this machine run their
+  own dev servers. Restart it after `prisma generate`; the client is cached on `globalThis`.
 
 ## Design
 

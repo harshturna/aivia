@@ -9,6 +9,13 @@ import prismadb from "@/lib/prismadb";
  */
 export const GUEST_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The client makes session ids with `crypto.randomUUID()`; nothing else is stored. */
+export function isSessionId(id: string) {
+  return UUID.test(id);
+}
+
 export type SessionSummary = Pick<
   Session,
   "id" | "title" | "mode" | "pinned" | "createdAt" | "updatedAt"

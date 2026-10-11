@@ -10,6 +10,14 @@ import {
 
 import { guardGeneration } from "@/lib/ai/guard";
 import { createAgentTools } from "@/lib/ai/tools";
+import {
+  ensureSession,
+  isSessionId,
+  messageText,
+  renameSession,
+  saveMessages,
+  titleFromBrief,
+} from "@/lib/sessions";
 
 // The agent can chain several media generations in one turn.
 export const maxDuration = 300;
@@ -48,7 +56,8 @@ const SYSTEM_PROMPT = [
 
 export async function POST(req: Request) {
   try {
-    const { messages }: { messages: UIMessage[] } = await req.json();
+    const { id, messages }: { id?: string; messages: UIMessage[] } =
+      await req.json();
 
     if (!messages?.length) {
       return new Response("Messages are required", { status: 400 });
@@ -60,14 +69,29 @@ export async function POST(req: Request) {
     const guard = await guardGeneration();
     if (!guard.ok) return guard.response;
 
+    // The chat id the client made is the session id (design §12). A new one becomes a row
+    // named after its first brief; anything that is not a uuid runs unsaved.
+    const userId = guard.user.id;
+    const sessionId = id && isSessionId(id) ? id : null;
+    if (sessionId) {
+      const session = await ensureSession(userId, sessionId);
+      if (session.title === "New session") {
+        const first = messages.find((m) => m.role === "user");
+        if (first)
+          await renameSession(
+            userId,
+            sessionId,
+            titleFromBrief(messageText(first))
+          );
+      }
+    }
+
     const result = streamText({
       model: anthropic("claude-sonnet-5"),
       system: SYSTEM_PROMPT,
       messages: await convertToModelMessages(messages),
       tools: {
-        // Session ids arrive with the Studio rebuild (TICKET-005/006); until then every
-        // asset is recorded against the user with no session.
-        ...createAgentTools({ userId: guard.user.id, sessionId: null }),
+        ...createAgentTools({ userId, sessionId }),
         // Server-side: Anthropic runs the search, so there is nothing to
         // execute here and no separate search API key to hold. The _20260209
         // variant filters results before they reach the context window.
@@ -93,6 +117,17 @@ export async function POST(req: Request) {
       stream: toUIMessageStream({
         stream: result.stream,
         sendReasoning: true,
+        originalMessages: messages,
+        // Saved when the stream ends, aborted or not: the assets are already rows (the
+        // tools write them), this keeps the transcript that shows them.
+        onFinish: async ({ messages: all }) => {
+          if (!sessionId) return;
+          try {
+            await saveMessages(userId, sessionId, all);
+          } catch (error) {
+            console.error("[AGENT_SAVE]", error);
+          }
+        },
         // Without this the SDK replaces every tool failure with the string
         // "An error occurred." The model then has nothing to report and
         // invents a plausible-sounding reason instead — a generate_music

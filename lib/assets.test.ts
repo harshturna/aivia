@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { groupByDay } from "./assets";
-import { messageText, titleFromBrief } from "./sessions";
+import { isSessionId, messageText, titleFromBrief } from "./sessions";
 
 describe("groupByDay", () => {
   const now = new Date("2026-10-10T18:00:00Z");
@@ -70,5 +70,15 @@ describe("messageText", () => {
         ],
       })
     ).toBe("a b");
+  });
+});
+
+describe("isSessionId", () => {
+  it("accepts a uuid and nothing else", () => {
+    expect(isSessionId("3f2b8a0e-1c4d-4e5f-9a6b-7c8d9e0f1a2b")).toBe(true);
+    expect(isSessionId("abc")).toBe(false);
+    expect(isSessionId("3f2b8a0e-1c4d-4e5f-9a6b-7c8d9e0f1a2b; drop")).toBe(
+      false
+    );
   });
 });

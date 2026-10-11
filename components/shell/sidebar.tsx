@@ -11,6 +11,7 @@ import { AccountMenu } from "./account-menu";
 import { SIDEBAR_COOKIE } from "./constants";
 import { CreditsMeter } from "./credits-meter";
 import { NAV_ITEMS } from "./nav-items";
+import { Recents } from "./recents";
 
 export interface ShellUser {
   name: string;
@@ -138,6 +139,8 @@ export function Sidebar({
           </Item>
         ))}
       </div>
+
+      {!rail && <Recents onNavigate={onNavigate} />}
 
       <div className="mt-auto space-y-3">
         {!user.isPro && !rail && (
