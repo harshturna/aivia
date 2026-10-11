@@ -33,6 +33,11 @@ export const metadata: Metadata = {
     title: `${TITLE}: ${TAGLINE}`,
     description: DESCRIPTION,
   },
+  twitter: {
+    card: "summary_large_image",
+    title: `${TITLE}: ${TAGLINE}`,
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {
