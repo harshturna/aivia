@@ -25,7 +25,7 @@ export function YourTurn() {
   };
   return (
     <section className={cn(WRAP, "text-center")}>
-      <h2 className="font-display text-[clamp(48px,7vw,104px)] font-medium leading-[0.95] tracking-[-0.015em]">
+      <h2 className="font-display text-[clamp(40px,5.4vw,80px)] font-medium leading-[0.95] tracking-[-0.015em]">
         Now write yours.
       </h2>
       <p className={cn(LEDE, "mx-auto")}>

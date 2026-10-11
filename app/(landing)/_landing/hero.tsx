@@ -69,7 +69,7 @@ const BRIEF: Tok[] = [
 export const BRIEF_TEXT = BRIEF.map((t) => t.w).join("");
 /**
  * The brief as words, each rising out of the fog on its own delay (CSS, so it runs before
- * any script). A noun's window opens as its word arrives.
+ * any script). The windows wait for the first scroll, then leave from their nouns.
  */
 const WORD_START = 0.45;
 const WORD_STEP = 0.075;
@@ -81,12 +81,6 @@ const WORDS = (() => {
   }
   return out.map((w, i) => ({ ...w, delay: WORD_START + i * WORD_STEP }));
 })();
-const LAST_WORD = WORDS[WORDS.length - 1].delay;
-/** When each window opens, in ms from load: a beat after its word starts rising. */
-const OPEN_AT = Object.fromEntries(
-  WORDS.filter((w) => w.noun).map((w) => [w.noun, (w.delay + 0.3) * 1000])
-) as Record<Key, number>;
-
 const TAGLINES: Array<{ text: string; from: number; to: number }> = [
   { text: "Older than every map.", from: 0.04, to: 0.28 },
   { text: "Walk in before the world wakes.", from: 0.36, to: 0.62 },
@@ -104,8 +98,6 @@ type Geo = {
   k1: Record<Key, R>;
   k2: Record<Key, R>;
   tracks: R;
-  s0: R;
-  s1: { x: number; y: number; s: number };
   vh: number;
 };
 
@@ -390,13 +382,13 @@ const MOTES = (() => {
     seed = (seed * 16807) % 2147483647;
     return seed / 2147483647;
   };
-  return Array.from({ length: 30 }, () => ({
+  return Array.from({ length: 18 }, () => ({
     left: 30 + rnd() * 62,
     size: 6 + rnd() * 8,
     dur: 14 + rnd() * 16,
     delay: -rnd() * 30,
     sway: 10 + rnd() * 30,
-    alpha: 0.4 + rnd() * 0.5,
+    alpha: 0.3 + rnd() * 0.4,
   }));
 })();
 
@@ -404,9 +396,7 @@ export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const sentenceRef = useRef<HTMLHeadingElement>(null);
-  const caretRef = useRef<HTMLSpanElement>(null);
-  const cueRef = useRef<HTMLParagraphElement>(null);
-  const captionRef = useRef<HTMLDivElement>(null);
+  const introRef = useRef<HTMLDivElement>(null);
   const k1Ref = useRef<HTMLDivElement>(null);
   const k2Ref = useRef<HTMLDivElement>(null);
   const skyRef = useRef<HTMLDivElement>(null);
@@ -420,7 +410,7 @@ export function Hero() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pieceRefs = useRef<Partial<Record<Key, HTMLDivElement | null>>>({});
-  const slotRefs = useRef<Partial<Record<Key, HTMLSpanElement | null>>>({});
+  const nounRefs = useRef<Partial<Record<Key, HTMLSpanElement | null>>>({});
   const geo = useRef<Geo | null>(null);
   const parts = useRef<{
     strip?: HTMLElement;
@@ -546,24 +536,16 @@ export function Hero() {
       }
       if (motesRef.current)
         motesRef.current.style.opacity = (1 - T2).toFixed(3);
-      if (cueRef.current)
-        cueRef.current.style.opacity = clamp01(1 - st * 6).toFixed(3);
-      if (caretRef.current)
-        caretRef.current.style.opacity = clamp01(1 - st * 8).toFixed(3);
-      for (const k of KEYS) {
-        const slot = slotRefs.current[k];
-        if (slot) slot.style.opacity = (T1 * 0.28).toFixed(3);
-      }
+      if (introRef.current)
+        introRef.current.style.opacity = clamp01(1 - st * 6).toFixed(3);
       const ph = playheadRef.current;
       if (ph) ph.style.opacity = L2.toFixed(3);
 
       const sentence = sentenceRef.current;
       if (sentence) {
-        const dx = (g.s1.x - g.s0.x) * st;
-        const dy = (g.s1.y - g.s0.y) * st;
-        sentence.style.transform = `translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0) scale(${lerp(1, g.s1.s, st).toFixed(4)})`;
-        // the brief is swept into its windows: it shrinks and is gone before they land
-        sentence.style.opacity = (1 - span(p, 0.08, 0.24)).toFixed(3);
+        // the windows leave from their words; the brief lifts and fades behind them
+        sentence.style.transform = `translate3d(0,${(-st * 0.06 * g.vh).toFixed(1)}px,0) scale(${(1 - st * 0.04).toFixed(4)})`;
+        sentence.style.opacity = (1 - span(p, 0.06, 0.2)).toFixed(3);
       }
 
       KEYS.forEach((k, i) => {
@@ -584,6 +566,7 @@ export function Hero() {
         const rx = lerp(7, w / 2, arch);
         const ry = lerp(7, w > h ? Math.min(h * 0.3, w / 2) : w / 2, arch);
         const rb = lerp(Math.max(2, h * 0.04), 7, b);
+        el.style.opacity = (b > 0 ? 1 : clamp01(a * 5)).toFixed(3);
         el.style.width = `${w.toFixed(1)}px`;
         el.style.height = `${h.toFixed(1)}px`;
         el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) rotate(${rot.toFixed(2)}deg)`;
@@ -644,10 +627,9 @@ export function Hero() {
       undefined;
     const stage = stageRef.current;
     const sentence = sentenceRef.current;
-    const caption = captionRef.current;
     const k1 = k1Ref.current;
     const k2 = k2Ref.current;
-    if (!stage || !sentence || !caption || !k1 || !k2) return;
+    if (!stage || !sentence || !k1 || !k2) return;
     const prev = sentence.style.transform;
     sentence.style.transform = "none";
     const base = stage.getBoundingClientRect();
@@ -666,14 +648,12 @@ export function Hero() {
       Object.fromEntries(
         KEYS.map((k) => [k, rel(root.querySelector(`[data-k="${k}"]`))])
       ) as Record<Key, R>;
-    const s0 = rel(sentence);
-    const cap = rel(caption);
     const ruler = rel(k2.querySelector("[data-ruler]"));
     const lanes = [...k2.querySelectorAll("[data-lane]")].map(rel);
     const last = lanes[lanes.length - 1] ?? ruler;
     geo.current = {
       k0: Object.fromEntries(
-        KEYS.map((k) => [k, rel(slotRefs.current[k])])
+        KEYS.map((k) => [k, rel(nounRefs.current[k])])
       ) as Record<Key, R>,
       k1: pick(k1),
       k2: pick(k2),
@@ -683,8 +663,6 @@ export function Hero() {
         w: ruler.w,
         h: last.y + last.h - ruler.y,
       },
-      s0,
-      s1: { x: cap.x, y: cap.y, s: cap.w / s0.w },
       vh: base.height,
     };
     sentence.style.transform = prev;
@@ -712,20 +690,9 @@ export function Hero() {
     setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
-  // the windows open as their words arrive (the words themselves are CSS, timed from load)
+  // under reduced motion the triptych shows at once, so its windows are open from the start
   useEffect(() => {
-    if (reduced === null) return;
-    if (reduced) {
-      for (const k of KEYS) open(k);
-      return;
-    }
-    const since = performance.now();
-    const ids = KEYS.map((k) =>
-      setTimeout(() => open(k), Math.max(0, OPEN_AT[k] - since))
-    );
-    return () => {
-      for (const id of ids) clearTimeout(id);
-    };
+    if (reduced) for (const k of KEYS) open(k);
   }, [reduced, open]);
 
   // geometry, scroll (one read and the writes per frame), visibility
@@ -843,7 +810,7 @@ export function Hero() {
         <div
           ref={mistRef}
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[50%] h-[44%] overflow-hidden opacity-[.22] will-change-transform"
+          className="pointer-events-none absolute inset-x-0 top-[50%] h-[44%] overflow-hidden opacity-[.14] will-change-transform"
         >
           <div className="w-drift w-drift-slow absolute inset-y-0 left-0 bg-[url(/landing/fog-mist.webp)] bg-[length:auto_100%] bg-repeat-x" />
         </div>
@@ -860,79 +827,46 @@ export function Hero() {
           <Rings />
         </div>
 
-        {/* the brief, written over the trunks */}
-        <div className="absolute inset-x-0 top-0 z-10 px-5 pt-[16svh] sm:px-8 sm:pt-[17svh]">
-          <div className="mx-auto w-full max-w-[1240px]">
+        {/* the brief, over the dark trunks; the forest leads */}
+        <div className="absolute inset-0 z-10 flex items-center px-5 pb-[8svh] sm:px-8">
+          <div className="mx-auto w-full max-w-[1200px]">
             <h1
               ref={sentenceRef}
               aria-label={BRIEF_TEXT}
-              className="max-w-[1180px] origin-top-left font-display text-[clamp(44px,7.4vw,124px)] leading-[0.96] tracking-[-0.015em] text-fg [text-shadow:0_1px_2px_color-mix(in_srgb,var(--color-bg)_35%,transparent),0_4px_40px_color-mix(in_srgb,var(--color-bg)_55%,transparent)] will-change-transform"
+              className="max-w-[640px] origin-top-left font-display text-[clamp(34px,4.6vw,72px)] leading-[1.02] tracking-[-0.01em] text-fg [text-shadow:0_1px_2px_color-mix(in_srgb,var(--color-bg)_35%,transparent),0_4px_32px_color-mix(in_srgb,var(--color-bg)_55%,transparent)] will-change-transform"
             >
-              {WORDS.map((w, i) => {
-                const gap = i > 0 ? " " : null;
-                const style = {
-                  animationDelay: `${w.delay}s`,
-                } as React.CSSProperties;
-                if (!w.noun)
-                  return (
-                    <Fragment key={w.text + w.delay}>
-                      {gap}
-                      <span aria-hidden className="w-word" style={style}>
-                        {w.text}
-                      </span>
-                    </Fragment>
-                  );
-                const k = w.noun;
-                return (
-                  <Fragment key={k}>
-                    {gap}
-                    <span className="whitespace-nowrap">
-                      <span
-                        ref={(el) => {
-                          slotRefs.current[k] = el;
-                        }}
-                        aria-hidden
-                        className="mx-[0.08em] inline-block h-[0.72em] rounded-t-full align-[-0.04em] opacity-0 will-change-[opacity]"
-                        style={{
-                          width: `${MEDIUM[k].em}em`,
-                          background: MEDIUM[k].tint,
-                        }}
-                      />
-                      <span
-                        aria-hidden
-                        className="w-word w-u"
-                        style={
-                          {
-                            animationDelay: `${w.delay}s, ${w.delay + 0.35}s`,
-                            "--tint": MEDIUM[k].tint,
-                          } as React.CSSProperties
-                        }
-                      >
-                        {w.text}
-                      </span>
-                    </span>
-                  </Fragment>
-                );
-              })}
-              <span
-                ref={caretRef}
-                className="w-caret will-change-[opacity]"
-                style={
-                  {
-                    "--caret-delay": `${LAST_WORD + 0.7}s`,
-                  } as React.CSSProperties
-                }
-              />
+              {WORDS.map((w, i) => (
+                <Fragment key={w.text + w.delay}>
+                  {i > 0 ? " " : null}
+                  <span
+                    ref={
+                      w.noun
+                        ? (el) => {
+                            if (w.noun) nounRefs.current[w.noun] = el;
+                          }
+                        : undefined
+                    }
+                    aria-hidden
+                    className="w-word"
+                    style={{ animationDelay: `${w.delay}s` }}
+                  >
+                    {w.text}
+                  </span>
+                </Fragment>
+              ))}
             </h1>
-            <p
-              ref={cueRef}
-              className="w-cue-wrap mt-8 flex items-center gap-3 text-[14px] text-fg will-change-[opacity]"
-            >
-              <span className="flex items-center gap-3 rounded-full bg-bg/45 py-2 pl-3 pr-4">
-                <span className="w-cue h-px w-8 bg-fg/80" />
-                Scroll, and watch it get made
-              </span>
-            </p>
+            <div ref={introRef} className="will-change-[opacity]">
+              <p className="w-sub mt-6 max-w-[42ch] text-[16px] leading-7 text-fg-2">
+                Write one line. Aivia plans it and makes every piece while you
+                watch.
+              </p>
+              <p className="w-cue-wrap mt-10 text-[13px] text-fg-2">
+                <span className="flex items-center gap-3">
+                  <span className="w-cue h-px w-8 bg-fg/60" />
+                  Scroll
+                </span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -942,12 +876,6 @@ export function Hero() {
           className="invisible absolute inset-0 z-10 opacity-0 will-change-[opacity]"
         >
           <div className="mx-auto flex h-full max-w-[1280px] flex-col px-5 pb-6 pt-[72px] sm:px-8 sm:pt-[84px] md:pb-10">
-            {/* where the brief shrinks toward as it fades; nothing is drawn here */}
-            <div
-              ref={captionRef}
-              aria-hidden
-              className="h-px w-[54%] sm:w-[460px]"
-            />
             <div className="w-grid my-auto">
               {KEYS.map((k) => (
                 <div
@@ -1062,7 +990,8 @@ export function Hero() {
             }}
             aria-hidden
             data-on="false"
-            className="w-piece pointer-events-none absolute left-0 top-0 z-20 overflow-hidden shadow-[0_30px_80px_-24px_rgb(0_0_0/.7)] outline outline-1 -outline-offset-1 outline-fg/20 [contain:strict] will-change-transform"
+            style={{ opacity: 0 }}
+            className="pointer-events-none absolute left-0 top-0 z-20 overflow-hidden shadow-[0_30px_80px_-24px_rgb(0_0_0/.7)] outline outline-1 -outline-offset-1 outline-fg/20 [contain:strict] will-change-transform"
           >
             <PieceBody k={k} videoRef={videoRef} />
           </div>

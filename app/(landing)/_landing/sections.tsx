@@ -151,7 +151,7 @@ export function Close({
         />
       </div>
       <div className={cn(WRAP, "text-center")}>
-        <h2 className="mx-auto font-display text-[clamp(48px,7vw,104px)] font-medium leading-[1] tracking-[-0.015em]">
+        <h2 className="mx-auto font-display text-[clamp(40px,5.4vw,80px)] font-medium leading-[1] tracking-[-0.015em]">
           Begin with one sentence.
         </h2>
         <Link

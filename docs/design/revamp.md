@@ -85,7 +85,8 @@ status dot or word.
 
 **Type (D-004).** Cormorant, one weight (500) in roman and italic, is the display face:
 the hero brief `clamp(44px, 7.4vw, 124px)` at line height 0.96, section headings
-`clamp(40px, 5.2vw, 76px)` at 0.98, the close at up to 104 px, and italics for made words
+`clamp(34px, 4.2vw, 58px)` at 0.98, the composer and close headings at up to 80 px
+(TICKET-027), and italics for made words
 (taglines, track titles, captions on the wall). Host Grotesk stays for everything else.
 
 **Type (D-003, the app until TICKET-022).** One family, Host Grotesk (variable 300 to 800, `next/font/google`), with JetBrains
@@ -124,13 +125,13 @@ cubic-bezier(.32, .72, 0, 1)` for sheets. Never ease-in; never `transition: all`
 | hero clips | crossfade every 9 s between three clips, 1.2 s, paused under reduced motion and when the tab is hidden |
 | media tiles on the wall | hover plays the clip (`preload="none"`, poster), 1.02 scale over 600 ms |
 
-**The landing hero (D-004)** is one scroll-pinned sequence over 380svh: the brief's fifteen words
-rise out of the fog once (CSS: opacity, a third of an em upward and a soft blur resolving,
-75 ms apart from 0.45 s, landed by about 2.3 s; each noun's underline draws and its window
-opens as it arrives; TICKET-026 replaced a typewriter that took about 5 s), then scroll drives the windows
-from their slots in the sentence to the triptych and on to the timeline; the brief shrinks
-and fades as its windows leave it, so the triptych and the timeline have the screen to
-themselves (TICKET-025). Ambient life: light shafts breathe (9 s), motes rise (14 to 30 s), fog drifts
+**The landing hero (D-004)** is one scroll-pinned sequence over 380svh. The first frame is
+calm (TICKET-027): the forest leads; the brief, `clamp(34px, 4.6vw, 72px)`, sits left over the
+dark trunks with one plain line under it and a thin "Scroll" cue; its fifteen words rise out
+of the fog once (CSS: opacity, a third of an em upward and a soft blur resolving, 75 ms apart
+from 0.45 s, landed by about 2.3 s; TICKET-026). Nothing else is on screen. On the first
+scroll each window starts on its noun's box, fades in as it leaves and flies to the
+triptych, while the brief lifts and fades; then the arches flatten into the timeline. Ambient life: light shafts breathe (9 s), motes rise (14 to 30 s), fog drifts
 (140 and 200 s), the tree rings turn with scroll. Frame budget rules: per-frame values are
 written straight onto the element that uses them, never through React state or an inherited
 custom property; what moves every frame is a transform or an opacity on its own layer; no
@@ -362,7 +363,8 @@ the fold each section skips layout and paint until it comes near (`content-visib
 1. **Nav**, 64 px, transparent over the hero and `--glass` after 40 px of scroll: the wordmark;
    Pricing; Sign in; "Start making" as the primary (parchment) button.
 2. **Hero**: the sequence in §2.3. The brief: "A poster, a teaser, a soundtrack and the words
-   for a forest older than memory." Picture is the lone tree, clip the canyon waterfall,
+   for a forest older than memory." Under it: "Write one line. Aivia plans it and makes every
+   piece while you watch." Picture is the lone tree, clip the canyon waterfall,
    score "First light in the old wood", words "Older than every map." and two more. The
    triptych has a play control for the score; the timeline has a playhead, timecode and the
    same control. The plate is art-directed (a portrait crop on tall screens) through
