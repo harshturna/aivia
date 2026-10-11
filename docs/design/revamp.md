@@ -390,7 +390,8 @@ the fold each section skips layout and paint until it comes near (`content-visib
    (steps ticking, the poster, the clip, the score, three taglines).
 6. **Need just one thing? Ask for just that.** The four direct modes: an image, a clip, the
    score and a sound, each with the line that made it.
-7. **Start free.** Free (five generations in every mode) and Pro ($20 a month, unlimited).
+7. **Start free.** The heading and one line ("Five generations in every mode to begin. Go Pro
+   when one sentence turns into a habit."); the plan cards were removed in TICKET-036.
 8. **Begin with one sentence.** Over the valley clip, faded by a mask so it melts into the
    page, and the primary button.
 9. **Footer**, one row above a hairline: the wordmark left; Studio, Library, Edit, Pricing,

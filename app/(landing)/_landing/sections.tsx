@@ -84,7 +84,7 @@ function Plate({
   );
 }
 
-/** Pricing (design §11.7): two columns on one rule. */
+/** Pricing (design §11.7): the line and nothing else (TICKET-036). */
 export function Pricing() {
   return (
     <section id="pricing" className={WRAP}>
@@ -93,38 +93,6 @@ export function Pricing() {
         Five generations in every mode to begin. Go Pro when one sentence turns
         into a habit.
       </p>
-      <div className="mt-12 grid gap-10 border-t border-border-strong pt-8 md:grid-cols-2">
-        <div>
-          <h3 className="text-[15px] font-medium">Free</h3>
-          <div className="mt-3 font-display text-[64px] font-medium leading-none">
-            $0
-          </div>
-          <p className="mt-4 max-w-[36ch] text-[15px] leading-6 text-fg-2">
-            Five generations to start, in every mode.
-          </p>
-          <Link
-            href="/get-started"
-            className={cn(buttonVariants({ variant: "secondary" }), "mt-6")}
-          >
-            Start free
-          </Link>
-        </div>
-        <div>
-          <h3 className="text-[15px] font-medium">Pro</h3>
-          <div className="mt-3 font-display text-[64px] font-medium leading-none">
-            $20
-            <span className="ml-2 font-sans text-[15px] font-normal text-mute">
-              a month
-            </span>
-          </div>
-          <p className="mt-4 max-w-[36ch] text-[15px] leading-6 text-fg-2">
-            Unlimited generations in every mode. Cancel any time.
-          </p>
-          <Link href="/login" className={cn(buttonVariants(), "mt-6")}>
-            Go Pro
-          </Link>
-        </div>
-      </div>
     </section>
   );
 }
