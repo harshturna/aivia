@@ -1,5 +1,5 @@
 {
-  "name": "vista-labs",
+  "name": "aivia",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,6 +7,9 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check:tickets": "node scripts/check-tickets.mjs",
+    "verify": "npm run lint && npm run typecheck && npm run check:tickets",
     "postinstall": "prisma generate"
   },
   "dependencies": {

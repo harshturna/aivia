@@ -34,3 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local permission grants for Claude Code; the skills are tracked
+.claude/settings.local.json
+.claude/worktrees/
+
+# screenshot review output (npm run shots)
+/.shots/
