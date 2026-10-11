@@ -165,58 +165,37 @@ export function Close({
   );
 }
 
-/** The footer (design §11.10). */
+/** The footer (design §11.9): the wordmark and the links a visitor uses, in one row. */
+const FOOTER_LINKS: Array<[string, string]> = [
+  ["Studio", "/studio"],
+  ["Library", "/library"],
+  ["Edit", "/edit"],
+  ["Pricing", "#pricing"],
+  ["Sign in", "/login"],
+  ["Create account", "/signup"],
+];
+
 export function LandingFooter() {
-  const cols: Array<[string, Array<[string, string]>]> = [
-    [
-      "Product",
-      [
-        ["Studio", "/studio"],
-        ["Library", "/library"],
-        ["Edit", "/edit"],
-        ["Pricing", "#pricing"],
-      ],
-    ],
-    [
-      "Account",
-      [
-        ["Sign in", "/login"],
-        ["Create account", "/signup"],
-        ["Try as a guest", "/get-started"],
-      ],
-    ],
-    [
-      "Aivia",
-      [
-        ["By harsh", "https://harshturna.com"],
-        ["Source", "https://github.com/harshturna/aivia"],
-      ],
-    ],
-  ];
   return (
-    <footer className={cn(WRAP, "pb-10 pt-16")}>
-      <div className="grid gap-8 border-t border-border pt-8 text-[13px] sm:grid-cols-[1fr_1fr_1fr_auto]">
-        {cols.map(([title, links]) => (
-          <div key={title}>
-            <div className="mb-2 font-medium text-fg">{title}</div>
-            {links.map(([label, href]) => (
-              <a
-                key={label}
-                href={href}
-                className="block py-1 text-fg-2 transition-colors hover:text-fg"
-                {...(href.startsWith("http")
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
-              >
-                {label}
-              </a>
+    <footer className={cn(WRAP, "pb-12 pt-16")}>
+      <div className="flex flex-col gap-6 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
+        <Link href="/" className="rounded-control">
+          <Logo className="text-[18px]" />
+        </Link>
+        <nav aria-label="Footer">
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-[13.5px]">
+            {FOOTER_LINKS.map(([label, href]) => (
+              <li key={label}>
+                <a
+                  href={href}
+                  className="text-fg-2 transition-colors hover:text-fg"
+                >
+                  {label}
+                </a>
+              </li>
             ))}
-          </div>
-        ))}
-        <div className="flex flex-col items-start gap-2 text-mute sm:items-end">
-          <Logo className="text-[16px]" />
-          <span>2026</span>
-        </div>
+          </ul>
+        </nav>
       </div>
     </footer>
   );

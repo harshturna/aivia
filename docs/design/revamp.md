@@ -376,8 +376,9 @@ the fold each section skips layout and paint until it comes near (`content-visib
 7. **Start free.** Free (five generations in every mode) and Pro ($20 a month, unlimited).
 8. **Begin with one sentence.** Over the valley clip, faded by a mask so it melts into the
    page, and the primary button.
-9. **Footer**, 13 px: Product (Studio, Library, Edit, Pricing), Account (Sign in, Create
-   account, Try as a guest), Aivia (by harsh, Source), the year.
+9. **Footer**, one row above a hairline: the wordmark left; Studio, Library, Edit, Pricing,
+   Sign in and Create account right at 13.5 px, wrapping on a phone. No source link, no year
+   (TICKET-023).
 
 Removed in TICKET-021 at the owner's call: the changelog ("what changed") and the library
 panel ("everything you make, kept": table stakes, not a reason to come). Copy sells features
