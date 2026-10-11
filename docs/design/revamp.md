@@ -156,6 +156,8 @@ through `LazyMotion` + `domMax` for layout work only; CSS for the rest.
 
 ## 3. The product: what exists and where it lives
 
+> Superseded in part by §17 (D-005): making, keeping and editing now live in the project.
+
 Decided in D-002.
 
 - **Studio** is the front door and the only place to make things. One composer with modes:
@@ -334,6 +336,8 @@ step. The upgrade dialog, when opened, says what Pro is in plain words, the pric
 
 ## 6. Library
 
+> Superseded in part by §17 (D-005): making, keeping and editing now live in the project.
+
 `/library`: the sheet's header carries the name and a segmented control All / Images / Video
 / Audio and a search field over prompts (Postgres full-text on `Asset.prompt`); a Favourites
 toggle. The body groups assets by day ("Today", "Yesterday", then the date) as `--mute` 13 px
@@ -347,6 +351,8 @@ Cursor pagination, 48 per page, loaded as the end comes into view. Empty: "Nothi
 Start in the Studio." and a link.
 
 ## 7. Edit
+
+> Superseded in part by §17 (D-005): making, keeping and editing now live in the project.
 
 `/edit`: the sheet shows a 2-column workspace from 1024 px (one column below): the source on
 the left (drop zone or "Choose from library", then the image), the result on the right at the
@@ -502,3 +508,209 @@ Asset     id, userId, sessionId?, kind (image|video|music|sound), url, posterUrl
 1. Characters: keep (as designed here, demoted) or cut. The design keeps it.
 2. The hero's words. "One brief. A whole production." is the working line.
 3. Whether Pro should keep its $20 price and single tier. The design assumes yes.
+
+## 17. The media platform (D-005)
+
+Decided in D-005, from `research-media-platform.md`. This section replaces what §3, §5, §6 and
+§7 say about making, keeping and editing living on separate pages; the composer (§5.2), the
+run (§5.3), tokens, type, motion and states (§2, §13, §14) stand and are used here.
+
+### 17.1 The product map
+
+- **Home** (`/studio`): "What are we making?" and the composer, as now; a send creates a
+  project. Under it, the projects as cards (a mosaic of the first three pieces, the title,
+  "Updated 2 h ago", a running ring), newest first. "Start from a photo" beside the composer
+  creates a project with an upload in it.
+- **A project** (`/p/[id]`, `/p/[id]/cut`): today's session, renamed and widened. Its briefs
+  (the run thread), its media (outputs, uploads, edited versions), its cuts. One thread per
+  project. `/studio/[id]` redirects to `/p/[id]`.
+- **Library** (`/library`): every piece of media across projects, the global bin. Filters gain
+  a project; every item gains "Open project". The lightbox stays.
+- **Characters**: unchanged, last in the navigation, until it is removed (owner, 2026-10-11).
+- **Edit** as a page goes: `/edit` redirects to Home with "Start from a photo" open;
+  `/edit?asset=` opens that image's project with the editor (17.7).
+- **Sidebar:** New project (⌘⇧O), Search (⌘K), Home, Library, Characters; then **Projects**
+  (up to eight, running ring and unseen dot as Recents had, then "All projects", which is Home).
+  "On this device" stays for the guest, as projects.
+
+### 17.2 The project screen, desktop (1024 and up)
+
+Two views in the header's segmented control, **Make** and **Cut**, and the **media tray** on
+the right in both, 300 px, collapsible (⌘. or its control; state in a cookie like the sidebar).
+Opening Cut collapses the app sidebar to its rail for width; leaving Cut restores the user's
+own setting.
+
+```
+Make
+┌────┬────────────────────────────────────────────────┬──────────────────┐
+│rail│ Night market teaser      [ Make | Cut ]  Export │ Media   All ▾    │
+│    │  a poster, a teaser and a soundtrack…          │ — brief 1 —      │
+│    │  ┌──────┐ ┌───────────────────┐                │ ▣ ▣ ▶▭           │
+│    │  │poster│ │ clip              │                │ ♪ night market   │
+│    │  └──────┘ └───────────────────┘                │ — brief 2 —      │
+│    │  ▶ night market lo-fi ▂▃▅▆▅▃▂ 0:30             │ ▣ ▣              │
+│    │  ╭──────────────────────────────────────╮      │ — cuts —         │
+│    │  │ composer                             │      │ ▶ Cut 1  0:18    │
+│    │  ╰──────────────────────────────────────╯      │ Upload · Library │
+└────┴────────────────────────────────────────────────┴──────────────────┘
+
+Cut
+┌────┬────────────────────────────────────────────────┬──────────────────┐
+│rail│ Night market teaser      [ Make | Cut ]  Export │ Media            │
+│    │ ┌────────────────────────────────────────────┐ │ (drag onto the   │
+│    │ │              stage (the player)            │ │  timeline, or    │
+│    │ └────────────────────────────────────────────┘ │  Add to cut)     │
+│    │  ▶ 0:07 / 0:18   Split  Delete  ↶ ↷   − ─ + Fit │──────────────────│
+│    │ T ▭title▭                    ▭end card▭         │ Selected clip    │
+│    │ ▣ ▭▭clip 1▭▭▭▭▭▭▭▭▭▭▭▭ ▭▭still▭▭ ▭▭clip 2▭▭▭▭▭ │ Crossfade in ☑   │
+│    │ ♪ ▂▃▅▆▅▃▂▃▅▆▅▃▂▃▅▆▅▃▂▃▅▆▅ score                │ Volume ──●──     │
+│    │ ♪ ·  ·  ▂▅▂ whoosh  ·  ·                        │ New take         │
+└────┴────────────────────────────────────────────────┴──────────────────┘
+```
+
+- The **tray** groups media by brief, newest brief first, each group headed by its brief in
+  one `--mute` line, cuts as their own group, and Upload and From library at its foot. Filters:
+  All, Images, Video, Audio. In Make it mirrors the thread; in Cut it is the drag source.
+- The **selected item's** few properties sit at the foot of the tray, not in a third panel.
+- **Export** in the header renders the current cut (Cut) or offers the project's media as a
+  zip of downloads (Make, v2).
+- Between 640 and 1024 px the tray is a sheet from the right behind a Media button; Cut shows
+  the storyboard (17.4) below 1024.
+
+### 17.3 Item actions: one set per kind
+
+One `MediaActions` definition per kind, rendered the same way in the thread, the tray, the
+Library grid and the lightbox: up to three primary actions on hover (buttons in the lightbox
+panel, a long-press sheet on touch) and "⋯" for the rest.
+
+| Kind | Primary | In "⋯" |
+|---|---|---|
+| Image | Open, Edit, Animate | Add to cut, Use in a brief, Reuse prompt, Download, Favourite, Delete |
+| Clip | Open, Add to cut, New take | Use a frame as an image, Reuse prompt, Download, Favourite, Delete |
+| Music, sound | Play, Add to cut | Reuse prompt, Download, Favourite, Delete |
+| Cut | Open in Cut, Export | Duplicate, Rename, Delete |
+
+- Paid actions (Animate, New take, the AI tools) name their cost, as the composer does.
+- **Add to cut** appends to the project's current cut, or starts one. **Use in a brief**
+  attaches the item to the composer as a reference. **Use a frame as an image** grabs the frame
+  at the playhead in the browser and saves it as an image (free).
+- Multi-select (⇧ and ⌘-click in the tray and the Library): Add to cut, Download, Delete.
+- Drag does the same verbs: tray to timeline adds at the drop point; tray to composer attaches.
+
+### 17.4 The phone (below 640, and Cut below 1024)
+
+A bottom tab bar: **Make**, **Media**, **Cut**. Make is the thread and composer; Media is the
+tray as a two-column grid, an item opening its action sheet; **Cut is a storyboard, not a
+timeline**: the player, then the shots in order (a handle to reorder, swipe to remove, tap for
+a sheet with trim handles on that clip and its crossfade), the score as one row, Export. No
+multi-track timeline below 1024.
+
+### 17.5 Cut and the timeline, v1
+
+- **Starting a cut:** an empty Cut view says "Start a cut", which lays out today's template
+  (title card on the first tagline, clips with crossfades, end card on the poster with the next
+  line, score under) as editable items. "Cut it together" in a run opens this.
+- **Tracks, fixed:** Text (cards and captions), Picture (clips and stills on one magnetic main
+  track), Score (music), Sound (effects).
+- **Operations:** add (drag, Add to cut); reorder on Picture (ripple, no gaps); trim by an edge
+  with snapping to frames, the playhead and neighbours (8 px); split at the playhead (S or ⌘B);
+  delete (ripple on Picture, a gap elsewhere); a crossfade toggle at each join, fade in and out
+  of the whole; a still's length (3 s default); a text card's words and its two styles (display
+  title, Host caption); volume and fades on audio; undo and redo (⌘Z, ⇧⌘Z); zoom (⌘ scroll,
+  − and +, Fit); Space plays; ← → step a frame.
+- **Autosave** to the project as you go (a quiet "Saved" in the header). The guest's cut is
+  kept in this browser and the header says so once.
+- **Export** renders in the browser through the same compositor as the preview, 720p, MP4
+  (WebM where AAC is missing and the encoder cannot load), up to 60 s; Download, and **Keep in
+  project** (signed in: uploaded to storage as a cut asset; the guest downloads).
+- **New take** on a selected clip or still: the brief that made it, prefilled, in its mode;
+  the result replaces the item in place on the timeline and the old one stays in the tray.
+  Through the guard, its cost on the button.
+- **Not in v1:** a second picture track, picture in picture, keyframes, speed, filters, a
+  transition library, captions from speech, the agent editing the timeline, extend and fill a
+  gap (second wave, once priced).
+
+### 17.6 The player
+
+A canvas stage at the cut's aspect (16:9 in v1), the playhead time and length beside the play
+control. Scrubbing on the timeline seeks the stage. What it draws is what export writes: one
+compositor (`lib/timeline`) used by both.
+
+### 17.7 The image editor, v1
+
+Opened from **Edit** on any image, anywhere. It takes the stage (in Make the thread gives way;
+the tray stays). `?edit=[assetId]` in the address, so Back closes it.
+
+```
+┌────┬──────────────────────────────────────────────┬──────────┐
+│rail│ ← Back   Editing "lantern poster"  Cancel Save│ Media    │
+│    │       ┌──────────────────────────┐           │          │
+│    │       │ image (hold to compare)  │           │          │
+│    │       └──────────────────────────┘           │          │
+│    │  Crop   Adjust   Text   AI                    │          │
+│    │  [ 1:1 3:4 4:3 16:9 9:16 Free ]  ↺  ⇋  Reset  │          │
+└────┴──────────────────────────────────────────────┴──────────┘
+```
+
+- **Crop:** the generation aspects and free; rotate 90°; flip.
+- **Adjust:** brightness, contrast, saturation, warmth; Reset.
+- **Text:** text boxes in the two faces, a colour from the tokens and media tints, size, drag
+  to place.
+- **AI:** Restore, Remove background, Recolor, Remove object, Fill, each naming its cost.
+- **Save** writes a new image beside the original in the tray (a version, linked to its
+  parent), never over it; the steps are kept, so a version reopens editable. Undo within the
+  editor. Cancel discards.
+- **Not in v1:** layers, brushes and masks, a filter gallery, compositing images, stickers,
+  prompt edits ("Describe a change", second wave once a priced model is chosen).
+
+### 17.8 Data
+
+- `Session` is the project (the table keeps its name; the interface says project).
+- New `Edit`: `id`, `userId`, `projectId`, `kind` (timeline or image), `doc` (JSON, versioned,
+  validated with zod on both sides), `version`, `rev` (optimistic concurrency: a stale save gets
+  409), `outputAssetId`, timestamps. `Asset` gains `parentAssetId`; an export's `params.edit`
+  names its edit.
+- `TimelineDoc v1`: integer milliseconds; a `media` map by id (url, asset id, kind, length);
+  tracks text, picture, score, sound; items with start, length, source in-point, fades, volume,
+  `transitionIn`; text presets resolved to tokens by the renderer. A document newer than the
+  code opens read-only.
+- **Storage:** exports and uploads go to a Supabase Storage bucket by direct signed upload
+  (owner-scoped paths, public read by URL); the 4 MB `/api/cuts` body goes.
+- **The guest:** projects and up to five edits in this browser, as guest sessions are now
+  (`lib/guest-local.ts`); `/api/claim` extends to edits on sign-up (validated, URLs filtered,
+  deterministic ids). Exports download.
+
+### 17.9 States
+
+Each new surface follows §13: the tray loading as tiles, empty as "Nothing here yet. Make
+something, or upload."; Cut empty as "Start a cut"; export in progress with a determinate bar
+and Cancel; a save conflict as "Changed in another tab. Reload to see it."; a missing source
+(an expired URL) as a struck-through item with "This piece is no longer available".
+
+### 17.10 The landing
+
+The story becomes the project: the hero's brief unfolding into media (as now), then the cut,
+then editing. The Studio frame becomes the project screen (Make, then Cut) replayed; the wall
+and modes stay; a section shows the image editor turning a still into a poster with its words.
+Each build ticket updates the sections it makes true (rule 9).
+
+### 17.11 Not built
+
+An infinite canvas or node graph, a full NLE, a timeline on phones, several threads per
+project, folders, teams, comments, brand kits, a separate photo page, a paid generative verb on
+every surface.
+
+### 17.12 The sequence
+
+1. TICKET-061 The timeline core: `lib/timeline` (schema, migrate, compositor generalised from
+   `cut-render.ts`); "Cut it together" renders through a `TimelineDoc`. No visible change.
+2. TICKET-062 Projects: routes, Home with project cards, sidebar Projects, Library by project,
+   redirects, the landing's words.
+3. TICKET-063 The media tray and one set of item actions, multi-select, Use in a brief, Use a
+   frame as an image.
+4. TICKET-064 Edits and storage: the `Edit` table and API, Supabase Storage uploads, guest
+   edits and the claim.
+5. TICKET-065 Cut on desktop: the player, the timeline, autosave, Start a cut, export and keep.
+6. TICKET-066 Cut on the phone: the storyboard and the trim sheet.
+7. TICKET-067 The image editor, `/edit` redirected, versions.
+8. TICKET-068 New take.

@@ -149,3 +149,65 @@ Accepted decisions are immutable except for their status and a pointer to a supe
   be retuned to the moss palette and the medium tints kept from turning into a rainbow; the
   page's media must be regenerated in the same world when it changes.
 
+
+## D-005 — A media platform: projects with Make and Cut, one set of item actions, a timeline and an image editor inside the project
+- **Status:** Accepted
+- **Date:** 2026-10-11
+- **Context:** The app is still shaped like the chat it grew from: a brief goes in, media
+  comes out in a thread, and everything after that is somewhere else (the Library grid, the
+  `/edit` page, the Cut dialog that makes one fixed film). The owner asked for a media
+  platform: "making everything that's there more cohesive and then add editing", not
+  Photoshop or CapCut level. The research (`docs/design/research-media-platform.md`) found the
+  products that work (LTX Studio, Descript, Runway, Kapwing, Krea, Canva) converge on a
+  project that holds the making, the media and the assembled cut; results that land in a
+  media bin and are placed on a timeline on purpose; a light timeline of a few fixed tracks
+  with trim, split, reorder, one transition and export; image editing as a panel inside the
+  product, not a page; and desktop-only editing, with phones getting something simpler. The
+  owner decided: the unit is called **Projects**; the guest gets the editor, kept in the
+  browser and claimed on sign-up; **Characters stays for now** and goes later.
+- **Decision:** A **project** is today's `Session` renamed and widened: its briefs (the run
+  thread), its media (every output, upload and edited version, as `Asset` rows) and its cuts
+  (timelines). It has two views in its header, **Make** (the thread and composer, as now) and
+  **Cut** (a player and a four-track timeline: text, picture for clips and stills, score,
+  sound), with a **media tray** on the right in both, grouped by brief. Every item has **one
+  set of actions** per kind, the same in the thread, the tray, the Library and the lightbox
+  (image: Open, Edit, Animate, then Add to cut, Use in a brief, Reuse prompt, Download,
+  Favourite, Delete; clip, audio and cut likewise). The **timeline** is one versioned JSON
+  document per edit (`TimelineDoc`, integer milliseconds, media by reference) in a new `Edit`
+  table; preview and export share one canvas compositor generalised from `cut-render.ts`,
+  decoding with mediabunny and exporting in the browser; "Cut it together" becomes the
+  starting cut you then edit. The **image editor** opens from Edit on any image, over the
+  project's stage: crop (react-easy-crop), adjust (colour matrices, previewed with CSS and
+  exported on canvas), text, and the existing Cloudinary AI tools, stored as a list of steps on
+  the untouched source; saving makes a new version (`Asset.parentAssetId`). One generative verb
+  on the timeline in v1: **New take**, which swaps a clip through the existing guard. Exports
+  are kept in **Supabase Storage** by direct signed upload, replacing the 4 MB `/api/cuts`
+  body. Phones get **Make, Media and Cut tabs**, with Cut as a vertical storyboard, not a
+  timeline. Navigation: **Home** (`/studio`: the composer, then project cards), **Library**
+  (the global bin, filterable by project), Characters; projects live at `/p/[id]` and
+  `/p/[id]/cut`; `/studio/[id]` and `/edit` redirect. Screens and data are in
+  `docs/design/revamp.md` §17. This replaces D-002's split of making, keeping and editing into
+  the Studio, Library and Edit pages; D-002's composer modes, its redirects, Settings and
+  credits stand, so D-002 stays Accepted.
+- **Rejected alternatives:** Remotion for preview and export, rejected for its licence (the
+  tier that covers an embedded player is a paid minimum), its size and per-render telemetry,
+  and because it would duplicate the media stack Aivia already has. An off-the-shelf timeline
+  component (@xzdarcy/react-timeline-editor, Twick, OpenVideo), rejected because none has
+  source in-points and design-token styling, and Twick's licence bars hosted products. Konva,
+  Fabric, Filerobot, Pintura and tldraw for the image editor, rejected as heavier than v1
+  needs, or paid, or beta. An infinite canvas or node graph (Firefly Boards, Krea Nodes, Runway
+  Workflows), rejected as a product of its own that reviews call overwhelming, when Aivia's
+  agent already plans the steps. A full multi-layer editor and a timeline on phones, rejected
+  by the evidence and the owner's scope. Server-side rendering, rejected for now: the browser
+  path is free and covers about 95% of visitors. Keeping exports on fal storage, rejected
+  because fal URLs can expire; Supabase is already a dependency. Several threads per project,
+  rejected as a team-scale feature a solo user does not need.
+- **Consequences:** Easier: one place per piece of work, so the app reads as one product; the
+  most distinctive feature (Cut) becomes an editor instead of a dead end; what you preview is
+  what you export; an image becomes a usable asset (a poster with its words) without leaving.
+  Harder: a new `Edit` table and `Asset.parentAssetId`, a storage bucket and its policies, a
+  claim path for guest edits, an in-house timeline UI (about a thousand lines) and compositor
+  to maintain, desktop and phone versions of Cut, browser memory and decoder limits on long
+  cuts (v1 caps at 60 s), mixed frame rates, fal URLs that may expire under saved timelines, and
+  a landing page to rewrite around the project. Characters remains a second product inside the
+  first until it is removed.

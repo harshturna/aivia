@@ -1,0 +1,36 @@
+# TICKET-066: Cut on the phone: the storyboard
+
+**Status:** pending
+**Created:** 2026-10-11
+**Started:** —
+**Completed:** —
+**Area:** feature
+
+## Goal
+Below 1024 px, Cut as a vertical storyboard: the player, shots in order with reorder, swipe to remove and a trim sheet, the score row, Export.
+
+## Context
+- D-005; `docs/design/revamp.md` §17; research in `docs/design/research-media-platform.md`.
+- Written by TICKET-060. Waits for the owner's approval of the §17 design.
+- Depends on 065.
+
+## Plan
+- [ ] The storyboard and its trim sheet, on the same document as the timeline.
+- [ ] Landing: the phone frame.
+- [ ] Before starting: read every file this touches, list them here, and make the steps
+      concrete (CLAUDE.md rule 2).
+- [ ] Verify: `npm run verify`, `npm run test:e2e` (with the in-use checks), Playwright in use
+      at 1440, 1024 and 390, `npm run shots` (with states), web-design-guidelines.
+
+## Progress log
+- 2026-10-11 — Written from TICKET-060.
+
+## Handoff
+- **State:** not started.
+- **Blocked on:** the owner's approval of D-005 / §17.
+- **Next:** plan from §17.
+- **Read first:** `docs/design/revamp.md` §17.
+
+## Verification
+
+## Outcome
