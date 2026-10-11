@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Upload } from "lucide-react";
 import { domMax, LazyMotion, m } from "motion/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScreenHeader } from "@/components/shell/screen";
@@ -23,6 +24,7 @@ import { Run } from "@/components/studio/run";
 import { Button } from "@/components/ui/button";
 import { userProModal } from "@/hooks/useProModal";
 import { ANIMATE_BRIEF, aspectOfSize } from "@/lib/ai/direct";
+import { getLocalSession, saveLocalSession } from "@/lib/guest-local";
 import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +55,7 @@ export function StudioClient({
   isNew,
   isGuest = false,
   initialAnimate,
+  localId,
 }: {
   id: string;
   initialMessages?: UIMessage[];
@@ -69,6 +72,8 @@ export function StudioClient({
     width: number;
     height: number;
   };
+  /** A guest session kept in this browser, to reopen (TICKET-041). */
+  localId?: string;
 }) {
   const router = useRouter();
   const proModal = userProModal();
@@ -85,28 +90,36 @@ export function StudioClient({
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, status, stop, error, regenerate, clearError } =
-    useChat({
-      id,
-      messages: initialMessages,
-      // Auto goes to the agent; a direct mode goes straight to its capability.
-      transport: new DefaultChatTransport({
-        api: "/api/agent",
-        prepareSendMessagesRequest: ({ id: chatId, messages: all, body }) => ({
-          api:
-            body?.mode && body.mode !== "auto" ? "/api/generate" : "/api/agent",
-          body: { ...body, id: chatId, messages: all },
-        }),
+  const {
+    messages,
+    setMessages,
+    sendMessage,
+    status,
+    stop,
+    error,
+    regenerate,
+    clearError,
+  } = useChat({
+    id,
+    messages: initialMessages,
+    // Auto goes to the agent; a direct mode goes straight to its capability.
+    transport: new DefaultChatTransport({
+      api: "/api/agent",
+      prepareSendMessagesRequest: ({ id: chatId, messages: all, body }) => ({
+        api:
+          body?.mode && body.mode !== "auto" ? "/api/generate" : "/api/agent",
+        body: { ...body, id: chatId, messages: all },
       }),
-      onFinish: () => {
-        if (!isGuest) window.dispatchEvent(new Event(SESSIONS_CHANGED));
-      },
-      onError: (err) => {
-        const message = err?.message ?? "";
-        if (message.includes("Free trial")) setLimit("free");
-        else if (message.includes("limit reached")) setLimit("demo");
-      },
-    });
+    }),
+    onFinish: () => {
+      if (!isGuest) window.dispatchEvent(new Event(SESSIONS_CHANGED));
+    },
+    onError: (err) => {
+      const message = err?.message ?? "";
+      if (message.includes("Free trial")) setLimit("free");
+      else if (message.includes("limit reached")) setLimit("demo");
+    },
+  });
 
   const busy = status === "submitted" || status === "streaming";
   const empty = messages.length === 0;
@@ -211,14 +224,16 @@ export function StudioClient({
       if (messages.length === 0) {
         setTitle(titleFromBrief(text));
         // A new session gets its address on the first send, so a reload resumes it. A guest's
-        // run is not stored (TICKET-038), so it gets no address and no place in Recents.
+        // run is not stored on the server (TICKET-038); it is kept in this browser and gets a
+        // local address instead (TICKET-041).
         if (isNew && !isGuest) {
           window.history.replaceState(null, "", `/studio/${id}`);
           setTimeout(
             () => window.dispatchEvent(new Event(SESSIONS_CHANGED)),
             1500
           );
-        }
+        } else if (isNew && isGuest)
+          window.history.replaceState(null, "", `/studio?local=${id}`);
       }
     },
     [
@@ -259,6 +274,26 @@ export function StudioClient({
     }),
     [animate, busy, limit, isGuest, id]
   );
+
+  // A guest's session lives in this browser (TICKET-041): reopened on arrival, kept as
+  // each run finishes.
+  useEffect(() => {
+    if (!isGuest || !localId) return;
+    const local = getLocalSession(localId);
+    if (!local) return;
+    setMessages(local.messages as unknown as UIMessage[]);
+    setTitle(local.title);
+  }, [isGuest, localId, setMessages]);
+  useEffect(() => {
+    if (!isGuest || busy || messages.length === 0) return;
+    saveLocalSession({
+      id,
+      title,
+      messages: messages as unknown as Parameters<
+        typeof saveLocalSession
+      >[0]["messages"],
+    });
+  }, [isGuest, busy, messages, title, id]);
 
   // From the library: animate the asset once, on arrival (TICKET-039). Scheduled and
   // cancelled on teardown, so a mount that is torn down at once (React's development double
@@ -407,6 +442,17 @@ export function StudioClient({
                       </div>
                     );
                   })}
+                  {isGuest && !busy && runs.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-media border border-border bg-surface p-4 text-[13.5px]">
+                      <span className="max-w-[52ch] text-fg-2">
+                        This lives only in this browser. Create an account to
+                        keep it, and everything you make next.
+                      </span>
+                      <Button asChild size="sm">
+                        <Link href="/signup">Create an account</Link>
+                      </Button>
+                    </div>
+                  )}
                   {error && !limit && (
                     <div className="flex items-center justify-between gap-4 rounded-media border border-border bg-surface p-4 text-[13px]">
                       <span className="text-fg-2">

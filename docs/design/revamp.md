@@ -375,7 +375,8 @@ Guests see the shared characters and cannot create or delete; the controls say s
 `/settings`, one page at 640 px: Account (email, "Signed in as", sign out), Plan (Free or
 Pro, the allowance used, "Manage subscription" through the Stripe portal or "Upgrade"), and
 Keyboard shortcuts. Guests see the account section as "Guest session": many people share
-the account, so nothing they make is kept; sign up to keep your work.
+the account, so what they make is kept only in their browser; signing up moves it into their
+own account.
 
 ## 10. Auth
 
@@ -383,7 +384,9 @@ the account, so nothing they make is kept; sign up to keep your work.
 the form on a moss panel (440 px, `bg/75`, 20 px radius, a hairline) over the dark trunks;
 the wordmark above; the heading in the display face at 44 px ("Welcome back", "Create your
 account"), the two fields, the primary button, a text link to the other page, and a quiet
-secondary link "Try it as a guest". Errors inline under the field. `/get-started` keeps its
+secondary link "Try it as a guest". Errors inline under the field. The signed-in guest can
+reach both pages (TICKET-041); a successful sign-in or sign-up claims the guest's browser
+sessions and opens the newest. `/get-started` keeps its
 job (sign in as the guest and forward) and says "Opening the Studio…" in the display face
 over the same plate, so leaving the landing never leaves the forest.
 
@@ -445,6 +448,13 @@ Asset     id, userId, sessionId?, kind (image|video|music|sound), url, posterUrl
   are its Recents and its library, viewable but not renamed, deleted or favourited. A daily
   job deletes every other guest session, asset and character message. The rule lives in the
   storage layer (`lib/sessions.ts`, `lib/assets.ts`, `isGuestId`), so no route can leak it.
+- A guest's own work lives in their browser instead (TICKET-041, `lib/guest-local.ts`): up to
+  five sessions, saved as runs finish, without pasted attachments; a guest session's address
+  is `/studio?local=<id>` and reopens after a reload; Recents show them under "On this device"
+  above the examples; after a run a quiet note says it lives only in this browser and offers
+  an account. Signing up or signing in claims them (`POST /api/claim`): each becomes a session
+  of the new account under a fresh id, with an asset per output (https or the site's own
+  media only), and the browser copy is cleared.
 - `/api/sessions` (list, create), `/api/sessions/[id]` (get, rename, delete), `/api/assets`
   (list with cursor, kind, query), `/api/assets/[id]` (favourite, delete).
 

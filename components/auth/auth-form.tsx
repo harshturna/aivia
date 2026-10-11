@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useGuestLogin } from "@/hooks/useGuestLogin";
+import { claimLocalSessions } from "@/lib/guest-local";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -63,8 +64,10 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
       setSent(true);
       return;
     }
+    // a guest's work kept in this browser moves into the account (TICKET-041)
+    const claimed = await claimLocalSessions();
     router.refresh();
-    router.push("/studio");
+    router.push(claimed ? `/studio/${claimed}` : "/studio");
   };
 
   if (sent) {

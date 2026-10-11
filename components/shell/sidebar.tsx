@@ -143,7 +143,7 @@ export function Sidebar({
         ))}
       </div>
 
-      {!rail && <Recents onNavigate={onNavigate} />}
+      {!rail && <Recents onNavigate={onNavigate} isGuest={user.isGuest} />}
 
       <div className="mt-auto space-y-3">
         {!user.isPro && !rail && (

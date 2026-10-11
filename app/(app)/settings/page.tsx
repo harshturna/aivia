@@ -33,9 +33,9 @@ export default async function SettingsPage() {
               <>
                 <p className="text-[15px]">Guest session</p>
                 <p className="mt-1 text-[13px] leading-5 text-mute">
-                  Many people share the guest account, so nothing you make here
-                  is kept: it is yours while the page is open. Sign up to keep
-                  your work.
+                  Many people share the guest account, so what you make is kept
+                  only in this browser. Sign up and it moves into your own
+                  account.
                 </p>
                 <Link href="/signup" className={cn(buttonVariants(), "mt-4")}>
                   Create an account

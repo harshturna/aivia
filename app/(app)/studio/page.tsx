@@ -4,6 +4,7 @@ import { type ComposerMode, MODES } from "@/components/studio/modes";
 import { getAsset } from "@/lib/assets";
 import { getUser } from "@/lib/getUser";
 import { isGuestUser } from "@/lib/guest-user";
+import { isSessionId } from "@/lib/session-text";
 import { StudioClient } from "./studio-client";
 
 export const metadata: Metadata = { title: "Studio" };
@@ -15,9 +16,14 @@ export const metadata: Metadata = { title: "Studio" };
 export default async function NewSessionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ prompt?: string; mode?: string; animate?: string }>;
+  searchParams: Promise<{
+    prompt?: string;
+    mode?: string;
+    animate?: string;
+    local?: string;
+  }>;
 }) {
-  const { prompt, mode, animate } = await searchParams;
+  const { prompt, mode, animate, local } = await searchParams;
   // From the library: a still to animate as the Studio opens (TICKET-039)
   const user = animate ? await getUser("SERVER_COMPONENT") : null;
   const still = user && animate ? await getAsset(user.id, animate) : null;
@@ -33,7 +39,9 @@ export default async function NewSessionPage({
   const initialMode = MODES.some((m) => m.id === mode)
     ? (mode as ComposerMode)
     : "auto";
-  const id = randomUUID();
+  // a guest session kept in this browser reopens under its own id (TICKET-041)
+  const localId = local && isSessionId(local) ? local : undefined;
+  const id = localId ?? randomUUID();
   return (
     <StudioClient
       key={id}
@@ -42,6 +50,7 @@ export default async function NewSessionPage({
       isGuest={await isGuestUser("SERVER_COMPONENT")}
       initialPrompt={prompt ?? ""}
       initialAnimate={initialAnimate}
+      localId={localId}
       initialMode={initialMode}
     />
   );
