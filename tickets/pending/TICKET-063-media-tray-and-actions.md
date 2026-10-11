@@ -11,7 +11,7 @@ The tray on the right of a project, grouped by brief, and one MediaActions defin
 
 ## Context
 - D-005; `docs/design/revamp.md` §17; research in `docs/design/research-media-platform.md`.
-- Written by TICKET-060. Waits for the owner's approval of the §17 design.
+- Written by TICKET-060; the §17 design was approved by the owner on 2026-10-11.
 - Reads: `components/studio/outputs.tsx`, `components/library/*`, the composer's attachments.
 
 ## Plan
@@ -29,7 +29,7 @@ The tray on the right of a project, grouped by brief, and one MediaActions defin
 
 ## Handoff
 - **State:** not started.
-- **Blocked on:** the owner's approval of D-005 / §17.
+- **Blocked on:** nothing (§17 approved 2026-10-11).
 - **Next:** plan from §17.
 - **Read first:** `docs/design/revamp.md` §17.
 

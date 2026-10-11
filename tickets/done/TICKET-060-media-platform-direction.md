@@ -1,9 +1,9 @@
 # TICKET-060: Media platform: research, decision and design
 
-**Status:** in-progress
+**Status:** done
 **Created:** 2026-10-11
 **Started:** 2026-10-11
-**Completed:** —
+**Completed:** 2026-10-11
 **Area:** feature
 
 ## Goal
@@ -36,7 +36,7 @@ ticket produces the research, the decision (D-005) and the redesigned screens in
 - [x] `docs/design/revamp.md`: the product map, the project screen, the media tray, the
       timeline, the image editor, the library as a bin, item actions, data, states, the landing.
 - [x] Build tickets in `pending/`, in order, each with its landing change.
-- [ ] Verify: `npm run check:tickets`; the owner approves the design before any build ticket
+- [x] Verify: `npm run check:tickets`; the owner approves the design before any build ticket
       starts.
 
 ## Progress log
@@ -45,14 +45,23 @@ ticket produces the research, the decision (D-005) and the redesigned screens in
   written; the design is `revamp.md` §17; build tickets 061 to 068 in `pending/`. Calls made in
   D-005 for the owner to confirm: exports kept in Supabase Storage; Home stays at `/studio`,
   projects at `/p/[id]`; Cut on phones is a storyboard; v1 export 720p, 60 s.
+- 2026-10-11 — Owner approved ("okay go") after a walkthrough of what a user does with it;
+  the four calls stand.
 
 ## Handoff
-- **State:** research, D-005, §17 and tickets 061 to 068 written. Waiting for the owner to
-  approve the design.
-- **Blocked on:** the owner's approval of §17.
-- **Next:** on approval, close this ticket and start TICKET-061.
-- **Read first:** `docs/design/revamp.md` §17, D-005.
+- **State:** closed.
+- **Blocked on:** nothing
+- **Next:** TICKET-061.
+- **Read first:** nothing
 
 ## Verification
+```
+npm run check:tickets   # passed (68 tickets)
+npm run verify          # pass
+owner approval of revamp.md §17 and D-005: chat, 2026-10-11 ("okay go")
+```
 
 ## Outcome
+Shipped: `docs/design/research-media-platform.md` (products and engineering), D-005,
+`docs/design/revamp.md` §17, and build tickets 061 to 068 in `pending/`, approved by the owner.
+No product code changed.

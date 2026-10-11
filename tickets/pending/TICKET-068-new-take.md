@@ -11,7 +11,7 @@ On a selected clip or still in Cut, New take reruns its brief in its mode and sw
 
 ## Context
 - D-005; `docs/design/revamp.md` §17; research in `docs/design/research-media-platform.md`.
-- Written by TICKET-060. Waits for the owner's approval of the §17 design.
+- Written by TICKET-060; the §17 design was approved by the owner on 2026-10-11.
 - Depends on 065. Through `lib/ai/guard.ts`; the cost on the button.
 
 ## Plan
@@ -27,7 +27,7 @@ On a selected clip or still in Cut, New take reruns its brief in its mode and sw
 
 ## Handoff
 - **State:** not started.
-- **Blocked on:** the owner's approval of D-005 / §17.
+- **Blocked on:** nothing (§17 approved 2026-10-11).
 - **Next:** plan from §17.
 - **Read first:** `docs/design/revamp.md` §17.
 
