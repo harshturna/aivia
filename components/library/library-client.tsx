@@ -3,7 +3,14 @@
 import { Heart, Maximize2, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { ScreenHeader } from "@/components/shell/screen";
 import { AudioRow } from "@/components/studio/audio-row";
 import { titleFrom } from "@/components/studio/outputs";
@@ -11,6 +18,7 @@ import { RevealImage } from "@/components/studio/reveal-image";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { groupByDay } from "@/lib/day-groups";
+import { formatDuration } from "@/lib/duration";
 import { cn } from "@/lib/utils";
 import type { LibraryAsset, LibraryKind } from "./types";
 
@@ -47,7 +55,13 @@ export function LibraryClient({
   const [cursor, setCursor] = useState(initialCursor);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(query);
+  const [searching, startSearch] = useTransition();
   const end = useRef<HTMLDivElement>(null);
+  // a new search's results arrive as new props; they replace the list in place
+  useEffect(() => {
+    setItems(initialItems);
+    setCursor(initialCursor);
+  }, [initialItems, initialCursor]);
 
   const href = useCallback(
     (next: { kind?: LibraryKind; q?: string; fav?: boolean }) => {
@@ -68,7 +82,10 @@ export function LibraryClient({
   useEffect(() => {
     if (search === query) return;
     const id = setTimeout(
-      () => router.replace(href({ q: search.trim() })),
+      () =>
+        startSearch(() =>
+          router.replace(href({ q: search.trim() }), { scroll: false })
+        ),
       350
     );
     return () => clearTimeout(id);
@@ -193,7 +210,13 @@ export function LibraryClient({
         </div>
       </div>
 
-      <div className="px-3 pb-16 pt-6 lg:px-6">
+      <div
+        aria-busy={searching}
+        className={cn(
+          "px-3 pb-16 pt-6 transition-opacity duration-150 lg:px-6",
+          searching && "opacity-60"
+        )}
+      >
         {items.length === 0 ? (
           <div className="mx-auto max-w-[420px] py-24 text-center">
             <p className="text-[15px]">
@@ -246,41 +269,40 @@ export function LibraryClient({
                     </div>
                   )}
                   {audio.length > 0 && (
+                    // one column until there is room for two full rows (TICKET-053)
                     <div
                       className={cn(
-                        "grid gap-2 md:grid-cols-2",
+                        "grid gap-2 xl:grid-cols-2",
                         visual.length > 0 && "mt-2"
                       )}
                     >
                       {audio.map((a) => (
-                        <div
+                        <AudioRow
                           key={a.id}
-                          className="flex min-w-0 items-center gap-2"
-                        >
-                          <AudioRow
-                            className="min-w-0 flex-1"
-                            src={a.url}
-                            title={
-                              titleFrom(a.prompt) ||
-                              (a.kind === "music" ? "Track" : "Sound")
-                            }
-                            subtitle={
-                              a.kind === "music" ? "Music" : "Sound effect"
-                            }
-                            seconds={a.durationSec ?? undefined}
-                          />
-                          <Link
-                            href={`/library/a/${a.id}`}
-                            scroll={false}
-                            aria-label={`Open details for ${
-                              titleFrom(a.prompt) ||
-                              (a.kind === "music" ? "the track" : "the sound")
-                            }`}
-                            className="grid size-9 shrink-0 place-items-center rounded-control text-mute transition-colors hover:bg-surface-2 hover:text-fg"
-                          >
-                            <Maximize2 className="size-4" />
-                          </Link>
-                        </div>
+                          className="min-w-0"
+                          src={a.url}
+                          title={
+                            titleFrom(a.prompt) ||
+                            (a.kind === "music" ? "Track" : "Sound")
+                          }
+                          subtitle={
+                            a.kind === "music" ? "Music" : "Sound effect"
+                          }
+                          seconds={a.durationSec ?? undefined}
+                          action={
+                            <Link
+                              href={`/library/a/${a.id}`}
+                              scroll={false}
+                              aria-label={`Open details for ${
+                                titleFrom(a.prompt) ||
+                                (a.kind === "music" ? "the track" : "the sound")
+                              }`}
+                              className="grid size-8 shrink-0 place-items-center rounded-control text-mute transition-colors hover:bg-surface-2 hover:text-fg"
+                            >
+                              <Maximize2 className="size-4" />
+                            </Link>
+                          }
+                        />
                       ))}
                     </div>
                   )}
@@ -359,7 +381,7 @@ function Tile({
       </Link>
       {asset.kind === "video" && asset.durationSec && (
         <span className="tabular pointer-events-none absolute bottom-2 left-2 rounded-chip bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
-          0:{String(Math.round(asset.durationSec)).padStart(2, "0")}
+          {formatDuration(asset.durationSec)}
         </span>
       )}
       {!readOnly && (
@@ -401,7 +423,7 @@ function SearchField({
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search what you have made…"
         autoComplete="off"
-        className="h-8 w-full rounded-control border border-border bg-surface pl-8 pr-2 text-[13px] text-fg outline-none transition-colors placeholder:text-mute hover:border-border-strong focus-visible:border-fg/50"
+        className="h-8 w-full rounded-control border border-border bg-surface pl-8 pr-2 text-[13px] text-fg transition-colors placeholder:text-mute hover:border-border-strong focus-visible:border-fg/50 [&::-webkit-search-cancel-button]:opacity-50"
       />
     </label>
   );

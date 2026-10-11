@@ -3,6 +3,7 @@
 import { Download, Pause, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { downloadFile, fileNameFrom } from "@/lib/download";
+import { formatDuration as format } from "@/lib/duration";
 import { cn } from "@/lib/utils";
 
 /**
@@ -62,17 +63,14 @@ function useWaveform(src: string, root: React.RefObject<HTMLElement | null>) {
   return peaks;
 }
 
-function format(seconds: number) {
-  const s = Math.max(0, Math.round(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
 export function AudioRow({
   src,
   title,
   subtitle,
   seconds,
   className,
+  action,
+  downloadable = true,
 }: {
   src: string;
   title: string;
@@ -80,6 +78,10 @@ export function AudioRow({
   /** Known length; read from the file when absent. */
   seconds?: number;
   className?: string;
+  /** One more control at the end of the row (the library's "open details"). */
+  action?: React.ReactNode;
+  /** Off where the page already offers a Download (the lightbox). */
+  downloadable?: boolean;
 }) {
   const audio = useRef<HTMLAudioElement>(null);
   const row = useRef<HTMLDivElement>(null);
@@ -182,14 +184,17 @@ export function AudioRow({
           style={{ transform: `scaleX(${progress})` }}
         />
       </span>
-      <button
-        type="button"
-        onClick={() => downloadFile(src, fileNameFrom(title, "audio"))}
-        aria-label={`Download ${title}`}
-        className="grid size-8 shrink-0 place-items-center rounded-control text-mute transition-colors hover:bg-surface-2 hover:text-fg"
-      >
-        <Download className="size-4" />
-      </button>
+      {downloadable && (
+        <button
+          type="button"
+          onClick={() => downloadFile(src, fileNameFrom(title, "audio"))}
+          aria-label={`Download ${title}`}
+          className="grid size-8 shrink-0 place-items-center rounded-control text-mute transition-colors hover:bg-surface-2 hover:text-fg"
+        >
+          <Download className="size-4" />
+        </button>
+      )}
+      {action}
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import {
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Film,
   Heart,
@@ -17,6 +19,7 @@ import { AudioRow } from "@/components/studio/audio-row";
 import { titleFrom } from "@/components/studio/outputs";
 import { Button } from "@/components/ui/button";
 import { downloadFile, fileNameFrom } from "@/lib/download";
+import { formatDuration } from "@/lib/duration";
 import { cn } from "@/lib/utils";
 import type { LibraryAsset } from "./types";
 
@@ -36,15 +39,21 @@ export function Lightbox({
   asset,
   modal = false,
   readOnly = false,
+  prev = null,
+  next = null,
 }: {
   asset: LibraryAsset;
   modal?: boolean;
+  /** The newer and older assets, for previous and next (TICKET-053). */
+  prev?: string | null;
+  next?: string | null;
   /** The shared guest account: a curated example it can view but not change or delete. */
   readOnly?: boolean;
 }) {
   const router = useRouter();
   const [favorite, setFavorite] = useState(asset.favorite);
   const [confirming, setConfirming] = useState(false);
+  const [failed, setFailed] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
   const opener = useRef<Element | null>(null);
 
@@ -52,6 +61,26 @@ export function Lightbox({
     if (modal) router.back();
     else router.push("/library");
   }, [modal, router]);
+  const go = useCallback(
+    (id: string | null) => {
+      if (id) router.replace(`/library/a/${id}`, { scroll: false });
+    },
+    [router]
+  );
+
+  // ← and → step through the library; Esc leaves the page view (the modal handles its own)
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const t = event.target as HTMLElement;
+      if (t.closest("input, textarea, video, audio, [contenteditable=true]"))
+        return;
+      if (event.key === "ArrowLeft") go(prev);
+      if (event.key === "ArrowRight") go(next);
+      if (event.key === "Escape" && !modal) close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go, prev, next, modal, close]);
 
   // As a modal: remember what had focus, move focus in, keep it in, give it back on close.
   useEffect(() => {
@@ -99,10 +128,11 @@ export function Lightbox({
     const response = await fetch(`/api/assets/${asset.id}`, {
       method: "DELETE",
     });
+    // replaced, not pushed: Back must not land on the asset that is gone
     if (response.ok) {
-      router.push("/library");
+      router.replace("/library");
       router.refresh();
-    }
+    } else setFailed(true);
   };
 
   // Formatted after mount: the server's time zone is not the viewer's.
@@ -128,16 +158,49 @@ export function Lightbox({
       }
     : {};
 
+  const audio = asset.kind === "music" || asset.kind === "sound";
+
   const body = (
     <div
       ref={dialog}
       {...dialogProps}
       className={cn(
-        "relative grid w-full min-h-0 grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-1",
-        modal ? "h-full" : "min-h-dvh"
+        // one explicit column on phones, so long text cannot widen it past the screen
+        "relative grid w-full min-h-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-1",
+        modal ? "h-full" : "h-dvh"
       )}
     >
       <div className="relative flex min-h-0 items-center justify-center p-4 lg:p-10">
+        {prev && (
+          <button
+            type="button"
+            onClick={() => go(prev)}
+            aria-label="Previous"
+            title="Previous (←)"
+            className={cn(
+              "absolute left-2 z-10 grid size-9 place-items-center rounded-full bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80",
+              // over a sound row they would cover its play button: below it instead
+              audio ? "bottom-3" : "top-1/2 -translate-y-1/2"
+            )}
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+        )}
+        {next && (
+          <button
+            type="button"
+            onClick={() => go(next)}
+            aria-label="Next"
+            title="Next (→)"
+            className={cn(
+              "absolute right-2 z-10 grid size-9 place-items-center rounded-full bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80",
+              // over a sound row they would cover its play button: below it instead
+              audio ? "bottom-3" : "top-1/2 -translate-y-1/2"
+            )}
+          >
+            <ChevronRight className="size-5" />
+          </button>
+        )}
         {asset.kind === "image" && (
           // biome-ignore lint/performance/noImgElement: generated media at its own size
           <img
@@ -165,11 +228,12 @@ export function Lightbox({
             title={titleFrom(asset.prompt) || KIND_LABEL[asset.kind]}
             subtitle={KIND_LABEL[asset.kind]}
             seconds={asset.durationSec ?? undefined}
+            downloadable={false}
           />
         )}
       </div>
 
-      <aside className="flex min-h-0 flex-col gap-5 overflow-y-auto border-t border-border bg-surface p-5 lg:border-l lg:border-t-0">
+      <aside className="flex min-h-0 flex-col gap-5 overflow-y-auto border-t border-border bg-surface p-5 max-lg:max-h-[55dvh] lg:border-l lg:border-t-0">
         <div className="flex items-center justify-between">
           {modal ? (
             <span className="text-[13px] font-medium text-fg-2">
@@ -216,7 +280,7 @@ export function Lightbox({
             <>
               <dt className="text-mute">Length</dt>
               <dd className="tabular text-fg-2">
-                {Math.round(asset.durationSec)} s
+                {formatDuration(asset.durationSec)}
               </dd>
             </>
           )}
@@ -240,7 +304,7 @@ export function Lightbox({
               aria-pressed={favorite}
             >
               <Heart className={cn(favorite && "fill-current")} />
-              {favorite ? "Favourite" : "Add to favourites"}
+              {favorite ? "In favourites" : "Add to favourites"}
             </Button>
           )}
           {asset.kind === "image" && (
@@ -280,6 +344,11 @@ export function Lightbox({
                 >
                   Keep it
                 </Button>
+                {failed && (
+                  <span role="alert" className="text-[13px] text-fg-2">
+                    It was not deleted. Try again.
+                  </span>
+                )}
               </div>
             ) : (
               <Button

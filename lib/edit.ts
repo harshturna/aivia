@@ -18,7 +18,7 @@ export const EDIT_TOOLS: Array<{
   {
     id: "restore",
     label: "Restore",
-    action: "Restore",
+    action: "Restore the photo",
     hint: "Clears noise, blur and compression marks",
   },
   {
@@ -30,7 +30,7 @@ export const EDIT_TOOLS: Array<{
   {
     id: "recolor",
     label: "Recolor",
-    action: "Recolor",
+    action: "Recolor it",
     hint: "Changes the colour of one thing in the picture",
   },
   {

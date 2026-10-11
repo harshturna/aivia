@@ -32,6 +32,16 @@ export function CutAction({
   sessionId: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  // a finished cut outlives the dialog: closing it and opening it again shows the same cut,
+  // not the lanes and "Cut it" (TICKET-053)
+  const [kept, setKept] = useState<Done | null>(null);
+  const keptUrl = kept?.url;
+  useEffect(
+    () => () => {
+      if (keptUrl) URL.revokeObjectURL(keptUrl);
+    },
+    [keptUrl]
+  );
   return (
     <>
       <Button
@@ -49,6 +59,8 @@ export function CutAction({
             title={title}
             canSave={canSave}
             sessionId={sessionId}
+            kept={kept}
+            onDone={setKept}
           />
         </DialogContent>
       </Dialog>
@@ -59,10 +71,11 @@ export function CutAction({
 /** What the library route accepts (Vercel's request limit, TICKET-042). */
 const KEEP_BYTES = 4 * 1024 * 1024;
 
+type Done = { at: "done"; result: Rendered; url: string };
 type State =
   | { at: "ready" }
   | { at: "rendering"; progress: number }
-  | { at: "done"; result: Rendered; url: string }
+  | Done
   | { at: "failed"; message: string };
 
 function CutBody({
@@ -70,21 +83,18 @@ function CutBody({
   title,
   canSave,
   sessionId,
+  kept,
+  onDone,
 }: {
   pieces: CutPieces;
   title: string;
   canSave: boolean;
   sessionId: string | null;
+  kept: Done | null;
+  onDone: (done: Done) => void;
 }) {
-  const [state, setState] = useState<State>({ at: "ready" });
+  const [state, setState] = useState<State>(kept ?? { at: "ready" });
   const [saved, setSaved] = useState<"no" | "saving" | "yes" | "failed">("no");
-  const url = state.at === "done" ? state.url : null;
-  useEffect(
-    () => () => {
-      if (url) URL.revokeObjectURL(url);
-    },
-    [url]
-  );
   // closing the dialog stops a cut in progress (TICKET-043)
   const running = useRef<AbortController | null>(null);
   useEffect(() => () => running.current?.abort(), []);
@@ -127,7 +137,13 @@ function CutBody({
         controller.signal
       );
       if (controller.signal.aborted) return;
-      setState({ at: "done", result, url: URL.createObjectURL(result.blob) });
+      const done: Done = {
+        at: "done",
+        result,
+        url: URL.createObjectURL(result.blob),
+      };
+      setState(done);
+      onDone(done);
     } catch (error) {
       if (controller.signal.aborted) return;
       setState({
@@ -138,6 +154,12 @@ function CutBody({
     } finally {
       if (running.current === controller) running.current = null;
     }
+  };
+
+  const cancel = () => {
+    running.current?.abort();
+    running.current = null;
+    setState({ at: "ready" });
   };
 
   const tooLarge = state.at === "done" && state.result.blob.size > KEEP_BYTES;
@@ -257,20 +279,20 @@ function CutBody({
                 It did not save. Try again.
               </span>
             )}
-            {!canSave && (
-              <span className="text-[13px] text-mute">
-                Create an account to keep cuts in your library.
-              </span>
-            )}
           </>
         ) : (
-          <Button
-            size="sm"
-            onClick={render}
-            disabled={state.at === "rendering"}
-          >
-            <Scissors /> {state.at === "failed" ? "Try again" : "Cut it"}
-          </Button>
+          <>
+            {state.at !== "rendering" && (
+              <Button size="sm" onClick={render}>
+                <Scissors /> {state.at === "failed" ? "Try again" : "Cut it"}
+              </Button>
+            )}
+            {state.at === "rendering" && (
+              <Button variant="secondary" size="sm" onClick={cancel}>
+                Cancel
+              </Button>
+            )}
+          </>
         )}
       </div>
     </>

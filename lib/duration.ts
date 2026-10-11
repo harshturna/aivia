@@ -1,0 +1,5 @@
+/** A length as m:ss, the one format for every duration on screen (TICKET-053). */
+export function formatDuration(seconds: number) {
+  const s = Math.max(0, Math.round(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}

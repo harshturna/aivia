@@ -29,7 +29,9 @@ export default async function LibraryPage({
   });
   return (
     <LibraryClient
-      key={`${kind}|${q ?? ""}|${fav ?? ""}`}
+      // not keyed on the search: a new query swaps the results in place, so the field keeps
+      // its focus and what is being typed (TICKET-053)
+      key={`${kind}|${fav ?? ""}`}
       initialItems={items.map(toLibraryAsset)}
       initialCursor={nextCursor}
       kind={kind}

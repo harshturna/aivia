@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { Skeleton } from "@/components/ui/skeleton";
+import { userProModal } from "@/hooks/useProModal";
 import {
   cloudinaryOptions,
   EDIT_TOOLS,
@@ -32,6 +33,8 @@ interface Source {
 }
 
 type Status = "idle" | "working" | "done" | "error" | "limit";
+/** Who hit the limit decides what it says and offers (TICKET-053). */
+type Limit = "free" | "guest";
 
 /**
  * Edit (design §7): a photo on the left, its edit on the right, the tools as tabs over both.
@@ -51,13 +54,25 @@ export function EditWorkspace({
   const [object, setObject] = useState("");
   const [color, setColor] = useState("");
   const [aspect, setAspect] = useState<FillAspect>("16:9");
-  const [result, setResult] = useState<string | null>(null);
+  // one result per tool, each with the request that made it: switching tools keeps a paid
+  // result, and the same request is not paid for twice (TICKET-053)
+  const [results, setResults] = useState<
+    Partial<Record<EditTool, { url: string; key: string }>>
+  >({});
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
+  const [limit, setLimit] = useState<Limit | null>(null);
+  const [dropping, setDropping] = useState(false);
   const attempts = useRef(0);
+  const proModal = userProModal();
 
   const input: EditInput = { tool, object, color, aspect };
   const meta = EDIT_TOOLS.find((t) => t.id === tool) ?? EDIT_TOOLS[0];
+  const key = JSON.stringify([source?.publicId, tool, object, color, aspect]);
+  const result = results[tool]?.url ?? null;
+  const applied = results[tool]?.key === key && status !== "error";
+  const setResult = (url: string) =>
+    setResults((all) => ({ ...all, [tool]: { url, key } }));
 
   // An image from the library is copied into Cloudinary once, by URL.
   useEffect(() => {
@@ -102,16 +117,54 @@ export function EditWorkspace({
     };
   }, [libraryImage]);
 
-  // A new tool or a new source starts from a clean result.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on these only
+  // A new source starts clean; a tool shows the result it already made, if any.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on the source only
   useEffect(() => {
-    setResult(null);
+    setResults({});
     setStatus("idle");
     setMessage("");
-  }, [tool, source?.publicId]);
+  }, [source?.publicId]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: on a tool change only
+  useEffect(() => {
+    setStatus((s) => (s === "limit" ? s : results[tool] ? "done" : "idle"));
+    setMessage("");
+  }, [tool]);
+
+  // A photo dropped on the upload box goes up the same way as one from the library.
+  const uploadFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    setImporting(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("upload_preset", PRESET);
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: "POST", body: form }
+      );
+      if (!response.ok) throw new Error(await response.text());
+      const info = (await response.json()) as {
+        public_id: string;
+        width: number;
+        height: number;
+        secure_url: string;
+      };
+      setSource({
+        publicId: info.public_id,
+        width: info.width,
+        height: info.height,
+        url: info.secure_url,
+      });
+    } catch {
+      setStatus("error");
+      setMessage("The upload did not go through. Try again.");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const apply = async () => {
-    if (!source || !isReady(input)) return;
+    if (!source || !isReady(input) || applied || limit) return;
     setStatus("working");
     setMessage("");
     // one generation, spent through the server's guard before the edit is built (TICKET-042)
@@ -119,8 +172,17 @@ export function EditWorkspace({
       () => null
     );
     if (!spend?.ok) {
-      setStatus(spend && spend.status !== 401 ? "limit" : "error");
-      if (!spend) setMessage("The edit could not start. Try again.");
+      if (spend?.status === 403 || spend?.status === 429) {
+        setLimit(spend.status === 403 ? "free" : "guest");
+        setStatus("limit");
+        return;
+      }
+      setStatus("error");
+      setMessage(
+        spend?.status === 401
+          ? "You were signed out. Reload the page to keep going."
+          : "The edit could not start. Try again."
+      );
       return;
     }
     attempts.current = 0;
@@ -141,8 +203,20 @@ export function EditWorkspace({
     if (attempts.current < 6) {
       attempts.current += 1;
       const base = result.split("?")[0];
+      const forTool = tool;
       setTimeout(
-        () => setResult(`${base}?attempt=${attempts.current}`),
+        () =>
+          setResults((all) => {
+            const current = all[forTool];
+            if (!current) return all;
+            return {
+              ...all,
+              [forTool]: {
+                ...current,
+                url: `${base}?attempt=${attempts.current}`,
+              },
+            };
+          }),
         3000 * attempts.current
       );
       return;
@@ -199,11 +273,12 @@ export function EditWorkspace({
               Your photo
             </h2>
             {source ? (
-              <div className="overflow-hidden rounded-media bg-surface">
+              // capped to the screen, so the tool's fields and Apply stay in view
+              <div className="flex justify-center overflow-hidden rounded-media bg-surface">
                 <RevealImage
                   src={source.url}
                   alt="Your photo"
-                  className="block w-full"
+                  className="block max-h-[55vh] w-auto max-w-full"
                 />
               </div>
             ) : importing ? (
@@ -238,12 +313,32 @@ export function EditWorkspace({
                 }}
               >
                 {({ open }) => (
-                  <div className="flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-media border border-dashed border-border-strong bg-surface p-6 text-center">
+                  // biome-ignore lint/a11y/noStaticElementInteractions: a drop target; the buttons are the keyboard path
+                  <div
+                    onDragOver={(event) => {
+                      if (!event.dataTransfer.types.includes("Files")) return;
+                      event.preventDefault();
+                      setDropping(true);
+                    }}
+                    onDragLeave={() => setDropping(false)}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      setDropping(false);
+                      const file = event.dataTransfer.files[0];
+                      if (file) void uploadFile(file);
+                    }}
+                    className={cn(
+                      "flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-media border border-dashed bg-surface p-6 text-center transition-colors",
+                      dropping
+                        ? "border-fg/60 bg-surface-2"
+                        : "border-border-strong"
+                    )}
+                  >
                     <ImagePlus className="size-6 text-mute" />
                     <div>
                       <p className="text-[15px]">Add a photo to edit</p>
                       <p className="mt-1 text-[13px] text-mute">
-                        JPG, PNG or WebP
+                        Drop it here, or choose one. JPG, PNG or WebP.
                       </p>
                     </div>
                     <div className="flex flex-wrap justify-center gap-2">
@@ -260,26 +355,46 @@ export function EditWorkspace({
             )}
           </section>
 
-          <section aria-label="The edit" aria-live="polite">
+          <section
+            aria-label="The edit"
+            aria-live="polite"
+            // nothing to show on a phone until there is a photo (TICKET-053)
+            className={cn(!source && "max-lg:hidden")}
+          >
             <h2 className="mb-2 text-[13px] font-medium text-fg-2">The edit</h2>
             {result && source && status !== "error" ? (
               <Result
                 key={result}
                 url={result}
                 original={tool === "fill" ? null : source.url}
+                shape={targetSize(input, source)}
                 onLoad={() => setStatus("done")}
                 onError={onResultError}
                 working={status === "working"}
               />
             ) : (
-              <div className="flex aspect-[4/3] items-center justify-center rounded-media border border-border bg-surface p-6 text-center text-[13px] text-mute">
-                {status === "error"
-                  ? message
-                  : status === "limit"
-                    ? "You have used your edits for now. Create an account or upgrade to keep going."
-                    : source
-                      ? "Choose the edit, then apply it."
-                      : "The edited photo shows here."}
+              <div className="flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-media border border-border bg-surface p-6 text-center text-[13px] text-mute">
+                {status === "error" ? (
+                  message
+                ) : limit === "free" ? (
+                  <>
+                    <span>You have used your free generations.</span>
+                    <Button size="sm" onClick={proModal.onOpen}>
+                      Upgrade to Pro
+                    </Button>
+                  </>
+                ) : limit === "guest" ? (
+                  <>
+                    <span>The guest session has reached its limit.</span>
+                    <Button asChild size="sm">
+                      <Link href="/signup">Create an account</Link>
+                    </Button>
+                  </>
+                ) : source ? (
+                  `“${meta.action}” shows the edit here.`
+                ) : (
+                  "The edited photo shows here."
+                )}
               </div>
             )}
           </section>
@@ -300,7 +415,7 @@ export function EditWorkspace({
                   placeholder={
                     tool === "recolor" ? "the car…" : "the person on the left…"
                   }
-                  className="w-64"
+                  className="h-9 w-64"
                   autoComplete="off"
                 />
               </label>
@@ -316,7 +431,7 @@ export function EditWorkspace({
                   value={color}
                   onChange={(e) => setColor(e.target.value)}
                   placeholder="deep green…"
-                  className="w-48"
+                  className="h-9 w-48"
                   autoComplete="off"
                 />
               </label>
@@ -346,9 +461,18 @@ export function EditWorkspace({
             )}
             <Button
               onClick={apply}
-              disabled={!isReady(input) || status === "working"}
+              disabled={
+                !isReady(input) ||
+                status === "working" ||
+                applied ||
+                limit !== null
+              }
             >
-              {status === "working" ? "Working…" : meta.action}
+              {status === "working"
+                ? "Working…"
+                : applied
+                  ? "Applied"
+                  : meta.action}
             </Button>
             {status === "done" && (
               <Button variant="secondary" onClick={download}>
@@ -366,12 +490,15 @@ export function EditWorkspace({
 function Result({
   url,
   original,
+  shape,
   onLoad,
   onError,
   working,
 }: {
   url: string;
   original: string | null;
+  /** The size the edit will come back at: the frame holds it while it works. */
+  shape: { width: number; height: number };
   onLoad: () => void;
   onError: () => void;
   working: boolean;
@@ -380,7 +507,16 @@ function Result({
   const [loaded, setLoaded] = useState(false);
   const clip = useMemo(() => `inset(0 ${100 - split}% 0 0)`, [split]);
   return (
-    <div className="relative overflow-hidden rounded-media bg-surface">
+    <div
+      className={cn(
+        "relative mx-auto overflow-hidden rounded-media bg-surface",
+        loaded ? "w-fit max-w-full" : "max-h-[55vh] w-full"
+      )}
+      // until it loads the frame has the edit's own shape, so "Working on it…" has a place
+      style={
+        loaded ? undefined : { aspectRatio: `${shape.width} / ${shape.height}` }
+      }
+    >
       {!loaded && working && (
         <Skeleton className="absolute inset-0 z-10 flex items-end rounded-none p-4 text-[13px] text-mute">
           Working on it…
@@ -394,7 +530,10 @@ function Result({
           onLoad();
         }}
         onError={onError}
-        className="block w-full"
+        className={cn(
+          "block max-h-[55vh] w-auto max-w-full",
+          !loaded && "absolute inset-0 size-full opacity-0"
+        )}
       />
       {original && loaded && (
         <>
@@ -405,11 +544,6 @@ function Result({
             aria-hidden
             className="pointer-events-none absolute inset-0 size-full object-cover"
             style={{ clipPath: clip }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 w-px bg-fg/80"
-            style={{ left: `${split}%` }}
           />
           <span className="pointer-events-none absolute left-2 top-2 rounded-chip bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
             Before
@@ -424,10 +558,21 @@ function Result({
             value={split}
             onChange={(e) => setSplit(Number(e.target.value))}
             aria-label="Compare before and after"
-            className={cn(
-              "absolute inset-0 size-full cursor-ew-resize opacity-0"
-            )}
+            className="peer absolute inset-0 size-full cursor-ew-resize opacity-0"
           />
+          {/* the divider and a handle you can see and find, lit when the slider has focus */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 w-px bg-fg/80"
+            style={{ left: `${split}%` }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-border-strong bg-bg/80 text-fg shadow-float backdrop-blur peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-fg"
+            style={{ left: `${split}%` }}
+          >
+            <span className="text-[11px] leading-none">‹ ›</span>
+          </div>
         </>
       )}
     </div>

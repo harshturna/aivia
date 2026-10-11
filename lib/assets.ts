@@ -121,6 +121,40 @@ export async function getAsset(userId: string, id: string) {
   });
 }
 
+/**
+ * The assets either side of one in the library's order (newest first), for previous and next
+ * in the lightbox (TICKET-053). Ties on the time fall back to the id, as the list does.
+ */
+export async function getNeighbors(
+  userId: string,
+  asset: { id: string; createdAt: Date }
+) {
+  const scope: Prisma.AssetWhereInput = {
+    userId,
+    ...(isGuestId(userId) ? { session: { pinned: true } } : {}),
+  };
+  const { id, createdAt } = asset;
+  const [newer, older] = await Promise.all([
+    prismadb.asset.findFirst({
+      where: {
+        ...scope,
+        OR: [{ createdAt: { gt: createdAt } }, { createdAt, id: { gt: id } }],
+      },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: { id: true },
+    }),
+    prismadb.asset.findFirst({
+      where: {
+        ...scope,
+        OR: [{ createdAt: { lt: createdAt } }, { createdAt, id: { lt: id } }],
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: { id: true },
+    }),
+  ]);
+  return { prev: newer?.id ?? null, next: older?.id ?? null };
+}
+
 export async function setFavorite(
   userId: string,
   id: string,
