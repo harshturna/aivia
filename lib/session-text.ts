@@ -15,7 +15,13 @@ export function isSessionId(id: string) {
 export function titleFromBrief(text: string) {
   const line = text.replace(/\s+/g, " ").trim();
   if (!line) return "New session";
-  const cut = line.length > 60 ? `${line.slice(0, 57).trimEnd()}…` : line;
+  // a long brief is cut at the last word that fits, never mid-word (TICKET-052)
+  let cut = line;
+  if (line.length > 60) {
+    const head = line.slice(0, 59);
+    const space = head.lastIndexOf(" ");
+    cut = `${(space > 30 ? head.slice(0, space) : line.slice(0, 57)).replace(/[\s,;:.]+$/, "")}…`;
+  }
   return cut.charAt(0).toUpperCase() + cut.slice(1);
 }
 

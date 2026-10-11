@@ -28,6 +28,20 @@ describe("collectCut", () => {
     ).toBe(false);
   });
 
+  it("does not offer a cut of one clip and nothing else", () => {
+    expect(
+      canCut({ clips: ["/a.mp4"], stills: [], track: null, lines: [] } as never)
+    ).toBe(false);
+    expect(
+      canCut({
+        clips: ["/a.mp4"],
+        stills: [],
+        track: { url: "/a.mp3", kind: "music" },
+        lines: [],
+      } as never)
+    ).toBe(true);
+  });
+
   it("strips quotes and emphasis from numbered lines", () => {
     expect(linesIn('Intro\n1. "One."\n2) **Two**\n- three\n3. ‘Four’')).toEqual(
       ["One.", "Two", "Four"]

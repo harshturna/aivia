@@ -107,7 +107,8 @@ export const Markdown = ({ children }: { children: string }) => (
         <ol className="my-2 list-decimal pl-6 space-y-1" {...props} />
       ),
       p: ({ node: _node, ...props }) => (
-        <p className="my-2 leading-7" {...props} />
+        // leading comes from the surface: 24 px in a run, as designed (TICKET-052)
+        <p className="my-2" {...props} />
       ),
       a: ({ node: _node, ...props }) => (
         <a

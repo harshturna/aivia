@@ -180,7 +180,7 @@ export function CharacterChat({
         <div ref={bottom} className="scroll-mb-44" />
       </div>
 
-      <div className="sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10">
+      <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
         <Composer
           className="mx-auto max-w-[680px]"
           showModes={false}

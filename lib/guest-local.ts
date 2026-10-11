@@ -56,6 +56,14 @@ export function saveLocalSession(session: {
   }
 }
 
+export function deleteLocalSession(id: string) {
+  try {
+    const rest = listLocalSessions().filter((s) => s.id !== id);
+    window.localStorage.setItem(KEY, JSON.stringify(rest));
+    window.dispatchEvent(new Event(LOCAL_CHANGED));
+  } catch {}
+}
+
 export function clearLocalSessions() {
   try {
     window.localStorage.removeItem(KEY);

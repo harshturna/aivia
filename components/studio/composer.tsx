@@ -14,10 +14,16 @@ import {
   useCallback,
   useEffect,
   useId,
-  useMemo,
   useRef,
   useState,
 } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Pill } from "@/components/ui/pill";
 import { ANIMATE_BRIEF } from "@/lib/ai/direct";
 import { cn } from "@/lib/utils";
@@ -106,11 +112,11 @@ export function Composer({
     },
     [onChange]
   );
-  const [menuOpen, setMenuOpen] = useState(false);
+  // a mode just chosen: the field takes focus back, not the menu's trigger
+  const chose = useRef(false);
   const localRef = useRef<HTMLTextAreaElement | null>(null);
   const ref = inputRef ?? localRef;
   const fileInput = useRef<HTMLInputElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const current = MODES.find((m) => m.id === mode) ?? MODES[0];
   const canAttach = files !== undefined && onFilesChange !== undefined;
@@ -129,23 +135,6 @@ export function Composer({
     el.style.height = "0px";
     el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
   }, [text, ref]);
-
-  // Close the mode menu on an outside click or Escape.
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDown = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
-    const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    window.addEventListener("mousedown", onDown);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("mousedown", onDown);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
 
   // In Video mode an attached image is animated as it is: it needs no words (TICKET-043)
   const stillOnly =
@@ -242,46 +231,52 @@ export function Composer({
           </>
         )}
         {showModes && (
-          <div ref={menuRef} className="relative">
-            <Pill
-              on
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              aria-controls={menuId}
-              onClick={() => setMenuOpen((open) => !open)}
+          // the Radix menu: arrow keys, a check on the current mode, and it flips or shifts
+          // to stay on screen in a short window (TICKET-052)
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Pill
+                aria-label={`Mode: ${current.label}`}
+                className="border-transparent bg-surface-3 text-fg hover:text-fg"
+              >
+                {current.label}
+                <ChevronDown className="opacity-70" />
+              </Pill>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="top"
+              align="start"
+              collisionPadding={8}
+              className="w-64"
+              onCloseAutoFocus={(event) => {
+                if (!chose.current) return;
+                chose.current = false;
+                event.preventDefault();
+                ref.current?.focus();
+              }}
             >
-              {current.label}
-              <ChevronDown className="opacity-70" />
-            </Pill>
-            {menuOpen && (
-              <div
-                id={menuId}
-                role="menu"
-                className="absolute bottom-full left-0 z-20 mb-2 w-64 rounded-media border border-border bg-surface-2 p-1 shadow-float animate-in fade-in-0 zoom-in-95 duration-150"
+              <DropdownMenuRadioGroup
+                value={mode}
+                onValueChange={(next) => {
+                  chose.current = true;
+                  onModeChange?.(next as ComposerMode);
+                }}
               >
                 {MODES.map((m) => (
-                  <button
+                  <DropdownMenuRadioItem
                     key={m.id}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={m.id === mode}
-                    onClick={() => {
-                      onModeChange?.(m.id);
-                      setMenuOpen(false);
-                      ref.current?.focus();
-                    }}
-                    className={cn(
-                      "flex w-full flex-col items-start rounded-control px-2.5 py-1.5 text-left transition-colors hover:bg-surface-3",
-                      m.id === mode ? "text-fg" : "text-fg-2"
-                    )}
+                    value={m.id}
+                    className="flex-col items-start gap-0 focus:bg-surface-3 focus:text-fg"
                   >
-                    <span className="text-[13px] font-medium">{m.label}</span>
+                    <span className="text-[13px] font-medium text-fg">
+                      {m.label}
+                    </span>
                     <span className="text-[12px] text-mute">{m.hint}</span>
-                  </button>
+                  </DropdownMenuRadioItem>
                 ))}
-              </div>
-            )}
-          </div>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
         {params}
         <div className="ml-auto flex items-center gap-3">
@@ -321,19 +316,18 @@ function Attachments({
   files: File[];
   onRemove: (i: number) => void;
 }) {
-  const urls = useMemo(
-    () =>
-      files.map((f) =>
-        f.type.startsWith("image/") ? URL.createObjectURL(f) : null
-      ),
-    [files]
-  );
-  useEffect(
-    () => () => {
-      for (const u of urls) if (u) URL.revokeObjectURL(u);
-    },
-    [urls]
-  );
+  // made and revoked in one effect, so a remount (React's development double run) cannot
+  // revoke URLs that are still shown (TICKET-052)
+  const [urls, setUrls] = useState<(string | null)[]>([]);
+  useEffect(() => {
+    const made = files.map((f) =>
+      f.type.startsWith("image/") ? URL.createObjectURL(f) : null
+    );
+    setUrls(made);
+    return () => {
+      for (const u of made) if (u) URL.revokeObjectURL(u);
+    };
+  }, [files]);
   return (
     <ul className="mb-2 flex flex-wrap gap-2 px-1">
       {files.map((file, i) => (
@@ -346,7 +340,7 @@ function Attachments({
             <img
               src={urls[i] ?? ""}
               alt={file.name}
-              className="size-14 rounded-control object-cover"
+              className="size-14 overflow-hidden rounded-control object-cover"
             />
           ) : (
             <span className="flex h-14 max-w-[200px] items-center gap-2 rounded-control border border-border bg-surface px-3 text-[12px] text-fg-2">

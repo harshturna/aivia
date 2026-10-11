@@ -52,6 +52,19 @@ describe("titleFromBrief", () => {
     expect(title.length).toBe(58);
     expect(title.endsWith("…")).toBe(true);
   });
+  it("cuts a long brief at a word, never inside one", () => {
+    const t = titleFromBrief(
+      "A poster, a short teaser and a soundtrack for a night market in the rain"
+    );
+    expect(t).toBe("A poster, a short teaser and a soundtrack for a night…");
+  });
+  it("drops trailing punctuation before the ellipsis", () => {
+    const t = titleFromBrief(
+      "Album art for a quiet piano record, with snow, and a name for it, please, now"
+    );
+    expect(t.endsWith(",…")).toBe(false);
+    expect(t.endsWith("…")).toBe(true);
+  });
   it("falls back when empty", () => {
     expect(titleFromBrief("   ")).toBe("New session");
   });

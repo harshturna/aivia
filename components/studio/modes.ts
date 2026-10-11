@@ -25,7 +25,7 @@ export const MODES: Array<{
   {
     id: "video",
     label: "Video",
-    hint: "A short clip, or attach a still to bring it to life",
+    hint: "A five-second clip, or a still brought to life",
     placeholder:
       "Describe the scene and the motion, or attach a still to animate…",
   },

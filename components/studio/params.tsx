@@ -63,6 +63,7 @@ export function ModeParamPills({
           value={String(params.count)}
           display={`${params.count} image${params.count === 1 ? "" : "s"}`}
           options={["1", "2", "3", "4"]}
+          format={(v) => `${v} image${v === "1" ? "" : "s"}`}
           onChange={(v) => set("count", Number(v) as ModeParams["count"])}
         />
       </>
@@ -84,7 +85,7 @@ export function ModeParamPills({
       <Choice
         label="Length"
         value={String(params.musicSeconds)}
-        display={`${params.musicSeconds} s`}
+        display={`${params.musicSeconds} seconds`}
         options={["15", "30", "60"]}
         format={(v) => `${v} seconds`}
         onChange={(v) =>
@@ -99,7 +100,7 @@ export function ModeParamPills({
         label="Length"
         value={String(params.soundSeconds)}
         display={
-          params.soundSeconds ? `${params.soundSeconds} s` : "Any length"
+          params.soundSeconds ? `${params.soundSeconds} seconds` : "Any length"
         }
         options={["0", "2", "5", "10"]}
         format={(v) => (v === "0" ? "Any length" : `${v} seconds`)}

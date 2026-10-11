@@ -24,7 +24,11 @@ import { Run } from "@/components/studio/run";
 import { Button } from "@/components/ui/button";
 import { userProModal } from "@/hooks/useProModal";
 import { ANIMATE_BRIEF, aspectOfSize } from "@/lib/ai/direct";
-import { getLocalSession, saveLocalSession } from "@/lib/guest-local";
+import {
+  deleteLocalSession,
+  getLocalSession,
+  saveLocalSession,
+} from "@/lib/guest-local";
 import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 
@@ -74,12 +78,38 @@ type Aspect = ModeParams["aspect"];
 
 export const SESSIONS_CHANGED = "aivia:sessions-changed";
 
-const EXAMPLES = [
-  "A poster, a short teaser and a soundtrack for a forest older than memory",
-  "Album art for a quiet piano record, and a name for it",
-  "A snowy owl over a frozen lake at dawn, as a poster and a short clip",
-  "The sound of rain on a tin roof, twenty seconds",
-];
+/**
+ * Starting points for each mode (TICKET-052): what that mode makes, and none of them a
+ * pinned example a guest can already open from the sidebar.
+ */
+const EXAMPLES: Record<ComposerMode, string[]> = {
+  auto: [
+    "A poster, a short teaser and a soundtrack for a night market in the rain",
+    "Album art for a quiet piano record, and a name for it",
+    "A logo for a small bakery called Ember, and three taglines",
+    "A lighthouse in a storm, as a poster and a short clip",
+  ],
+  image: [
+    "A ceramic teapot on linen, soft morning light",
+    "A city of paper lanterns at dusk, wide",
+    "A fox in a wool scarf, painted in oils",
+  ],
+  video: [
+    "Slow push-in on a candle flame in the dark",
+    "Waves rolling onto black sand at dusk",
+    "Steam rising from a cup of coffee, close up",
+  ],
+  music: [
+    "Warm lo-fi beat with soft piano, for studying",
+    "Bright synth-pop intro, short and upbeat",
+    "Slow cello over rain, melancholic",
+  ],
+  sound: [
+    "Rain on a tin roof",
+    "A wooden door creaking open",
+    "Footsteps on fresh snow",
+  ],
+};
 
 type Limit = "free" | "demo" | null;
 
@@ -461,6 +491,8 @@ export function StudioClient({
         const fork = crypto.randomUUID();
         setLocalKey(fork);
         window.history.replaceState(null, "", `/studio?local=${fork}`);
+        // named after what they asked, so it is not a second "Owl over a frozen lake"
+        if (messages.length > 0) setTitle(titleFromBrief(text));
       }
       if (messages.length === 0) {
         setTitle(titleFromBrief(text));
@@ -581,6 +613,16 @@ export function StudioClient({
     composerRef.current?.focus();
   }, []);
 
+  // a guest's own session lives in this browser: rename and delete it there (TICKET-052)
+  const removeLocal = () => {
+    if (localKey) deleteLocalSession(localKey);
+    router.push("/studio");
+  };
+  const renameLocal = (next: string) => {
+    touched.current = true;
+    setTitle(next);
+  };
+
   const remove = async () => {
     const response = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
     if (response.ok || response.status === 404) {
@@ -651,8 +693,9 @@ export function StudioClient({
                 <EditableTitle
                   id={id}
                   title={title}
-                  onChange={setTitle}
-                  enabled={!empty && !isGuest}
+                  onChange={isGuest ? renameLocal : setTitle}
+                  enabled={!empty && (!isGuest || localKey !== null)}
+                  local={isGuest}
                 />
               }
             >
@@ -662,13 +705,14 @@ export function StudioClient({
                   Running
                 </span>
               )}
-              {!empty && !busy && !isGuest && (
-                <DeleteSession onConfirm={remove} />
+              {!empty && !busy && (!isGuest || localKey !== null) && (
+                <DeleteSession onConfirm={isGuest ? removeLocal : remove} />
               )}
             </ScreenHeader>
 
             {empty ? (
-              <div className="flex flex-1 flex-col items-center justify-center px-6 pb-24">
+              // a fixed top, so the heading stays put as the composer grows (TICKET-052)
+              <div className="flex flex-1 flex-col items-center px-6 pb-24 pt-[max(48px,calc(50dvh-220px))] max-sm:pt-[10dvh]">
                 <div className="w-full max-w-[720px]">
                   <h2 className="text-center font-display text-[clamp(36px,4vw,54px)] font-medium leading-[1.04] tracking-[-0.01em]">
                     What are we making?
@@ -685,8 +729,8 @@ export function StudioClient({
                       {failure.text}
                     </p>
                   )}
-                  <ul className="mt-4 flex flex-wrap justify-center gap-2">
-                    {EXAMPLES.map((example) => (
+                  <ul className="mt-4 flex flex-wrap justify-center gap-2 max-sm:flex-col max-sm:items-stretch">
+                    {EXAMPLES[mode].map((example) => (
                       <li key={example}>
                         <button
                           type="button"
@@ -694,7 +738,7 @@ export function StudioClient({
                             setInput(example);
                             composerRef.current?.focus();
                           }}
-                          className="rounded-full border border-border px-3 py-1.5 text-[12.5px] leading-[18px] text-fg-2 transition-colors duration-150 hover:border-border-strong hover:text-fg"
+                          className="rounded-full border border-border px-3 py-1.5 text-[12.5px] leading-[18px] text-fg-2 transition-colors duration-150 hover:border-border-strong hover:text-fg max-sm:w-full max-sm:rounded-control max-sm:px-3 max-sm:py-2.5 max-sm:text-left"
                         >
                           {example}
                         </button>
@@ -763,7 +807,7 @@ export function StudioClient({
                   {/* outside the list, so it adds no gap of its own */}
                   <div ref={bottomRef} className="scroll-mb-48" />
                 </div>
-                <div className="sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10">
+                <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
                   <m.div layoutId="composer" className="mx-auto max-w-[760px]">
                     {composer}
                   </m.div>
@@ -847,11 +891,14 @@ function EditableTitle({
   title,
   onChange,
   enabled,
+  local = false,
 }: {
   id: string;
   title: string;
   onChange: (t: string) => void;
   enabled: boolean;
+  /** Kept in this browser: the new name is saved there, not sent. */
+  local?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(title);
@@ -861,6 +908,7 @@ function EditableTitle({
     const next = draft.trim();
     if (!next || next === title) return;
     onChange(next);
+    if (local) return;
     await fetch(`/api/sessions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

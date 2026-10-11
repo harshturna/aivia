@@ -105,7 +105,7 @@ export function AudioRow({
     <div
       ref={row}
       className={cn(
-        "flex h-14 items-center gap-3 rounded-media border border-border bg-surface pl-2 pr-3",
+        "relative flex h-14 items-center gap-3 rounded-media border border-border bg-surface pl-2 pr-3",
         className
       )}
     >
@@ -131,7 +131,8 @@ export function AudioRow({
       <button
         type="button"
         onClick={toggle}
-        aria-label={playing ? `Pause ${title}` : `Play ${title}`}
+        aria-label={`Play ${title}`}
+        aria-pressed={playing}
         className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-[.96]"
       >
         {playing ? (
@@ -167,7 +168,19 @@ export function AudioRow({
         ))}
       </div>
       <span className="tabular w-9 shrink-0 text-right text-[12px] text-mute">
-        {duration === undefined ? "" : format(duration)}
+        {duration === undefined
+          ? ""
+          : format(playing ? progress * duration : duration)}
+      </span>
+      {/* below 640 px the waveform is hidden: a hairline of progress stands in (TICKET-052) */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-3 bottom-1.5 h-0.5 overflow-hidden rounded-full bg-fg/10 sm:hidden"
+      >
+        <span
+          className="block h-full origin-left bg-sun"
+          style={{ transform: `scaleX(${progress})` }}
+        />
       </span>
       <button
         type="button"

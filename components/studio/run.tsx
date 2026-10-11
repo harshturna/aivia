@@ -133,20 +133,21 @@ export function Run({
                 <li
                   // biome-ignore lint/suspicious/noArrayIndexKey: steps are positional
                   key={i}
-                  className="flex items-center gap-3 text-[13px] leading-6"
+                  className="flex items-start gap-3 text-[13px] leading-6"
                 >
                   <span className="tabular w-3 text-right text-[12px] text-mute">
                     {i + 1}
                   </span>
                   <span
                     className={cn(
-                      "min-w-0 flex-1",
+                      "min-w-0",
                       step.status === "queued" ? "text-mute" : "text-fg-2"
                     )}
                   >
                     {step.text}
                   </span>
-                  <span className="shrink-0">
+                  {/* beside its step, not at the far edge of the column (TICKET-052) */}
+                  <span className="flex h-6 shrink-0 items-center">
                     {step.status === "done" && (
                       <Check className="size-3.5 text-good" />
                     )}
@@ -239,7 +240,7 @@ function Brief({ message }: { message: UIMessage }) {
           )}
         </ul>
       )}
-      <p className="whitespace-pre-wrap text-[15px] leading-6 text-fg-2">
+      <p className="whitespace-pre-wrap text-[14px] leading-6 text-fg-2">
         {text}
       </p>
     </div>

@@ -183,7 +183,11 @@ export function ToolOutput({
           style={box(input?.aspect, "16:9", 760)}
           className="rounded-media bg-surface object-contain"
         />
-        <Caption prompt={prompt} onReusePrompt={actions.onReusePrompt} />
+        <Caption
+          prompt={prompt}
+          onReusePrompt={actions.onReusePrompt}
+          onDownload={() => downloadFile(urls[0], fileNameFrom(prompt, "clip"))}
+        />
       </figure>
     );
   }
@@ -267,6 +271,8 @@ function RevealedImage({
   single: boolean;
 }) {
   const { animate } = useStudioActions();
+  // the buttons say which image they act on: a grid of four has four of each
+  const label = alt.length > 48 ? `${alt.slice(0, 45).trimEnd()}…` : alt;
   const [natural, setNatural] = useState<string>();
   const frame = useRef<HTMLDivElement>(null);
   const measure = useCallback((img: HTMLImageElement | null | undefined) => {
@@ -307,7 +313,7 @@ function RevealedImage({
         {animate && (
           <button
             type="button"
-            aria-label="Animate"
+            aria-label={`Animate ${label}`}
             title="Animate"
             onClick={(event) => {
               const img = event.currentTarget
@@ -325,12 +331,12 @@ function RevealedImage({
             <Film /> Animate
           </button>
         )}
-        <IconLink href={url} label="Open full size">
+        <IconLink href={url} label={`Open ${label} full size`}>
           <Maximize2 />
         </IconLink>
         <button
           type="button"
-          aria-label="Download"
+          aria-label={`Download ${label}`}
           title="Download"
           onClick={() => downloadFile(url, fileNameFrom(prompt, "image"))}
           className={ICON_BUTTON}
@@ -371,14 +377,26 @@ function IconLink({
 function Caption({
   prompt,
   onReusePrompt,
+  onDownload,
 }: {
   prompt: string;
   onReusePrompt?: (prompt: string) => void;
+  /** A clip has only native controls: its download sits here (TICKET-052). */
+  onDownload?: () => void;
 }) {
-  if (!prompt) return null;
+  if (!prompt && !onDownload) return null;
   return (
     <figcaption className="mt-2 flex items-start gap-3 text-[12px] leading-4 text-mute">
       <span className="line-clamp-2 min-w-0 flex-1">{prompt}</span>
+      {onDownload && (
+        <button
+          type="button"
+          onClick={onDownload}
+          className="shrink-0 text-fg-2 transition-colors hover:text-fg"
+        >
+          Download
+        </button>
+      )}
       {onReusePrompt && (
         <button
           type="button"

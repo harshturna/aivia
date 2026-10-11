@@ -59,8 +59,17 @@ export function collectCut(parts: ReadonlyArray<Part>): CutPieces {
 }
 
 /** A cut needs motion: a clip, or stills with a track to carry them. */
+/** A cut needs motion and something to cut it with: a lone clip is already a clip. */
 export function canCut(p: CutPieces) {
-  return p.clips.length > 0 || (p.stills.length > 0 && p.track !== null);
+  const pieces =
+    p.clips.length +
+    p.stills.length +
+    (p.track ? 1 : 0) +
+    (p.lines.length ? 1 : 0);
+  return (
+    (p.clips.length > 0 && pieces >= 2) ||
+    (p.stills.length > 0 && p.track !== null)
+  );
 }
 
 export type Segment = {

@@ -232,13 +232,12 @@ One layout for every signed-in route, `app/(app)/layout.tsx`, replacing the thre
 
 ### 5.1 The empty state
 
-A new session shows, vertically centred: one line at 32 px weight 500, "What are we
-making?"; under it the composer; under that four chips that fill the composer rather than
-send it, each showing a different kind of job: "A poster, a short teaser and a
-soundtrack for a night market", "Album art for a synthwave record, and name it", "A logo for a
-coffee roastery with three taglines", "The sound of rain on a tin roof, twenty seconds". A
-guest's first session opens on a finished example run instead, so the first thing seen is the
-product at its best; the composer sits under it.
+A new session shows, from a fixed point a little above the middle (so nothing moves as the
+composer grows): "What are we making?" in the display face at 36 to 54 px; under it the
+composer; under that chips that fill the composer rather than send it. The chips follow the
+mode (Auto shows different kinds of job, Image shows image prompts, and so on), and none of
+them repeats a pinned example. Below 640 px they stack as full-width rows. A guest sees the
+pinned examples in the sidebar and starts here, like everyone else (TICKET-052).
 
 ### 5.2 The composer
 
