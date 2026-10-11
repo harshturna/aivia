@@ -8,6 +8,7 @@ import {
   Users,
   Wand2,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import Logo from "@/components/Logo";
 import { Composer } from "@/components/studio/composer";
 import { RunDemo } from "@/components/studio/run-demo";
@@ -31,7 +32,41 @@ const RECENT = [
   "Dawn chorus by a stream",
 ];
 
+/**
+ * Keeps the newest output in view as the replay adds it, the way a session follows its run,
+ * unless the visitor has scrolled up inside the frame.
+ */
+function useFollow() {
+  const area = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = area.current;
+    const inner = content.current;
+    if (!el || !inner) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let pinned = true;
+    const onScroll = () => {
+      pinned = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    };
+    const ro = new ResizeObserver(() => {
+      if (pinned)
+        el.scrollTo({
+          top: el.scrollHeight,
+          behavior: still ? "auto" : "smooth",
+        });
+    });
+    el.addEventListener("scroll", onScroll, { passive: true });
+    ro.observe(inner);
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+  return { area, content };
+}
+
 export function StudioDemo() {
+  const { area, content } = useFollow();
   return (
     <section className={WRAP}>
       <h2 className={H2}>It plans the work, then does it.</h2>
@@ -40,8 +75,9 @@ export function StudioDemo() {
         in front of you. Every run stays a session you can reopen.
       </p>
 
-      <div className="mt-12 overflow-hidden rounded-window border border-border bg-surface shadow-float">
-        <div className="grid md:grid-cols-[220px_minmax(0,1fr)]">
+      {/* a fixed frame: the run scrolls inside it, so nothing around it grows */}
+      <div className="mt-12 h-[620px] overflow-hidden rounded-window border border-border bg-surface shadow-float md:h-[720px]">
+        <div className="grid h-full md:grid-cols-[220px_minmax(0,1fr)]">
           <aside
             aria-hidden
             className="hidden flex-col gap-5 border-r border-border px-3 py-4 text-[13px] md:flex"
@@ -112,7 +148,7 @@ export function StudioDemo() {
             </div>
           </aside>
 
-          <div className="relative flex min-h-[560px] flex-col">
+          <div className="relative flex h-full min-h-0 flex-col">
             <div className="flex h-13 items-center gap-3 border-b border-border px-6 text-[15px] font-medium">
               A forest older than memory
               <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
@@ -122,11 +158,16 @@ export function StudioDemo() {
                 Rename
               </span>
             </div>
-            <div className="flex-1 px-6 py-6 md:px-10">
-              <RunDemo className="mx-auto max-w-[720px]" />
+            <div
+              ref={area}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6 [mask-image:linear-gradient(to_bottom,transparent,black_28px)] [scrollbar-width:none] md:px-10 [&::-webkit-scrollbar]:hidden"
+            >
+              <div ref={content}>
+                <RunDemo className="mx-auto max-w-[720px]" />
+              </div>
             </div>
             {/* a picture of the composer, not a working one: out of the tab order */}
-            <div className="sticky bottom-0 px-6 pb-5 md:px-10" inert>
+            <div className="shrink-0 px-6 pb-5 pt-2 md:px-10" inert>
               <Composer
                 className="mx-auto max-w-[720px]"
                 onSubmit={() => {}}
