@@ -52,7 +52,7 @@ on any media behind them.
 | `--border-strong` | `rgb(255 255 255 / .16)` | focused fields, the composer's edge |
 | `--fg` | `#F4F4F5` | text, icons |
 | `--fg-2` | `#A3A3A8` | secondary text |
-| `--mute` | `#6E6E76` | labels, captions, timestamps (4.9:1 on bg) |
+| `--mute` | `#8E8E97` | labels, captions, timestamps (6.0:1 on bg, 4.9:1 on surface-2; raised from `#6E6E76`, which measured 3.9:1, in TICKET-014) |
 | `--faint` | `#4A4A52` | placeholders, disabled, decorative only |
 | `--white` | `#FFFFFF` | the primary button, selected and live states |
 | `--good` / `--warn` / `--poor` | `#5CC489` / `#E0B15A` / `#F2756B` | status only |
@@ -394,7 +394,7 @@ Asset     id, userId, sessionId?, kind (image|video|music|sound), url, posterUrl
   path. The lightbox and menus trap focus and restore it. The audio rows are buttons with
   `aria-pressed`; the waveform is decorative. Images carry the prompt as alt text.
 - Live regions: a run's status changes are announced politely ("Poster done").
-- Contrast: `--fg` 17:1, `--fg-2` 8:1, `--mute` 4.9:1 on `--bg`; `--faint` never carries text.
+- Contrast, measured: `--mute` 6.0:1 on `--bg` and 4.9:1 on `--surface-2`; `--faint` never carries text. The smoke suite runs axe on every screen (TICKET-014).
 - Reduced motion as in §2.3. Hover-only actions are also reachable by focus.
 - Widths designed at 1440, 1024, 768 and 390. No horizontal scroll at any of them.
 - Each screen ticket records `npm run shots` at 1440 and 390 and a keyboard pass.

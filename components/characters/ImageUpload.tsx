@@ -33,7 +33,12 @@ export const ImageUpload = ({
     </span>
   );
   // The upload button takes no disabled state; a guest or a save in flight sees the frame.
-  if (disabled) return <div className="w-40 opacity-60">{frame}</div>;
+  if (disabled)
+    return (
+      <div className="w-40 cursor-not-allowed" aria-disabled="true">
+        {frame}
+      </div>
+    );
   return (
     <CldUploadButton
       onSuccess={(result) => {

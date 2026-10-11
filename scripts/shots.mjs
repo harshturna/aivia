@@ -2,7 +2,7 @@
 // as the guest, written to .shots/. Needs a running dev server:
 //   PORT=3005 npm run dev &  then  npm run shots
 // Options: BASE (default http://localhost:3005), PAGES (comma list),
-// WIDTHS (default 1440,390), FULL=0 for viewport-only, GUEST=0 to stay signed out.
+// WIDTHS (default 1440,1024,768,390), FULL=0 for viewport-only, GUEST=0 to stay signed out.
 import { mkdirSync } from "node:fs";
 import { chromium } from "@playwright/test";
 
@@ -10,9 +10,11 @@ const BASE = process.env.BASE ?? "http://localhost:3005";
 const OUT = ".shots";
 const PAGES = (
   process.env.PAGES ??
-  "/,/login,/dashboard,/studio,/conversation,/image,/video,/music,/code,/documents,/characters,/transformations/restore,/generative/settings"
+  "/,/login,/signup,/studio,/library,/edit,/characters,/characters/new,/settings"
 ).split(",");
-const WIDTHS = (process.env.WIDTHS ?? "1440,390").split(",").map(Number);
+const WIDTHS = (process.env.WIDTHS ?? "1440,1024,768,390")
+  .split(",")
+  .map(Number);
 
 mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch();

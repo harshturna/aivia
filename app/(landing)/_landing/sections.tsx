@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import { AmbientVideo } from "@/components/studio/ambient-video";
 import { AudioRow } from "@/components/studio/audio-row";
 import { buttonVariants } from "@/components/ui/button";
 import { CHANGELOG, formatChangelogDate } from "@/lib/changelog";
@@ -38,17 +39,11 @@ export function Modes() {
         </Plate>
         <Plate title="Video" caption={`${clip.prompt}, ${clip.seconds} s clip`}>
           <div className="aspect-video overflow-hidden rounded-media bg-surface">
-            <video
-              muted
-              loop
-              playsInline
-              autoPlay
-              preload="metadata"
+            <AmbientVideo
+              src={clip.src}
               poster={clip.poster}
               className="size-full object-cover"
-            >
-              <source src={clip.src} type="video/mp4" />
-            </video>
+            />
           </div>
         </Plate>
         <Plate title="Music" caption={`${TRACKS[0].prompt}, 30 s`}>
@@ -226,17 +221,11 @@ export function Close() {
   return (
     <section className="relative isolate mt-32 overflow-hidden py-32">
       <div aria-hidden className="absolute inset-0 -z-10">
-        <video
-          muted
-          loop
-          playsInline
-          autoPlay
-          preload="metadata"
+        <AmbientVideo
+          src={clip.src}
           poster={clip.poster}
           className="size-full object-cover opacity-40"
-        >
-          <source src={clip.src} type="video/mp4" />
-        </video>
+        />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgb(10_10_11/1),rgb(10_10_11/.3)_40%,rgb(10_10_11/.3)_60%,rgb(10_10_11/1))]" />
       </div>
       <div className={cn(WRAP, "text-center")}>

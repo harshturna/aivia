@@ -3,6 +3,7 @@
 import { Check, ChevronDown, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { AmbientVideo } from "@/components/studio/ambient-video";
 import { AudioRow } from "@/components/studio/audio-row";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -207,17 +208,11 @@ export function RunDemo({ className }: { className?: string }) {
             ratio="16/9"
             label="lanterns swaying in light rain, 10 s"
           >
-            <video
-              muted
-              loop
-              playsInline
-              autoPlay
-              preload="metadata"
+            <AmbientVideo
+              src={CLIPS[0].src}
               poster={CLIPS[0].poster}
               className="size-full object-cover"
-            >
-              <source src={CLIPS[0].src} type="video/mp4" />
-            </video>
+            />
           </Output>
         </div>
       )}

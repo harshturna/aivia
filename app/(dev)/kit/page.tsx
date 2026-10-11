@@ -22,7 +22,7 @@ const SWATCHES: Array<[string, string, string]> = [
   ["border-strong", "rgb(255 255 255 / .16)", "focused edges"],
   ["fg", "#f4f4f5", "text 17:1"],
   ["fg-2", "#a3a3a8", "secondary 8:1"],
-  ["mute", "#6e6e76", "captions 4.9:1"],
+  ["mute", "#8e8e97", "captions 4.9:1 on surface-2"],
   ["faint", "#4a4a52", "placeholders, never text"],
   ["good", "#5cc489", "status"],
   ["warn", "#e0b15a", "status"],

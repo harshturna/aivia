@@ -13,7 +13,8 @@
     "test:unit": "vitest run",
     "verify": "npm run lint && npm run typecheck && npm run check:tickets && npm run test:unit",
     "shots": "node scripts/shots.mjs",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.78",
@@ -63,6 +64,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@biomejs/biome": "^2.5.15",
     "@playwright/test": "^1.64.0",
     "@testing-library/jest-dom": "^7.0.1",

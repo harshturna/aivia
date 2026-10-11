@@ -41,3 +41,6 @@ next-env.d.ts
 
 # screenshot review output (npm run shots)
 /.shots/
+
+/test-results/
+/playwright-report/

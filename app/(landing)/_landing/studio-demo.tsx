@@ -53,11 +53,11 @@ export function StudioDemo() {
             <div className="space-y-0.5">
               <div className="flex h-8 items-center gap-2.5 rounded-control px-2 text-fg-2">
                 <Plus className="size-4" /> New session
-                <span className="ml-auto text-[11px] text-faint">⌘N</span>
+                <span className="ml-auto text-[11px] text-mute">⌘⇧O</span>
               </div>
               <div className="flex h-8 items-center gap-2.5 rounded-control px-2 text-fg-2">
                 <Search className="size-4" /> Search
-                <span className="ml-auto text-[11px] text-faint">⌘K</span>
+                <span className="ml-auto text-[11px] text-mute">⌘K</span>
               </div>
             </div>
             <div className="space-y-0.5">
