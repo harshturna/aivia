@@ -44,7 +44,7 @@ export default async function CharactersPage({
       <ScreenHeader title="Characters">
         {isGuest ? (
           <Link href="/signup" className="text-[13px] text-fg-2 hover:text-fg">
-            Sign up to make your own
+            Create an account to make your own
           </Link>
         ) : (
           <Link

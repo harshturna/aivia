@@ -59,7 +59,7 @@ export function CharacterFilters({
           onChange={(e) => setValue(e.target.value)}
           placeholder="Search characters…"
           autoComplete="off"
-          className="h-8 w-full rounded-control border border-border bg-surface pl-8 pr-2 text-[13px] text-fg outline-none transition-colors placeholder:text-mute hover:border-border-strong focus:border-border-strong"
+          className="h-8 w-full rounded-control border border-border bg-surface pl-8 pr-2 text-[13px] text-fg outline-none transition-colors placeholder:text-mute hover:border-border-strong focus-visible:border-fg/50"
         />
       </label>
       <nav

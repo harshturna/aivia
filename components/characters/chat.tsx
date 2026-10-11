@@ -145,6 +145,14 @@ export function CharacterChat({
               <Line key={m.id} who={character} text={messageText(m)} />
             )
           )}
+          {/* the reply is announced as it lands, as the Studio's runs are (TICKET-045) */}
+          <p className="sr-only" aria-live="polite">
+            {busy
+              ? `${character.name} is writing`
+              : messages.at(-1)?.role === "assistant"
+                ? `${character.name} replied: ${messageText(messages.at(-1) as (typeof messages)[number])}`
+                : ""}
+          </p>
           {status === "submitted" && (
             <p className="flex items-center gap-2 text-[13px] text-fg-2">
               <Spinner className="size-3" /> {character.name} is writing…

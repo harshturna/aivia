@@ -25,8 +25,6 @@
   --color-fg-2: #b3afa5;
   --color-mute: #938f86;
   --color-faint: #4b4944;
-  --color-white: #ffffff;
-  --color-black: #000000;
   --color-good: #5cc489;
   --color-warn: #e0b15a;
   --color-poor: #f2756b;
@@ -76,6 +74,8 @@
   --font-mono:
     var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* small badges and keys on media (TICKET-045) */
+  --radius-chip: 5px;
   --radius-control: 8px;
   --radius-media: 12px;
   --radius-panel: 16px;
@@ -153,6 +153,11 @@
   }
   ::selection {
     background: color-mix(in srgb, var(--color-sun) 32%, transparent);
+  }
+  /* highlighted code sits on the block's own surface, in the app's ink (TICKET-045) */
+  .hljs {
+    background: transparent;
+    color: var(--color-fg);
   }
   /* one focus ring everywhere (design §2.2); an element that sets its own ring keeps it */
   :focus-visible {

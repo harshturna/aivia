@@ -43,7 +43,7 @@ export function CutAction({
         <Scissors /> Cut it together
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[680px]">
+        <DialogContent className="w-[calc(100%-32px)] max-w-[680px]">
           <CutBody
             pieces={pieces}
             title={title}
@@ -165,7 +165,7 @@ function CutBody({
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="font-display text-[30px] font-medium leading-tight">
+        <DialogTitle className="text-[20px] font-medium tracking-[-0.01em]">
           Cut it together
         </DialogTitle>
         <DialogDescription>
@@ -178,7 +178,7 @@ function CutBody({
           {lanes.map(([lane, what]) => (
             <li
               key={lane}
-              className="grid grid-cols-[88px_minmax(0,1fr)] items-baseline gap-3 rounded-control bg-surface-2 px-3 py-2 text-[13.5px]"
+              className="grid grid-cols-[88px_minmax(0,1fr)] items-baseline gap-3 rounded-control bg-surface-3 px-3 py-2 text-[13.5px]"
             >
               <span className="text-mute">{lane}</span>
               <span className="truncate text-fg">{what}</span>
@@ -188,7 +188,7 @@ function CutBody({
       )}
 
       {state.at === "rendering" && (
-        <div className="mt-4" aria-live="polite">
+        <div className="mt-4">
           <div className="h-1 overflow-hidden rounded-full bg-surface-3">
             <div
               className="h-full bg-sun transition-[width] duration-200"
@@ -198,6 +198,10 @@ function CutBody({
           <p className="mt-2 flex items-center gap-2 text-[13px] text-fg-2">
             <Spinner className="size-3" /> Cutting,{" "}
             {Math.round(state.progress * 100)}%
+          </p>
+          {/* announced in quarters, not every percent */}
+          <p className="sr-only" aria-live="polite">
+            Cutting, {Math.floor(state.progress * 4) * 25}%
           </p>
         </div>
       )}
@@ -215,7 +219,7 @@ function CutBody({
           autoPlay
           playsInline
           className={cn(
-            "mt-2 max-h-[52vh] w-full rounded-media bg-black object-contain"
+            "mt-2 max-h-[52vh] w-full rounded-media bg-bg object-contain"
           )}
         />
       )}
@@ -255,7 +259,7 @@ function CutBody({
             )}
             {!canSave && (
               <span className="text-[13px] text-mute">
-                Sign up to keep cuts in a library.
+                Create an account to keep cuts in your library.
               </span>
             )}
           </>

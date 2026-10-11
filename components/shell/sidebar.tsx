@@ -3,7 +3,7 @@
 import { ChevronDown, PanelLeft, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
@@ -113,17 +113,21 @@ export function Sidebar({
           icon={Plus}
           rail={rail}
           onNavigate={onNavigate}
+          keys="Meta+Shift+O"
+          // shortcuts mean nothing on the phone sheet
           hint={
-            <>
-              <Kbd>⌘</Kbd>
-              <Kbd>⇧</Kbd>
-              <Kbd>O</Kbd>
-            </>
+            inSheet ? undefined : (
+              <>
+                <Kbd>⌘</Kbd>
+                <Kbd>⇧</Kbd>
+                <Kbd>O</Kbd>
+              </>
+            )
           }
         >
           New session
         </Item>
-        <SearchItem rail={rail} />
+        <SearchItem rail={rail} hint={!inSheet} />
       </div>
 
       <div className="space-y-0.5">
@@ -143,7 +147,12 @@ export function Sidebar({
         ))}
       </div>
 
-      {!rail && <Recents onNavigate={onNavigate} isGuest={user.isGuest} />}
+      {!rail && (
+        // it reads the address's query, which suspends where a page is prerendered
+        <Suspense fallback={null}>
+          <Recents onNavigate={onNavigate} isGuest={user.isGuest} />
+        </Suspense>
+      )}
 
       <div className="mt-auto space-y-3">
         {!user.isPro && !rail && (
@@ -155,7 +164,7 @@ export function Sidebar({
             onClick={onNavigate}
             className="block rounded-control px-2 py-1.5 text-[12px] leading-4 text-mute transition-colors hover:bg-surface-2 hover:text-fg"
           >
-            Guest session. Sign up to keep your work.
+            Guest session. Create an account to keep your work.
           </Link>
         )}
         <AccountMenu user={user} rail={rail}>
@@ -166,7 +175,10 @@ export function Sidebar({
               rail ? "h-9 justify-center" : "h-10 px-2"
             )}
           >
-            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-fg text-[11px] font-medium text-bg">
+            <span
+              aria-hidden
+              className="grid size-6 shrink-0 place-items-center rounded-full bg-fg text-[11px] font-medium text-bg"
+            >
               {user.name.slice(0, 1).toUpperCase()}
             </span>
             {!rail && (
@@ -200,6 +212,7 @@ function Item({
   rail,
   active = false,
   hint,
+  keys,
   onNavigate,
 }: {
   href: string;
@@ -208,6 +221,8 @@ function Item({
   rail: boolean;
   active?: boolean;
   hint?: React.ReactNode;
+  /** The shortcut, for assistive tech; the hint shows it and stays out of the name. */
+  keys?: string;
   onNavigate?: () => void;
 }) {
   return (
@@ -215,6 +230,7 @@ function Item({
       href={href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
+      aria-keyshortcuts={keys}
       title={rail ? String(children) : undefined}
       className={cn(
         "flex h-8 items-center gap-2.5 rounded-control font-medium transition-colors duration-150",
@@ -226,12 +242,16 @@ function Item({
     >
       <Icon className="size-4 shrink-0" />
       {!rail && <span className="truncate">{children}</span>}
-      {!rail && hint && <span className="ml-auto flex gap-0.5">{hint}</span>}
+      {!rail && hint && (
+        <span aria-hidden className="ml-auto flex gap-0.5">
+          {hint}
+        </span>
+      )}
     </Link>
   );
 }
 
-function SearchItem({ rail }: { rail: boolean }) {
+function SearchItem({ rail, hint }: { rail: boolean; hint: boolean }) {
   const open = usePalette();
   return (
     <button
@@ -246,8 +266,8 @@ function SearchItem({ rail }: { rail: boolean }) {
     >
       <Search className="size-4 shrink-0" />
       {!rail && <span>Search</span>}
-      {!rail && (
-        <span className="ml-auto flex gap-0.5">
+      {!rail && hint && (
+        <span aria-hidden className="ml-auto flex gap-0.5">
           <Kbd>⌘</Kbd>
           <Kbd>K</Kbd>
         </span>

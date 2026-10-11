@@ -130,7 +130,6 @@ export function AudioRow({
       <button
         type="button"
         onClick={toggle}
-        aria-pressed={playing}
         aria-label={playing ? `Pause ${title}` : `Play ${title}`}
         className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-[.96]"
       >

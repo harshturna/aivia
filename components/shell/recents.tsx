@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { LOCAL_CHANGED, listLocalSessions } from "@/lib/guest-local";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ export function Recents({
   isGuest?: boolean;
 }) {
   const pathname = usePathname();
+  const localOpen = useSearchParams().get("local");
   const [items, setItems] = useState<Recent[] | null>(null);
   const [local, setLocal] = useState<Recent[]>([]);
   useEffect(() => {
@@ -63,17 +64,26 @@ export function Recents({
         <>
           <div className="px-2 pb-1 text-[12px] text-mute">On this device</div>
           <ul className="mb-3 space-y-0.5">
-            {local.map((item) => (
-              <li key={item.id}>
-                <Link
-                  href={`/studio?local=${item.id}`}
-                  onClick={onNavigate}
-                  className="flex h-8 items-center rounded-control px-2 text-fg-2 transition-colors duration-150 hover:bg-surface-2 hover:text-fg"
-                >
-                  <span className="truncate">{item.title}</span>
-                </Link>
-              </li>
-            ))}
+            {local.map((item) => {
+              const active = pathname === "/studio" && localOpen === item.id;
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={`/studio?local=${item.id}`}
+                    onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex h-8 items-center rounded-control px-2 transition-colors duration-150",
+                      active
+                        ? "bg-surface-3 text-fg"
+                        : "text-fg-2 hover:bg-surface-2 hover:text-fg"
+                    )}
+                  >
+                    <span className="truncate">{item.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}

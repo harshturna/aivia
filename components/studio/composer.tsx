@@ -188,7 +188,7 @@ export function Composer({
         send();
       }}
       className={cn(
-        "glass relative w-full rounded-panel border border-border p-3 shadow-float transition-colors duration-150 focus-within:border-border-strong",
+        "glass relative w-full rounded-panel border border-border p-3 shadow-float transition-colors duration-150 focus-within:border-border-strong has-[textarea:focus-visible]:border-fg/50",
         className
       )}
     >

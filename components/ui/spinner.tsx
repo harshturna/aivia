@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** The ring that marks a running job: a thin arc, white, turning once a second. */
+/** The ring that marks a running job: a thin arc in ink, turning once a second. */
 export function Spinner({
   className,
   label = "Working",

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * A small pill (design §2.2): the composer's mode and parameter chips, example prompts,
- * source chips. `on` is the selected state: white on a lighter surface, never a colour.
+ * source chips. `on` is the selected state: ink on a lighter surface, never a colour.
  */
 export interface PillProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {

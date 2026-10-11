@@ -5,7 +5,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The button (design §2.2). The primary is white on black; there is no chromatic accent.
+ * The button (design §2.2). The primary is parchment ink on charcoal; there is no chromatic accent.
  * Sizes are heights on the 4 px grid; `icon` is square.
  */
 const buttonVariants = cva(

@@ -14,7 +14,11 @@ import "highlight.js/styles/github-dark.css";
  * to walk React children: rehype-highlight replaces the code contents with
  * nested <span> elements, so the children are no longer plain strings.
  */
-const CodeBlock = ({ children, ...props }: React.ComponentProps<"pre">) => {
+const CodeBlock = ({
+  children,
+  node: _node,
+  ...props
+}: React.ComponentProps<"pre"> & { node?: unknown }) => {
   const preRef = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
 
@@ -38,9 +42,9 @@ const CodeBlock = ({ children, ...props }: React.ComponentProps<"pre">) => {
         type="button"
         onClick={onCopy}
         aria-label={copied ? "Copied to clipboard" : "Copy code to clipboard"}
-        className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-md
-                   bg-fg/10 px-2 py-1 text-xs text-fg-2 opacity-0 transition
-                   hover:bg-fg/20 focus-visible:opacity-100 group-hover/code:opacity-100"
+        className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-chip
+                   bg-fg/10 px-2 py-1 text-xs text-fg-2 opacity-0 transition-[opacity,background-color]
+                   hover:bg-fg/20 focus-visible:opacity-100 group-hover/code:opacity-100 [@media(hover:none)]:opacity-100"
       >
         {copied ? (
           <>
@@ -54,7 +58,7 @@ const CodeBlock = ({ children, ...props }: React.ComponentProps<"pre">) => {
       </button>
       <pre
         ref={preRef}
-        className="overflow-x-auto rounded-lg bg-surface-3 p-4 text-sm"
+        className="overflow-x-auto rounded-control bg-surface-3 p-4 text-sm"
         {...props}
       >
         {children}
@@ -75,32 +79,37 @@ export const Markdown = ({ children }: { children: string }) => (
     rehypePlugins={[rehypeHighlight]}
     components={{
       pre: CodeBlock,
-      code: ({ className, ...props }) => {
+      // `node` is the syntax tree react-markdown passes; it is not a DOM attribute
+      code: ({ className, node: _node, ...props }) => {
         const isFenced = Boolean(className?.includes("language-"));
         return isFenced ? (
           <code className={className} {...props} />
         ) : (
           <code
-            className="rounded bg-foreground/10 px-1 py-0.5 text-[0.9em]"
+            className="rounded-chip bg-foreground/10 px-1 py-0.5 text-[0.9em]"
             {...props}
           />
         );
       },
-      h1: (props) => (
+      h1: ({ node: _node, ...props }) => (
         <h1 className="mb-2 mt-4 text-xl font-semibold" {...props} />
       ),
-      h2: (props) => (
+      h2: ({ node: _node, ...props }) => (
         <h2 className="mb-2 mt-4 text-lg font-semibold" {...props} />
       ),
-      h3: (props) => <h3 className="mb-1 mt-3 font-semibold" {...props} />,
-      ul: (props) => (
+      h3: ({ node: _node, ...props }) => (
+        <h3 className="mb-1 mt-3 font-semibold" {...props} />
+      ),
+      ul: ({ node: _node, ...props }) => (
         <ul className="my-2 list-disc pl-6 space-y-1" {...props} />
       ),
-      ol: (props) => (
+      ol: ({ node: _node, ...props }) => (
         <ol className="my-2 list-decimal pl-6 space-y-1" {...props} />
       ),
-      p: (props) => <p className="my-2 leading-7" {...props} />,
-      a: (props) => (
+      p: ({ node: _node, ...props }) => (
+        <p className="my-2 leading-7" {...props} />
+      ),
+      a: ({ node: _node, ...props }) => (
         <a
           className="text-primary underline underline-offset-2"
           target="_blank"
@@ -108,7 +117,7 @@ export const Markdown = ({ children }: { children: string }) => (
           {...props}
         />
       ),
-      blockquote: (props) => (
+      blockquote: ({ node: _node, ...props }) => (
         <blockquote
           className="my-2 border-l-2 border-border pl-4 italic"
           {...props}

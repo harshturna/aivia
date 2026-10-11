@@ -88,8 +88,7 @@ export function Run({
               <Check className="size-3.5 text-good" />
             )}
             <span>
-              {steps.length} steps
-              <span className="text-mute"> · </span>
+              {steps.length} steps,{" "}
               {active
                 ? `${done} done`
                 : failed

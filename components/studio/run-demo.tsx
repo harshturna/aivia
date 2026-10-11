@@ -129,9 +129,7 @@ export function RunDemo({ className }: { className?: string }) {
               <Check className="size-3.5 text-good" />
             )}
             <span>
-              Steps {STEPS.length}
-              <span className="text-mute"> · </span>
-              {done ? "done" : `${doneSteps} done`}
+              {STEPS.length} steps, {done ? "done" : `${doneSteps} done`}
             </span>
             {!done && (
               <span className="tabular text-mute">

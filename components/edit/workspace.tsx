@@ -176,16 +176,13 @@ export function EditWorkspace({
       </ScreenHeader>
 
       <div className="px-3 pb-16 pt-4 lg:px-6">
-        <div
-          role="tablist"
-          aria-label="Tool"
-          className="flex flex-wrap gap-1.5"
-        >
+        {/* a set of toggles, not tabs: each says whether it is the chosen tool */}
+        <fieldset className="flex flex-wrap gap-1.5">
+          <legend className="sr-only">Tool</legend>
           {EDIT_TOOLS.map((t) => (
             <Pill
               key={t.id}
-              role="tab"
-              aria-selected={t.id === tool}
+              aria-pressed={t.id === tool}
               on={t.id === tool}
               onClick={() => setTool(t.id)}
               className="h-8 px-3 text-[13px]"
@@ -193,7 +190,7 @@ export function EditWorkspace({
               {t.label}
             </Pill>
           ))}
-        </div>
+        </fieldset>
         <p className="mt-2 text-[13px] text-mute">{meta.hint}.</p>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -414,10 +411,10 @@ function Result({
             className="pointer-events-none absolute inset-y-0 w-px bg-fg/80"
             style={{ left: `${split}%` }}
           />
-          <span className="pointer-events-none absolute left-2 top-2 rounded-[5px] bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
+          <span className="pointer-events-none absolute left-2 top-2 rounded-chip bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
             Before
           </span>
-          <span className="pointer-events-none absolute right-2 top-2 rounded-[5px] bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
+          <span className="pointer-events-none absolute right-2 top-2 rounded-chip bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
             After
           </span>
           <input

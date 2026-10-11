@@ -165,7 +165,7 @@ export function LibraryClient({
                 aria-current={tab.id === kind ? "page" : undefined}
                 replace
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1 transition-colors duration-150",
+                  "inline-flex items-center gap-1.5 rounded-chip px-3 py-1 transition-colors duration-150",
                   tab.id === kind
                     ? "bg-surface-3 text-fg"
                     : "text-fg-2 hover:text-fg"
@@ -272,7 +272,10 @@ export function LibraryClient({
                           <Link
                             href={`/library/a/${a.id}`}
                             scroll={false}
-                            aria-label="Open details"
+                            aria-label={`Open details for ${
+                              titleFrom(a.prompt) ||
+                              (a.kind === "music" ? "the track" : "the sound")
+                            }`}
                             className="grid size-9 shrink-0 place-items-center rounded-control text-mute transition-colors hover:bg-surface-2 hover:text-fg"
                           >
                             <Maximize2 className="size-4" />
@@ -329,7 +332,8 @@ function Tile({
       <Link
         href={`/library/a/${asset.id}`}
         scroll={false}
-        className="block size-full"
+        // inset: the figure clips anything drawn outside it
+        className="block size-full focus-visible:outline-offset-[-3px]"
         aria-label={asset.prompt}
       >
         {asset.kind === "video" ? (
@@ -354,7 +358,7 @@ function Tile({
         )}
       </Link>
       {asset.kind === "video" && asset.durationSec && (
-        <span className="tabular pointer-events-none absolute bottom-2 left-2 rounded-[5px] bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
+        <span className="tabular pointer-events-none absolute bottom-2 left-2 rounded-chip bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
           0:{String(Math.round(asset.durationSec)).padStart(2, "0")}
         </span>
       )}
@@ -368,7 +372,9 @@ function Tile({
           }
           className={cn(
             "absolute right-2 top-2 grid size-8 place-items-center rounded-control bg-bg/60 text-fg backdrop-blur transition-opacity duration-150 focus-visible:opacity-100",
-            asset.favorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            asset.favorite
+              ? "opacity-100"
+              : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
           )}
         >
           <Heart className={cn("size-4", asset.favorite && "fill-current")} />
@@ -395,7 +401,7 @@ function SearchField({
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search what you have made…"
         autoComplete="off"
-        className="h-8 w-full rounded-control border border-border bg-surface pl-8 pr-2 text-[13px] text-fg outline-none transition-colors placeholder:text-mute hover:border-border-strong focus:border-border-strong"
+        className="h-8 w-full rounded-control border border-border bg-surface pl-8 pr-2 text-[13px] text-fg outline-none transition-colors placeholder:text-mute hover:border-border-strong focus-visible:border-fg/50"
       />
     </label>
   );

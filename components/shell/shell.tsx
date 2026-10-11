@@ -35,6 +35,12 @@ export function Shell({
   return (
     <ShellMenuContext.Provider value={() => setOpen(true)}>
       <CommandPalette>
+        <a
+          href="#main"
+          className="sr-only rounded-control bg-primary px-3 py-2 text-[13px] font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50"
+        >
+          Skip to content
+        </a>
         <div className="flex min-h-dvh bg-bg text-fg">
           <div className="hidden h-dvh shrink-0 lg:sticky lg:top-0 lg:block">
             <Sidebar user={user} usage={usage} collapsed={collapsed} />
@@ -65,7 +71,11 @@ export function Shell({
                 />
               </SheetContent>
             </Sheet>
-            <main id="main" className="min-h-0 flex-1">
+            <main
+              id="main"
+              tabIndex={-1}
+              className="min-h-0 flex-1 outline-none"
+            >
               {children}
             </main>
           </div>

@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { OpenerCapture, useReturnFocus } from "./return-focus";
 
 const Sheet = SheetPrimitive.Root;
 
@@ -56,22 +57,34 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content
-      ref={ref}
-      className={cn(sheetVariants({ side }), className)}
-      {...props}
-    >
-      {children}
-      <SheetPrimitive.Close className="absolute right-3 top-3 grid size-8 place-items-center rounded-control text-mute transition-colors hover:bg-surface-3 hover:text-fg disabled:pointer-events-none">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
-    </SheetPrimitive.Content>
-  </SheetPortal>
-));
+>(
+  (
+    { side = "right", className, children, onCloseAutoFocus, ...props },
+    ref
+  ) => {
+    const { opener, onCloseAutoFocus: returnFocus } = useReturnFocus({
+      onCloseAutoFocus,
+    });
+    return (
+      <SheetPortal>
+        <SheetOverlay />
+        <SheetPrimitive.Content
+          ref={ref}
+          onCloseAutoFocus={returnFocus}
+          className={cn(sheetVariants({ side }), className)}
+          {...props}
+        >
+          <OpenerCapture into={opener} />
+          {children}
+          <SheetPrimitive.Close className="absolute right-3 top-3 grid size-8 place-items-center rounded-control text-mute transition-colors hover:bg-surface-3 hover:text-fg disabled:pointer-events-none">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+        </SheetPrimitive.Content>
+      </SheetPortal>
+    );
+  }
+);
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({

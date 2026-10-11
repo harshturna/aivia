@@ -103,7 +103,7 @@ line height 0.98, at most two lines, no accented word. Section headings 36 to 56
 −0.02em. Body 15 px / 24 px at 400; UI 13 px / 20 px, names and buttons at 500; captions 12 px
 `--mute`; numbers tabular. Prose under 68ch. Sentence case; no uppercase labels.
 
-**Shape and elevation.** Radii: 8 px controls, 12 px media and cards, 16 px the composer and
+**Shape and elevation.** Radii: 5 px chips (badges and keys on media, inline code), 8 px controls, 12 px media and cards, 16 px the composer and
 panels, 20 px the large media window on the landing, 999 px for small pills. Media is
 borderless. Panels are a surface step, not a border, except where they float (the composer,
 menus, the lightbox panel) which also take `0 24px 64px -24px rgb(0 0 0 / .8)`. Spacing on a
@@ -111,8 +111,8 @@ menus, the lightbox panel) which also take `0 24px 64px -24px rgb(0 0 0 / .8)`. 
 
 **Icons.** Lucide at 16 px, stroke 1.75, `absoluteStrokeWidth`. Never on a tinted tile.
 
-**Wordmark.** "aivia" in Host Grotesk 600, 20 px, −0.02em, `--fg`. The favicon is a white
-rounded square with a black "a". No brain, no sparkle.
+**Wordmark.** "aivia" in Host Grotesk 600, 20 px, −0.02em, `--fg`. The favicon is a charcoal
+(`--bg`) rounded square with a parchment (`--fg`) "a". No brain, no sparkle.
 
 ### 2.3 Motion
 
