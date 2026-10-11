@@ -18,7 +18,7 @@ Accepted decisions are immutable except for their status and a pointer to a supe
 
 
 ## D-001 — Visual direction for the revamp: studio white, a serif voice, ultramarine, the job sheet
-- **Status:** Accepted
+- **Status:** Superseded by D-003
 - **Date:** 2026-10-10
 - **Context:** The owner asked for a complete revamp that reads as a real company, with freedom
   to choose the direction. Three research passes (`docs/design/research-landing.md`,
@@ -86,3 +86,33 @@ Accepted decisions are immutable except for their status and a pointer to a supe
   best run first. Harder: two new tables and a cleanup job for guest rows; the agent route and
   a new direct route must write assets reliably; eleven redirects to keep; a hard dependency
   on fal's asset URLs until they are mirrored (a follow-up, logged in TICKET-005).
+
+## D-003 — The direction is dark and media-first; D-001 is withdrawn
+- **Status:** Accepted
+- **Date:** 2026-10-10
+- **Context:** The owner saw the D-001 mockup (studio white, a serif voice, the "job sheet")
+  and rejected it outright: the layout and the direction. Read back, the mockup was a
+  document: a table of small grey text as the hero, media the size of thumbnails, a newspaper
+  serif, and a light analytics-style chrome carried over from the owner's other product. For a
+  tool whose entire output is images, video and sound, the media has to be the page. The owner
+  also asked for the work to happen in the real app on a branch, not in static mockups.
+- **Decision:** Dark and media-first. A near-black canvas (`#0A0A0B`) with raised surfaces a
+  shade lighter and borders as white at low alpha; type in one grotesk, Host Grotesk, set large
+  and tight for headlines and at 13 to 15 px for the UI; the primary button is white on black;
+  no chromatic accent (the generated media is the colour; selected and live states are white);
+  semantic colours only as a status. Media is rendered large, borderless, at 12 px radius, with
+  a blur-to-sharp reveal. The landing opens on a full-viewport generated clip with a two-line
+  headline and the real composer as the hero, then a wall of real outputs, then the Studio
+  shown running. The app is a dark shell (sidebar and canvas), and a run renders as the prompt
+  in a line, the plan as a compact collapsible strip, and the outputs at full column width.
+  All design work happens in the app on the `revamp` branch and is judged from screenshots
+  of the running site. D-001 is withdrawn; D-002 (the information architecture) stands.
+- **Rejected alternatives:** Keeping light and making it media-first (Pika's cream with a
+  large video window): possible, but the owner's reaction was to the whole direction and a
+  dark stage is where images and video read best. A serif in any role: rejected with D-001.
+  A chromatic accent: rejected so nothing competes with the media; it can be added later as
+  one token if a state needs it.
+- **Consequences:** Easier: the generated media does the work, and the app's own models make
+  it; the chrome is simple; the hero is the product. Harder: the hero clips must be genuinely
+  good and kept small; a dark UI needs careful contrast and no "zinc plus violet" tells; every
+  surface and border must be tuned by eye in the real app, which is why the work moves there.

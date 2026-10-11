@@ -1,9 +1,9 @@
 # The revamp: direction, product, every screen, sequence
 
-Version 1, 2026-10-10. Owner: harsh. Status: the design the implementation tickets are written
-from (TICKET-002). Decisions it rests on: D-001 (direction), D-002 (information architecture).
-The direction mockup (landing hero, the Studio with a run, the empty state, the library):
-https://claude.ai/artifact/4StG5BZSbsavXntnWvNGeg
+Version 2, 2026-10-10. Owner: harsh. Status: the design the implementation tickets are written
+from (TICKET-002). Decisions it rests on: D-003 (direction; D-001 withdrawn after the owner
+rejected its mockup), D-002 (information architecture). Design is judged in the running app on
+the `revamp` branch, from screenshots, not from mockups.
 
 Aivia is rebuilt from the tokens up. This document is what each ticket cites. The research it
 rests on is in `research-landing.md` and `research-app.md` in this directory; the two skills it
@@ -30,117 +30,79 @@ floor).
 
 ### 2.1 The subject and the one bold thing
 
-Aivia's subject is a production: one line of brief becomes a plan, and the plan becomes
-deliverables in several media at once. No other tool in the research does the mix; each makes
-one kind of thing. So the most characteristic object in Aivia's world is not a prompt box and
-not a gallery: it is **a job sheet filling itself in**, the brief at the top, the plan beneath
-it as a real numbered sequence, and the deliverables landing one by one in their own media.
+Aivia makes images, video, music and sound from a line of text. The most characteristic thing
+in its world is the output: a cinematic clip, a still with real light, a track you can play.
+So the page is a dark stage and the media is the show. The one bold element is the hero: a
+full-viewport generated clip with a two-line headline and the real composer on top of it, so
+the first thing a visitor does is read four words and type. Everything else is quiet chrome
+that gets out of the way of the media.
 
-That is where the boldness is spent. The landing hero is a replayed production: a brief, a
-plan appearing line by line, a poster, a six-second clip, a thirty-second track and three
-taglines arriving in order, in the app's own components. The Studio renders every run the same
-way: a run is a brief, a plan and its deliverables, not a stream of chat bubbles. Everything
-around it is quiet.
+### 2.2 Tokens
 
-### 2.2 The token plan, checked against the brief
+Dark only (D-003). Surfaces step up in lightness; borders are white at low alpha so they read
+on any media behind them.
 
-The plan was written, then compared with what the same brief would produce by default (the
-warm-paper, serif, clay look the research found everywhere). Three things changed as a result:
-the canvas is a cool studio white rather than cream; the accent is ultramarine rather than any
-warm hue; small labels and captions are set in the sans, never in a mono, and never tracked
-uppercase. The serif stays, because a studio needs a voice, but it is roman, not italic, and
-used in few places.
-
-**Colour** (light only, D-001; measured contrast against the surface it sits on)
-
-| Token | Hex | Use | Contrast |
-|---|---|---|---|
-| `--canvas` | `#F6F6F3` | the page, the sidebar | |
-| `--surface` | `#FFFFFF` | the sheet, panels, the composer, cards | |
-| `--soft` | `#ECECE8` | sunken fills, hover, placeholders | |
-| `--soft-2` | `#E2E2DD` | pressed, selected rows, skeleton base | |
-| `--ink` | `#1A1917` | text, the primary button, icons | 16.2 on canvas, 17.6 on surface |
-| `--ink-2` | `#55544F` | secondary text | 7.0 / 7.6 |
-| `--mute` | `#6B6963` | labels, captions, timestamps | 5.1 / 5.5 / 4.6 on soft |
-| `--faint` | `#A9A7A0` | placeholder text, disabled, decorative only | 2.2 (never for reading) |
-| `--rule` | `#E3E2DD` | hairlines | |
-| `--rule-strong` | `#1A1917` | the rule under a sheet's header, a focused field | |
-| `--accent` | `#2E3BDB` | the one accent: links, focus, selected, the live dot | 7.0 / 7.6 |
-| `--accent-ink` | `#2430B8` | hover and pressed accent | 8.9 / 9.6 |
-| `--accent-soft` | `#E9EBFB` | selected tint, marks | ink on it 14.8 |
-| `--good` / `--good-soft` | `#1F6F4A` / `#E1F1E8` | done, saved | 5.7 |
-| `--warn` / `--warn-soft` | `#8A5A00` / `#F7ECD2` | near the limit | 5.5 |
-| `--poor` / `--poor-soft` | `#B42318` / `#FBE5E2` | failed, destructive | 6.1 |
-| `--stage` | `#141311` | the lightbox, video surfaces, one band on the landing | |
-| `--bone` / `--bone-mute` | `#F2F1EC` / `#A3A199` | text on stage | 16.4 / 7.2 |
-| `--accent-stage` | `#8A93F2` | the accent on stage | 6.7 |
-| `--scrim` | `rgb(26 25 23 / .24)` | behind dialogs | |
-
-The primary button is ink on surface, white text. The accent is not the button colour; it
-marks what is selected, focused, live or a link, which is why one hue is enough. Semantic
-colours appear only as a status (a failed deliverable, the limit nearly reached) and never as
-decoration.
-
-**Type**
-
-| Role | Face | Setting |
+| Token | Value | Use |
 |---|---|---|
-| Voice | Newsreader, variable, `opsz` 72, roman only | the landing headline `clamp(44px, 6vw, 76px)` weight 400, tracking −0.015em, line height 1.02; section leads 32 to 40 px weight 400; the Studio's empty-state line 30 px; a session's title in the header 20 px weight 500 |
-| Everything else | Inter, variable, `opsz` axis on | body 15 px / 24 px; UI labels 13 px / 20 px, weight 500 for names and buttons; small 12 px for captions and timestamps; `font-variant-numeric: tabular-nums` on durations, counts and costs |
-| Code | JetBrains Mono, variable | code blocks only, 13 px / 20 px |
+| `--bg` | `#0A0A0B` | the canvas |
+| `--surface` | `#141416` | the sidebar, panels, cards, inputs at rest |
+| `--surface-2` | `#1C1C1F` | hover, popovers, the composer at rest |
+| `--surface-3` | `#242428` | pressed, selected rows |
+| `--border` | `rgb(255 255 255 / .08)` | hairlines |
+| `--border-strong` | `rgb(255 255 255 / .16)` | focused fields, the composer's edge |
+| `--fg` | `#F4F4F5` | text, icons |
+| `--fg-2` | `#A3A3A8` | secondary text |
+| `--mute` | `#6E6E76` | labels, captions, timestamps (4.9:1 on bg) |
+| `--faint` | `#4A4A52` | placeholders, disabled, decorative only |
+| `--white` | `#FFFFFF` | the primary button, selected and live states |
+| `--good` / `--warn` / `--poor` | `#5CC489` / `#E0B15A` / `#F2756B` | status only |
+| `--scrim` | `rgb(0 0 0 / .6)` | behind dialogs and the lightbox |
+| `--glass` | `rgb(20 20 22 / .72)` + `backdrop-filter: blur(20px)` | the floating composer, the nav after scroll |
 
-Both loaded with `next/font/google` (self-hosted at build). Line length under 72 characters for
-prose (`max-w-[68ch]`). Headings sentence case. No uppercase labels. The serif never carries
-body text, buttons or UI labels.
+No chromatic accent: the generated media is the colour; what is selected, focused or live is
+white. The primary button is white with black text (hover `#E6E6E6`); the secondary is
+`--surface-2` with a border. Links are `--fg` underlined. Semantic colours appear only as a
+status dot or word.
 
-**Shape and elevation**
+**Type.** One family, Host Grotesk (variable 300 to 800, `next/font/google`), with JetBrains
+Mono for code only. Hero headline `clamp(44px, 6.5vw, 92px)` weight 500, tracking −0.03em,
+line height 0.98, at most two lines, no accented word. Section headings 36 to 56 px weight 500,
+−0.02em. Body 15 px / 24 px at 400; UI 13 px / 20 px, names and buttons at 500; captions 12 px
+`--mute`; numbers tabular. Prose under 68ch. Sentence case; no uppercase labels.
 
-- Radii encode hierarchy: 6 px controls (buttons, inputs, chips), 8 px media and small
-  panels, 10 px the sheet and cards, 14 px the composer, 999 px only the mode and parameter
-  pills, which are small.
-- No drop shadow on anything that sits in the page. Two shadows exist: the composer and
-  anything that floats (menus, the lightbox panel): `0 1px 2px rgb(26 25 23 / .06),
-  0 12px 32px -16px rgb(26 25 23 / .25)`; and the lifted element in a landing panel.
-- Hairlines (`--rule`) only where they separate rows of a sheet or sections of a page.
-  Panels are distinguished by surface against canvas, not by borders.
-- Spacing on a 4 px grid; section rhythm on the landing is 96 px, in the app 24 px.
-- Focus: `outline: 2px solid var(--accent); outline-offset: 2px` everywhere, once.
+**Shape and elevation.** Radii: 8 px controls, 12 px media and cards, 16 px the composer and
+panels, 20 px the large media window on the landing, 999 px for small pills. Media is
+borderless. Panels are a surface step, not a border, except where they float (the composer,
+menus, the lightbox panel) which also take `0 24px 64px -24px rgb(0 0 0 / .8)`. Spacing on a
+4 px grid; landing sections 120 px apart; the app on 24 px.
 
-**Icons:** Lucide 1.x at 16 px in the UI, `strokeWidth` 1.75 with `absoluteStrokeWidth`.
-Never an icon tile with a tinted background.
+**Icons.** Lucide at 16 px, stroke 1.75, `absoluteStrokeWidth`. Never on a tinted tile.
 
-**Wordmark:** "Aivia" set in Newsreader 500 at 20 px, ink. The favicon is a white "a" in
-Newsreader on an ultramarine rounded square. No brain, no sparkle.
+**Wordmark.** "aivia" in Host Grotesk 600, 20 px, −0.02em, `--fg`. The favicon is a white
+rounded square with a black "a". No brain, no sparkle.
 
 ### 2.3 Motion
 
-Easings: `--ease-out: cubic-bezier(.23, 1, .32, 1)` for anything entering or leaving;
-`--ease-move: cubic-bezier(.77, 0, .175, 1)` for movement on screen; `--ease-sheet:
-cubic-bezier(.32, .72, 0, 1)` for sheets and the sidebar. Never ease-in. Exits about 20%
-faster than entrances. Never `transition: all`.
+Easings: `--ease-out: cubic-bezier(.23, 1, .32, 1)` for entering and leaving;
+`--ease-move: cubic-bezier(.77, 0, .175, 1)` for movement; `--ease-sheet:
+cubic-bezier(.32, .72, 0, 1)` for sheets. Never ease-in; never `transition: all`.
 
 | What | How |
 |---|---|
 | hover, colour | 150 ms |
 | press | `scale(.98)`, 100 ms |
-| tooltip | 125 ms fade, 500 ms first delay then none |
-| menu, popover | 150 ms, scale .96 → 1 from its origin, opacity |
-| dialog | 200 ms; sheet 280 ms; sidebar collapse 200 ms |
-| a plan line, a deliverable card arriving | opacity + 4 px lift, 200 ms, staggered 60 ms |
-| media revealing | `filter: blur(12px)` → 0 and opacity, 400 ms, on load |
-| a running job | a 2 s shimmer sweep across the placeholder, never a pulse |
-| the composer moving from the middle to the bottom after the first run | a layout animation, 320 ms, `--ease-sheet` |
-| page-load, landing only | the hero's replay: the headline settles (opacity and 6 px, 500 ms), then the sheet fills itself in over about eight seconds, once |
+| menu, popover | 150 ms, scale .96 → 1 from its origin |
+| dialog 200 ms, sheet 280 ms, sidebar 200 ms | |
+| a new output card | opacity + 6 px, 240 ms |
+| media revealing | `blur(14px)` → 0 with opacity, 500 ms, on load |
+| a running job | a 2 s shimmer across the placeholder at the final aspect ratio |
+| the hero on load | the clip fades in over 900 ms, the headline settles 500 ms after (opacity and 8 px), the composer 150 ms later; once |
+| hero clips | crossfade every 9 s between three clips, 1.2 s, paused under reduced motion and when the tab is hidden |
+| media tiles on the wall | hover plays the clip (`preload="none"`, poster), 1.02 scale over 600 ms |
 
-Nothing animates on route changes, on the command palette, on streamed tokens, on sidebar
-active state or on a number. Loops over five seconds carry a pause control. Under
-`prefers-reduced-motion: reduce` transforms and layout animations stop, opacity still runs,
-the replay shows its finished state.
-
-Library: Motion 14 (`motion/react`) through `LazyMotion` with `domMax`, used only for layout
-work (the composer's move, thumbnail to lightbox, list insertions with `AnimatePresence
-mode="popLayout"`). Everything else is CSS. Page transitions, if any, use React's
-`<ViewTransition>` which Next 16.4 supports with no flag.
+Nothing animates on route changes, the palette, streamed tokens, sidebar state or numbers.
+Under reduced motion: no transforms, no autoplay, opacity still runs. Library: Motion 14
+through `LazyMotion` + `domMax` for layout work only; CSS for the rest.
 
 ## 3. The product: what exists and where it lives
 
@@ -178,47 +140,41 @@ Decided in D-002.
 One layout for every signed-in route, `app/(app)/layout.tsx`, replacing the three route groups.
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│ canvas                                                                │
-│ ┌──────────┐ ┌──────────────────────────────────────────────────────┐ │
-│ │ Aivia    │ │ surface (the sheet), radius 10, inset 8 px top/right │ │
-│ │          │ │  Night market teaser                        Running  │ │
-│ │ New      │ │  ────────────────────────────────────────────────── │ │
-│ │ Search ⌘K│ │                                                      │ │
-│ │          │ │   Brief                                              │ │
-│ │ Studio   │ │   ...                                                │ │
-│ │ Library  │ │   Plan                                               │ │
-│ │ Edit     │ │   1 ...  2 ...  3 ...                                │ │
-│ │ Characters│ │  Deliverables                                       │ │
-│ │          │ │   [poster]  [clip]  [track]                          │ │
-│ │ Recent   │ │                                                      │ │
-│ │  ◌ Night…│ │                                                      │ │
-│ │    Poster│ │  ┌────────────────────────────────────────────────┐  │ │
-│ │          │ │  │ composer                                       │  │ │
-│ │ ▮▮▮▯ 34  │ │  └────────────────────────────────────────────────┘  │ │
-│ │ harsh ▾  │ └──────────────────────────────────────────────────────┘ │
-│ └──────────┘                                                          │
-└──────────────────────────────────────────────────────────────────────┘
+┌──────────┬────────────────────────────────────────────────────────┐
+│ aivia    │  Night market teaser                         Running   │
+│          │                                                        │
+│ + New    │   a poster, a ten-second teaser and a soundtrack …     │
+│ ⌕ Search │   Steps 4 · 2 done ▾                                   │
+│          │   ┌──────────────┐ ┌──────────────────────────────┐    │
+│ Studio   │   │              │ │                              │    │
+│ Library  │   │   poster     │ │   clip (16:9, shimmer)       │    │
+│ Edit     │   │   3:4        │ │                              │    │
+│ Characters│  └──────────────┘ └──────────────────────────────┘    │
+│          │   ▶ night market lo-fi  ▂▃▅▆▅▃▂▃▅▆▅▃▂  0:30            │
+│ Recent   │   Three taglines: …                                    │
+│  ◌ Night…│                                                        │
+│    Poster│                                                        │
+│          │   ╭──────────────────────────────────────────────╮     │
+│ ▮▮▮▯ 34  │   │ composer (glass, floating)                    │     │
+│ harsh ▾  │   ╰──────────────────────────────────────────────╯     │
+└──────────┴────────────────────────────────────────────────────────┘
 ```
 
-- **Sidebar:** 240 px on canvas, no border; collapses to a 48 px icon rail on ⌘B and on a
-  button at its foot; the state is a cookie. Items are 32 px tall, 13 px weight 500, icon 16
-  px, inactive at `--ink-2`, active `--ink` on `--soft` with a 6 px radius. No separators;
-  groups are separated by 16 px. Order: the wordmark; New session (⌘N); Search (⌘K);
-  Studio, Library, Edit, Characters; "Recent" with up to eight sessions (a 6 px ring that
-  spins while a run is active, a filled dot when a result landed unseen), then "All
-  sessions" to the library; the foot: the credits meter (a 4 px bar on `--soft-2`, ink fill,
-  "34 of 100 generations", the Upgrade link only below 20% or at the limit, nothing for Pro)
-  and the account button (avatar initial, name, plan) that opens a menu: Settings, Plan and
-  credits, Keyboard shortcuts, Sign out. A guest sees "Guest · sign up to keep your work" in
-  place of the plan.
-- **The sheet:** `--surface` with a 10 px radius, 8 px from the canvas edge on the top, right
-  and bottom; it scrolls, the sidebar does not. Its header is 52 px: the session title (or the
-  screen's name) at 15 px weight 500 on the left, the screen's actions on the right (on a
-  session: status, rename, delete). A `--rule` under it.
-- **Below 1024 px:** the sidebar becomes a sheet from the left (280 px) behind a menu button
-  in the header; the inset goes to 0 and the sheet fills the viewport. Below 640 px the
-  composer's toolbar wraps and the deliverable grid is one column.
+- **Sidebar:** 232 px, `--surface`, a `--border` on its right; collapses to a 52 px icon rail
+  on ⌘B and on a control at its foot, state in a cookie. Items 32 px, 13 px weight 500, icons
+  16 px; inactive `--fg-2`, hover `--surface-2`, active `--fg` on `--surface-3`, 8 px radius.
+  No separators; groups 16 px apart. Order: the wordmark; New session (⌘N); Search (⌘K);
+  Studio, Library, Edit, Characters; Recent with up to eight sessions (a spinning ring while a
+  run is active, a white dot for an unseen result), then "All sessions"; the foot: the credits
+  meter (a 4 px bar on `--surface-3` with a white fill, "34 of 100 generations", the Upgrade
+  link only below 20% or at the limit, nothing for Pro) and the account button (initial,
+  name, plan) opening a menu: Settings, Plan and credits, Keyboard shortcuts, Sign out. A guest
+  sees "Guest · sign up to keep your work" in place of the plan.
+- **The main area** is the canvas itself; there is no inset sheet. Its header is 52 px: the
+  session title or screen name at 15 px 500 on the left, the screen's actions on the right, a
+  `--border` beneath only when the content has scrolled under it.
+- **Below 1024 px** the sidebar is a sheet from the left (280 px) behind a menu button in the
+  header. Below 640 px the composer's toolbar wraps and output grids go to one column.
 - **Keyboard:** ⌘K palette, ⌘N new session, ⌘B sidebar, `/` focuses the composer, Esc stops a
   run or closes the lightbox, `?` shows the shortcuts.
 
@@ -226,9 +182,9 @@ One layout for every signed-in route, `app/(app)/layout.tsx`, replacing the thre
 
 ### 5.1 The empty state
 
-A new session shows, vertically centred in the sheet: one line in the serif, 30 px, "What
-are we making?"; under it the composer; under that four chips that fill the composer rather
-than send it, each showing a different kind of job: "A poster, a ten-second teaser and a
+A new session shows, vertically centred: one line at 32 px weight 500, "What are we
+making?"; under it the composer; under that four chips that fill the composer rather than
+send it, each showing a different kind of job: "A poster, a ten-second teaser and a
 soundtrack for a night market", "Album art for a synthwave record, and name it", "A logo for a
 coffee roastery with three taglines", "The sound of rain on a tin roof, twenty seconds". A
 guest's first session opens on a finished example run instead, so the first thing seen is the
@@ -236,8 +192,9 @@ product at its best; the composer sits under it.
 
 ### 5.2 The composer
 
-Width of the run column (max 768 px), `--surface`, 14 px radius, a 1 px `--rule` border that
-turns `--rule-strong` on focus, the floating shadow. Top to bottom:
+Width of the column (max 760 px), `--glass` with the blur, 16 px radius, a 1 px `--border` that
+turns `--border-strong` on focus, the floating shadow; it floats 16 px above the bottom edge
+and the transcript scrolls beneath it. Top to bottom:
 
 1. Attachment chips, 56 px, 8 px radius, a remove control on hover, a ring while uploading.
    Images and PDFs; `.txt`, `.md`, `.csv` as documents.
@@ -249,62 +206,48 @@ turns `--rule-strong` on focus, the floating shadow. Top to bottom:
    parameter pills: Image: aspect (1:1, 3:4, 4:3, 16:9, 9:16) and count (1 to 4); Video:
    length (6 to 20 s in the model's steps) and aspect; Music: length (15, 30, 60 s); Sound:
    length (auto, 2, 5, 10 s). Right: the cost of the send in 12 px tabular `--mute` ("1
-   generation", "4 generations" for four images) and a 32 px round send button, ink with a
-   white arrow, that becomes a square stop while a run is active; disabled until there is
-   text.
+   generation", "4 generations" for four images) and a 32 px round send button, white with a
+   black arrow, that becomes a square stop while a run is active; dimmed until there is text.
 4. Keys: Enter sends, Shift+Enter breaks a line, `/` focuses from anywhere, Esc stops, ↑ in an
    empty composer recalls the last brief, `/image` and the others typed at the start switch
    the mode. Paste or drop attaches; a drop anywhere on the sheet shows a dashed overlay.
 
 ### 5.3 A run
 
-Each user turn and the assistant turn that answers it render as one run, a sheet of its own
-inside the column, separated from the next by 32 px and a hairline:
+Each user turn and the assistant turn that answers it render as one run, 40 px below the
+last, in the 760 px column:
 
 ```
-Brief                                              12:04
-A poster, a ten-second teaser and a soundtrack for a night market
-
-Plan
-1  Search for night-market photography references           done
-2  Generate the poster, 3:4                                  done · 4 s
-3  Generate a 10 s clip of lanterns in rain                  running 0:41
-4  Compose 30 s of lo-fi with field recording                queued
-
-Deliverables
-┌────────────┐ ┌─────────────────────────┐
-│ poster     │ │ clip (placeholder 16:9) │
-│ 3:4        │ │ shimmer · "lanterns…"   │
-└────────────┘ └─────────────────────────┘
-▶  Night market lo-fi            ▂▃▅▆▅▃▂▃▅  0:30   ↓
-
-Notes
-Three taglines: …  (the assistant's prose, markdown)
+a poster, a ten-second teaser and a soundtrack for a night market           12:04
+Steps 4 · 2 done · 0:41 ▾
+┌───────────────────┐ ┌────────────────────────────────────┐
+│ poster 3:4        │ │ clip 16:9, shimmer, "lanterns…"     │
+└───────────────────┘ └────────────────────────────────────┘
+▶  night market lo-fi            ▂▃▅▆▅▃▂▃▅  0:30   ↓
+Three taglines: …
 ```
 
-- **Brief:** the user's text at 15 px, the attachments as chips above it, the time at 12 px
-  `--mute` on the right. No bubble, no avatar.
-- **Plan:** the assistant's reasoning summary (sent as `reasoning` parts) is rendered as the
-  numbered sequence it is, one line per step at 13 px, with the step's status on the right:
-  queued, running with elapsed time, done with duration, failed. Numbering is used because a
-  plan is a sequence. If the model sends no steps, the section is omitted; tool calls still
-  appear as lines ("Generating the poster"). Text that is not a step shows under Notes.
-- **Deliverables:** every tool result as a card at its final aspect ratio, so nothing jumps:
-  images in a grid of up to two columns, 8 px gap, 8 px radius, with the prompt the model
-  wrote as a 12 px caption under the card; while running, the placeholder is `--soft` with
-  the shimmer and the prompt inside at 13 px `--mute`; on load the image reveals from blur.
-  Hover shows a bottom bar: download, reuse prompt, use as reference, animate (switches to
-  Video mode with the image as a start frame), edit (opens `/edit?asset=`), expand. Video is
-  a 16:9 card with a poster and a play control; it plays in place, the lightbox for full
-  size. Music and sound are a 56 px row: play, the title taken from the prompt, a waveform
-  drawn from the decoded audio, the duration in tabular figures, download; one global
-  `<audio>` element, and when the playing row leaves the viewport a mini player docks to the
-  foot of the sheet. Web search is a row of source chips (favicon, host) that expand to the
-  list. Code is the existing code block with a copy control. A failed deliverable keeps its
-  card: one plain line of what failed, "No generation used", Retry and Edit brief.
-- **Notes:** the assistant's prose through the markdown renderer, 15 px / 24 px, `max-w-[68ch]`.
-- A run that is still working shows a thin progress hairline under the sheet header and the
-  send button is a stop.
+- **The prompt** is one line at 14 px `--fg-2` with the attachments as 40 px thumbnails before
+  it and the time at 12 px `--mute` on the right. No bubble, no avatar, no label.
+- **Steps** is one compact line at 13 px: "Steps 4 · 2 done", the elapsed time while running,
+  a chevron; open, it lists the plan the agent wrote (the reasoning summary parsed into
+  numbered lines by `lib/ai/plan.ts`, tool calls matched to them by order) with each line's
+  status: queued, running with elapsed time, done with duration, failed. Closed by default once
+  the run finishes; open by default while it runs. If there is no plan, the line is omitted and
+  tool calls show as their own status lines.
+- **Outputs** are the point and get the width: a single image fills the column up to its
+  natural height; two to four images sit in a two-column grid; video is a 16:9 card with a
+  poster and a play control that plays in place; music and sound are a 56 px row with play,
+  the title from the prompt, a waveform from the decoded audio, the duration, download; one
+  global `<audio>` and a mini player docked above the composer when the playing row leaves the
+  viewport. All media at 12 px radius, borderless, revealed from blur on load; while running,
+  the placeholder is `--surface` at the final aspect ratio with the shimmer and the prompt the
+  model wrote inside at 13 px `--mute`. Hover on an image shows a bottom bar: download, reuse
+  prompt, use as reference, animate (switches to Video mode with the image as the start frame),
+  edit (`/edit?asset=`), expand (the lightbox). Web search is a row of source chips. Code is the
+  code block with a copy control. A failed output keeps its slot: one plain line, "No
+  generation used", Retry and Edit prompt.
+- **Notes** are the assistant's prose through the markdown renderer, 15 px / 24 px, `max-w-[68ch]`.
 
 ### 5.4 Direct modes
 
@@ -331,7 +274,7 @@ headings; images and video in CSS-columns masonry (`columns-2 md:columns-3 xl:co
 gap, 8 px radius, `break-inside-avoid`), audio as rows under their day. Hover shows the kind,
 the duration and a favourite control; click opens the lightbox at `/library/a/[id]`, an
 intercepting route with a parallel slot so the URL is shareable and Esc returns. The lightbox
-is `--stage`: media centred, a panel on the right at 320 px with the prompt, the model, the
+is the canvas with the scrim: media centred, a panel on the right at 320 px with the prompt, the model, the
 parameters, when it was made, "Open session", download, use as reference, edit, delete.
 Cursor pagination, 48 per page, loaded as the end comes into view. Empty: "Nothing made yet.
 Start in the Studio." and a link.
@@ -367,7 +310,7 @@ Keyboard shortcuts. Guests see the account section as "Guest session" with sign-
 
 ## 10. Auth
 
-`/login` and `/signup`: the canvas, a centred 400 px column, the wordmark, a one-line serif
+`/login` and `/signup`: the canvas, a centred 400 px column, the wordmark, a one-line 28 px
 heading ("Welcome back", "Create your account"), the two fields, the primary button, a text
 link to the other page, and a quiet secondary link "Try it as a guest". Errors inline under
 the field. `/get-started` keeps its job (sign in as the guest and forward) with the shimmer
@@ -375,41 +318,42 @@ rather than dots.
 
 ## 11. The landing page
 
-Light, the app's tokens, max width 1180 px, 32 px gutters, section rhythm 96 px.
+Dark, the app's tokens, content at 1200 px with 32 px gutters, sections 120 px apart.
 
-1. **Nav**, 60 px: the wordmark; Pricing and Changelog as text links; "Open Aivia" as the
-   primary button (ink). Sticky with a canvas blur.
-2. **Hero**: a two-column grid from 960 px, 1.1fr / 0.9fr. Left: the headline in Newsreader,
-   "One brief. A whole production." (the final words are chosen in the ticket; two lines, no
-   accent), a 17 px `--ink-2` paragraph of two sentences saying what happens, the primary
-   button "Start making" to `/get-started` and a text link "See a run". Right: the replayed
-   production, a sheet component identical to the app's run, filling in over about eight
-   seconds once: the brief types in, the plan lines appear with their status ticking, the
-   poster reveals from blur, the clip's poster appears then plays muted, the track's waveform
-   draws, the taglines arrive. Real assets generated with the app's own models, stored under
-   `public/landing/` as webp and a short mp4 with a poster. A replay control under it.
-3. **Modes**: "Make any of it directly" with four plates in a row (2 × 2 below 960): an image
-   (3:4), a video frame (16:9, hover to play), a waveform row, a sound row, each captioned in
-   13 px with the brief that made it and the length of time it took. Real outputs.
-4. **A run, step by step**: three columns on one rule: Brief, Plan, Deliverables, each with a
-   short paragraph. Numbered because it is a sequence.
-5. **Library and Edit**: two panels side by side in the staged-panel manner (real UI inside a
-   `--soft` panel, oversized and bleeding off its edge, one element lifted): the library
-   grid, and the edit workspace with the before/after slider.
-6. **The stage band**: full-bleed `--stage`, one generated clip looping (muted, with a pause
-   control) at 16:9 inside a 1180 px frame, one line of bone text over it.
-7. **Characters**: a small section, one row of three portraits and a line.
-8. **Pricing**: two columns on one rule: Free (the allowance, every mode) and Pro ($20 a
-   month, unlimited). "Start free" and "Go Pro". Honest; no feature table.
-9. **Changelog**: "What changed" with the last five dated entries, each one line, taken from
-   a `changelog.ts` the tickets keep current. A real company has one.
-10. **Close**: one serif line, "Make something today.", the primary button.
-11. **Footer**, 13 px, three columns: Product (Studio, Library, Edit, Pricing, Changelog),
-    Account (Sign in, Create account, Guest), Aivia (by harsh, GitHub, the privacy line),
-    and the year.
+1. **Nav**, 64 px, transparent over the hero and `--glass` after 40 px of scroll: the wordmark;
+   Pricing and Changelog as text links; Sign in; "Start making" as the white button.
+2. **Hero**, `100svh`, minimum 640 px: one of three generated clips full-bleed behind, muted,
+   looping, crossfading every 9 s, under a gradient from `rgb(10 10 11 / .25)` at the top to
+   `.92` at the bottom so type reads. Centred, 760 px wide: the headline in two lines ("Describe
+   it. Watch it get made." is the working line; chosen in the ticket from the real render), a
+   one-sentence 18 px `--fg-2` line, the real composer (Auto mode, placeholder "Describe what
+   you want made") that hands the prompt to the Studio through `/get-started?prompt=`, and
+   three example chips. Bottom left, 12 px `--mute`: "Made in Aivia from 'lanterns in rain'".
+   A pause control bottom right. Reduced motion: the poster, no autoplay.
+3. **The wall**: "Every one of these started as a sentence." Twelve real outputs in a grid of
+   four columns (two below 760 px), 12 px gap, one aspect ratio per row (16:9, 3:4, 1:1),
+   clips with posters that play on hover, each tile's prompt revealed on hover at 12 px over a
+   bottom gradient. Audio as two rows under the grid with real waveforms.
+4. **The Studio, running**: a 1200 px frame, `--surface`, 20 px radius, 1 px `--border`, showing
+   the real run component replaying a four-step job once as it scrolls into view (prompt,
+   steps ticking, poster revealing, clip placeholder then poster, track row), with the composer
+   at its foot. A replay control.
+5. **Modes**: four large plates, two by two (one column below 760 px): an image (3:4), a clip
+   (16:9), a music row, a sound row, each with a 14 px caption of the prompt that made it and
+   the time it took.
+6. **Library and Edit**: two frames side by side at 20 px radius: the library grid; the edit
+   workspace with the before/after slider mid-drag.
+7. **Pricing**: two columns on one `--border`: Free (five generations to start, every mode,
+   your library kept) and Pro ($20 a month, unlimited). "Start free" and "Go Pro".
+8. **Changelog**: "What changed", the last five dated entries from `lib/changelog.ts`.
+9. **Close**: one line at 48 px, "Make something today.", the white button, over the third clip
+   at low opacity.
+10. **Footer**, 13 px, three columns: Product (Studio, Library, Edit, Pricing, Changelog),
+    Account (Sign in, Create account, Try as a guest), Aivia (by harsh, Source, Privacy), the
+    year.
 
 Copy sells features in plain sentences; no model or vendor names, no "coming soon", no
-disclaimers. Open Graph image rendered from the hero's sheet.
+disclaimers, no eyebrows, no accented word. Open Graph image rendered from the hero frame.
 
 ## 12. Data
 
@@ -450,7 +394,7 @@ Asset     id, userId, sessionId?, kind (image|video|music|sound), url, posterUrl
   path. The lightbox and menus trap focus and restore it. The audio rows are buttons with
   `aria-pressed`; the waveform is decorative. Images carry the prompt as alt text.
 - Live regions: a run's status changes are announced politely ("Poster done").
-- Contrast as measured in §2.2; `--faint` is never used for text that must be read.
+- Contrast: `--fg` 17:1, `--fg-2` 8:1, `--mute` 4.9:1 on `--bg`; `--faint` never carries text.
 - Reduced motion as in §2.3. Hover-only actions are also reachable by focus.
 - Widths designed at 1440, 1024, 768 and 390. No horizontal scroll at any of them.
 - Each screen ticket records `npm run shots` at 1440 and 390 and a keyboard pass.
@@ -460,7 +404,8 @@ Asset     id, userId, sessionId?, kind (image|video|music|sound), url, posterUrl
 | Ticket | What | Depends on |
 |---|---|---|
 | 003 | Tokens, fonts, Tailwind 4, the primitive kit, a `/kit` dev page | 002 |
-| 004 | The shell: one layout, sidebar, sheet, account menu, redirects, `/settings` | 003 |
+| 012 | The landing page, first, so the direction is judged on the real site | 003 |
+| 004 | The shell: one layout, sidebar, account menu, redirects, `/settings` | 003 |
 | 005 | Sessions and assets persisted; the routes that read and write them | 004 |
 | 006 | The Studio: composer, empty state, the run (plan, deliverables, notes) | 005 |
 | 007 | Direct modes and `/api/generate`; the old per-tool pages and routes deleted | 006 |
@@ -468,7 +413,6 @@ Asset     id, userId, sessionId?, kind (image|video|music|sound), url, posterUrl
 | 009 | Edit on the shell | 004, 008 |
 | 010 | Characters on the shell | 004, 006 |
 | 011 | Auth pages and the guest start | 003 |
-| 012 | The landing page: assets, hero replay, sections, changelog, footer, metadata | 006, 008 |
 | 013 | Command palette and keyboard shortcuts | 005 |
 | 014 | Accessibility and responsive pass, Playwright smoke per screen | 006 to 013 |
 | 015 | Whole-app review in the browser; the fix list | 014 |

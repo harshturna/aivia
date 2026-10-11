@@ -22,18 +22,20 @@ clip, characters, pricing, the changelog, the close and the footer, with metadat
 Graph image; the old landing components and images deleted.
 
 ## Plan
-- Design §11, §2.3 (the one orchestrated moment), D-001, CLAUDE.md rule 9 (features what is
+- Design §11, §2.3 (the one orchestrated moment), D-003, CLAUDE.md rule 9 (features what is
   real; sells, never disclaims; no vendor names).
 - Files: `app/(landing)/page.tsx`, `components/landing/{hero,features,pricing,footer,navbar}.tsx`
   (replaced), `config/contents.ts` (deleted), `lib/links.ts`; new `app/(landing)/_landing/
   {nav,hero,replay,plates,steps,panels,band,characters,pricing,changelog,close,footer}.tsx`,
   `lib/changelog.ts` (dated entries; every feature ticket adds one), `app/opengraph-image.tsx`,
   `public/landing/*`.
-- Assets: generated with the app's models in a one-off script and kept under
-  `public/landing/` as webp (hero poster, four plates) and two mp4 clips (6 s, muted, with
-  posters) under 2 MB each, plus two short audio files for the waveforms. Four stills already
-  exist from the mockup (lanterns, cup, rain on a window, paper); the clips and tracks are made
-  in this ticket (about $0.60 at current prices; noted in the progress log).
+- Order: this ticket runs right after TICKET-003, before the shell, because the owner judges
+  the direction on the real landing page first (D-003). The hero composer is the real
+  component, shared with the Studio once TICKET-006 lands; until then it hands the prompt to
+  `/get-started?prompt=`.
+- Assets: `scripts/landing-assets.mjs` generated three 6 s clips (alley, ink, sea), six stills
+  and two audio files on 2026-10-10 (about $1); re-encoded with ffmpeg into `public/landing/`
+  (webp, h264 mp4 under 2 MB with posters). Four earlier stills are there already.
 - The replay is a client component that steps the run's state on a timer, once, with a
   replay control; reduced motion shows the finished state.
 - Performance: fonts preloaded, the hero poster `priority`, clips `preload="none"` with

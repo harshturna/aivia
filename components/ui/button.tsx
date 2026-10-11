@@ -4,28 +4,30 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * The button (design §2.2). The primary is white on black; there is no chromatic accent.
+ * Sizes are heights on the 4 px grid; `icon` is square.
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control text-[13.5px] font-medium transition-[background-color,color,transform] duration-150 ease-out active:scale-[.98] disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        default: "bg-white text-black hover:bg-[#e6e6e6]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        premium:
-          "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-0",
+          "border border-border bg-surface-2 text-fg hover:bg-surface-3 hover:border-border-strong",
+        ghost: "text-fg-2 hover:bg-surface-2 hover:text-fg",
+        outline:
+          "border border-border-strong bg-transparent text-fg hover:bg-surface-2",
+        destructive: "bg-poor text-black hover:bg-poor/90",
+        link: "h-auto px-0 text-fg underline underline-offset-4 hover:text-fg-2",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-9 px-4",
+        sm: "h-8 px-3 text-[13px]",
+        lg: "h-11 px-5 text-[14px]",
+        icon: "size-9",
+        "icon-sm": "size-8",
       },
     },
     defaultVariants: {

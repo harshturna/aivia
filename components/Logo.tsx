@@ -1,18 +1,18 @@
-import { Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Sized by the caller. The previous version hardcoded 50x50, which overflowed
-// the 32px slot in every sidebar and collided with the wordmark.
-const Logo = ({ className }: { className?: string }) => {
-  return (
-    // Not filled: Brain is a line icon, and filling it collapses the interior
-    // strokes into a solid blob.
-    <Brain
-      className={cn("h-8 w-8 text-primary", className)}
-      strokeWidth={1.75}
-      aria-hidden="true"
-    />
-  );
-};
+/**
+ * The wordmark (design §2.2): the name in the one family, lowercase, tight. No icon.
+ * Sized by the caller through `className` (font size); defaults to 20 px.
+ */
+const Logo = ({ className }: { className?: string }) => (
+  <span
+    className={cn(
+      "font-sans text-[20px] font-semibold leading-none tracking-[-0.02em] text-fg",
+      className
+    )}
+  >
+    aivia
+  </span>
+);
 
 export default Logo;

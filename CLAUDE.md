@@ -86,6 +86,8 @@ sections, Handoff on in-progress tickets, Verification and Outcome on done ticke
 - `docs/design/revamp.md` is the design: tokens, type, the shell, every screen, states, motion,
   and the ticket sequence. `docs/design/research-*.md` is the evidence behind it. Read the
   relevant section before a UI ticket; change the doc in the ticket that changes the design.
+- Design is judged in the running app, from screenshots at 1440 and 390 (`npm run shots`),
+  never from a static mockup. Build the real screen, look at it, fix it, look again.
 - Load the `frontend-design` skill before designing or reshaping any UI, and run the
   `web-design-guidelines` skill over the files a UI ticket touched before closing it.
 - Copy is sentence case everywhere (headings, buttons, labels). Buttons say what happens
@@ -103,9 +105,10 @@ ticket that changes a model records its price per call in that file.
 
 ## Deploys
 
-Vercel, from the GitHub remote. A push to `main` is a deploy unless the project has been set to
-manual; check before assuming either. A ticket's Verification says "pushed" or "deployed" as
-appropriate, never one for the other.
+Vercel, from the GitHub remote. `main` is the live site and stays untouched; the revamp is
+built on the `revamp` branch and merged when the owner says so. A push to `main` is a deploy
+unless the project has been set to manual; check before assuming either. A ticket's
+Verification says "pushed" or "deployed" as appropriate, never one for the other.
 
 ## Subagents
 
