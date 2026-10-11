@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import Image, { getImageProps } from "next/image";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -148,25 +148,17 @@ function Plate() {
   );
 }
 
-function PlayButton({
-  playing,
-  onToggle,
-}: {
-  playing: boolean;
-  onToggle: () => void;
-}) {
+/** The timeline always runs; this only switches the soundtrack on and off. */
+function SoundButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      aria-label={playing ? "Pause the soundtrack" : "Play the soundtrack"}
+      aria-pressed={on}
+      aria-label={on ? "Turn the sound off" : "Turn the sound on"}
       className="grid size-8 place-items-center rounded-full border border-fg/30 bg-bg/40 text-fg transition-colors hover:bg-fg/15"
     >
-      {playing ? (
-        <Pause className="size-3.5" />
-      ) : (
-        <Play className="size-3.5 translate-x-px" />
-      )}
+      {on ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
     </button>
   );
 }
@@ -437,7 +429,10 @@ export function Hero() {
     inView: true,
     teaserOpen: false,
     raf: 0,
-    clockT0: 0,
+    /** The one timeline clock: seconds at `ref` (a performance.now() time). */
+    base: 0,
+    ref: 0,
+    seekTo: null as number | null,
     timeline: false,
   });
   const [reduced, setReduced] = useState<boolean | null>(null);
@@ -456,16 +451,21 @@ export function Hero() {
     if (tcRef.current)
       tcRef.current.textContent = `${fmt(v * SCORE_SECONDS)} / 0:30`;
   }, []);
-  const tick = useCallback(() => {
+  /** Where the timeline is now: the music's time while it plays, the silent clock otherwise. */
+  const clockNow = useCallback(() => {
     const st = state.current;
     const audio = audioRef.current;
-    const live = !!audio && !audio.paused;
-    const sec = live
-      ? audio.currentTime % SCORE_SECONDS
-      : ((performance.now() - st.clockT0) / 1000) % SCORE_SECONDS;
-    writePlay(sec / SCORE_SECONDS);
+    if (audio && !audio.paused && st.seekTo === null)
+      return audio.currentTime % SCORE_SECONDS;
+    if (audio && !audio.paused) return st.seekTo ?? st.base;
+    if (!st.raf) return st.base;
+    return (st.base + (performance.now() - st.ref) / 1000) % SCORE_SECONDS;
+  }, []);
+  const tick = useCallback(() => {
+    const st = state.current;
+    writePlay(clockNow() / SCORE_SECONDS);
     st.raf = requestAnimationFrame(tick);
-  }, [writePlay]);
+  }, [writePlay, clockNow]);
   const syncClock = useCallback(() => {
     const st = state.current;
     const audio = audioRef.current;
@@ -474,14 +474,16 @@ export function Hero() {
       !document.hidden &&
       ((audio ? !audio.paused : false) || st.timeline);
     if (want && !st.raf) {
-      st.clockT0 = performance.now();
+      // pick up where the clock rested, never from zero
+      st.ref = performance.now();
       st.raf = requestAnimationFrame(tick);
     } else if (!want && st.raf) {
+      st.base = clockNow();
       cancelAnimationFrame(st.raf);
       st.raf = 0;
       writePlay(1);
     }
-  }, [tick, writePlay]);
+  }, [tick, writePlay, clockNow]);
 
   // --- the teaser plays only once its window is open and the hero is on screen ---
   const syncVideo = useCallback(() => {
@@ -775,11 +777,28 @@ export function Hero() {
     };
   }, [reduced, apply, measure, open, syncClock, syncVideo]);
 
+  // the sound joins the timeline where it is, and leaves it there
   const toggle = () => {
     const a = audioRef.current;
+    const st = state.current;
     if (!a) return;
-    if (a.paused) a.play().catch(() => {});
-    else a.pause();
+    if (a.paused) {
+      const t = clockNow();
+      st.base = t;
+      st.ref = performance.now();
+      st.seekTo = t;
+      try {
+        a.currentTime = t;
+      } catch {}
+      a.play().catch(() => {
+        st.seekTo = null;
+      });
+    } else {
+      st.base = a.currentTime % SCORE_SECONDS;
+      st.ref = performance.now();
+      st.seekTo = null;
+      a.pause();
+    }
   };
 
   return (
@@ -939,7 +958,7 @@ export function Hero() {
                     <span className="text-fg/55">{MEDIUM[k].meta}</span>
                     {k === "score" && (
                       <span className="ml-auto">
-                        <PlayButton playing={playing} onToggle={toggle} />
+                        <SoundButton on={playing} onToggle={toggle} />
                       </span>
                     )}
                   </div>
@@ -974,7 +993,7 @@ export function Hero() {
                 >
                   0:00 / 0:30
                 </span>
-                <PlayButton playing={playing} onToggle={toggle} />
+                <SoundButton on={playing} onToggle={toggle} />
               </div>
             </div>
             <div className="grid grid-cols-[64px_1fr] gap-x-3 gap-y-2 sm:grid-cols-[96px_1fr]">
@@ -1078,6 +1097,14 @@ export function Hero() {
         src="/landing/score.mp3"
         preload="none"
         loop
+        onLoadedMetadata={(e) => {
+          const t = state.current.seekTo;
+          if (t !== null) e.currentTarget.currentTime = t;
+        }}
+        onPlaying={() => {
+          // the music is really running now; from here the clock reads it
+          state.current.seekTo = null;
+        }}
         onPlay={() => {
           setPlaying(true);
           syncClock();
