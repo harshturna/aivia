@@ -36,7 +36,7 @@ export function Run({
   onRetry,
 }: RunProps) {
   const parts = assistant?.parts ?? [];
-  const { steps, notes, done } = readPlan(parts as never, !active);
+  const { steps, notes, done, failed } = readPlan(parts as never, !active);
   const tools = parts.filter((p) => isToolUIPart(p)) as ToolPart[];
   const elapsed = useElapsed(active ? startedAt : undefined);
   const [open, setOpen] = useState<boolean | null>(null);
@@ -76,13 +76,19 @@ export function Run({
           >
             {active ? (
               <Spinner className="size-3" />
+            ) : failed ? (
+              <X className="size-3.5 text-poor" />
             ) : (
               <Check className="size-3.5 text-good" />
             )}
             <span>
               {steps.length} steps
               <span className="text-mute"> · </span>
-              {active ? `${done} done` : "done"}
+              {active
+                ? `${done} done`
+                : failed
+                  ? "not everything worked"
+                  : "done"}
             </span>
             {active && elapsed !== null && (
               <span className="tabular text-mute">{clock(elapsed)}</span>

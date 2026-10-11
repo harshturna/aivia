@@ -79,4 +79,31 @@ describe("readPlan", () => {
     );
     expect(r.steps.map((s) => s.text)).toEqual(["Search", "Answer"]);
   });
+
+  it("keeps a paragraph between notes split by a tool call, and reports a failure", () => {
+    const r = readPlan(
+      [
+        { type: "text", text: "Let me retry that one." },
+        tool("output-error"),
+        { type: "text", text: "The video tool failed again." },
+      ],
+      true
+    );
+    expect(r.notes).toBe(
+      "Let me retry that one.\n\nThe video tool failed again."
+    );
+    expect(r.failed).toBe(true);
+  });
+
+  it("does not break a sentence at a citation", () => {
+    const r = readPlan(
+      [
+        { type: "text", text: "The market opens at six" },
+        { type: "source-url" },
+        { type: "text", text: ", every Friday." },
+      ],
+      true
+    );
+    expect(r.notes).toBe("The market opens at six, every Friday.");
+  });
 });

@@ -341,7 +341,7 @@ function Failed({
     <div className="flex items-start gap-3 rounded-media border border-border bg-surface p-4 text-[13px]">
       <AlertTriangle className="mt-0.5 size-4 shrink-0 text-poor" />
       <div className="min-w-0 flex-1">
-        <p className="text-fg">Could not make the {what || "output"}.</p>
+        <p className="text-fg">Could not make {what || "the output"}.</p>
         {reason && <p className="mt-1 line-clamp-3 text-mute">{reason}</p>}
       </div>
       {onRetry && (

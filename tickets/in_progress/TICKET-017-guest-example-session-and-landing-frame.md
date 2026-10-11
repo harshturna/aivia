@@ -1,8 +1,8 @@
 # TICKET-017: The guest's example session, and the landing frame on the real run
 
-**Status:** pending
+**Status:** blocked
 **Created:** 2026-10-11
-**Started:** —
+**Started:** 2026-10-11
 **Completed:** —
 **Area:** ui
 
@@ -32,12 +32,15 @@ replay.
 
 ## Progress log
 - 2026-10-11 — Opened from TICKET-006's outcome.
+- 2026-10-11 — Started; the recording run showed four UI faults (TICKET-018) and a video outage (TICKET-019). Blocked on 019.
 
 ## Handoff
 Kept current while the ticket is in progress. Overwrite, do not append.
-- **State:** not started
-- **Blocked on:** nothing
-- **Next:** start
+- **State:** one real run recorded (session 9245d3b9-e579-4a20-98d8-27f72f0fe919): poster,
+  track and taglines came out; the clip failed three times (TICKET-019). Not pinned.
+- **Blocked on:** TICKET-019 (video), so the example and the landing replay show a clip.
+- **Next:** once video works, record the run again, pin it, record the transcript; the Edit
+  panel and Characters strip can be done before then.
 - **Read first:** `components/studio/run.tsx`, `lib/sessions.ts`
 
 ## Verification

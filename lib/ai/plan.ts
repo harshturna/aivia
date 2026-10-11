@@ -62,6 +62,8 @@ export interface RunShape {
   /** Text that is not the plan, in order, already merged. */
   notes: string;
   done: number;
+  /** A tool call failed, so the run did not do everything it planned. */
+  failed: boolean;
 }
 
 /**
@@ -96,8 +98,11 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
       text += part.text ?? "";
       continue;
     }
+    // Only a tool call breaks the text: sources, step markers and reasoning sit between
+    // fragments of one sentence when the answer cites the web.
+    if (!isToolPart(part)) continue;
     flush();
-    if (isToolPart(part)) tools.push(part);
+    tools.push(part);
   }
   flush();
 
@@ -125,7 +130,12 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
 
   return {
     steps: planSteps,
-    notes: notes.join("").trim(),
+    // Chunks split by a tool call are separate thoughts: keep a paragraph between them.
+    notes: notes
+      .map((n) => n.trim())
+      .filter(Boolean)
+      .join("\n\n"),
     done: planSteps.filter((s) => s.status === "done").length,
+    failed: failedAt.size > 0,
   };
 }

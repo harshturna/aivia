@@ -27,7 +27,7 @@ export function Shell({
   return (
     <ShellMenuContext.Provider value={() => setOpen(true)}>
       <CommandPalette>
-        <div className="flex h-full min-h-dvh bg-bg text-fg">
+        <div className="flex min-h-dvh bg-bg text-fg">
           <div className="hidden h-dvh shrink-0 lg:sticky lg:top-0 lg:block">
             <Sidebar user={user} usage={usage} collapsed={collapsed} />
           </div>
