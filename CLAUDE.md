@@ -81,6 +81,19 @@ sections, Handoff on in-progress tickets, Verification and Outcome on done ticke
 - Keep changes focused. Preserve unrelated work in a dirty tree.
 - Unit tests live next to the code as `*.test.ts(x)`. Add tests with the code they cover.
 
+## Design
+
+- `docs/design/revamp.md` is the design: tokens, type, the shell, every screen, states, motion,
+  and the ticket sequence. `docs/design/research-*.md` is the evidence behind it. Read the
+  relevant section before a UI ticket; change the doc in the ticket that changes the design.
+- Load the `frontend-design` skill before designing or reshaping any UI, and run the
+  `web-design-guidelines` skill over the files a UI ticket touched before closing it.
+- Copy is sentence case everywhere (headings, buttons, labels). Buttons say what happens
+  ("Save changes", not "Submit"). No tracked uppercase eyebrows, no middle-dot meta strings,
+  no "→" appended to links, no accenting one word of a headline.
+- One accent colour. Semantic colours (good, warn, poor) never stand in for it. Generated
+  media supplies the colour; the chrome stays neutral.
+
 ## Costs
 
 Every generation spends real money on a shared guest account. `constants.ts` holds the caps
