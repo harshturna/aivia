@@ -41,10 +41,16 @@ a lone tree), made with the app's own models. Everything around the sequence is 
 
 ### 2.2 Tokens
 
-**The forest (D-004)** is the default in `app/globals.css` `@theme`, for the landing and the
-whole app (TICKET-022). Every text token passes AA: fg 15.8:1 and fg-2 9.9:1 on bg, mute
-5.3:1 on surface-2 and 4.7:1 on surface-3. Live states and played progress use `--sun`; the
-library's kind filters carry the tints.
+**The app is warm neutral charcoal** (TICKET-031: the owner found the moss app "too green";
+the media should be the colour): `--bg` #0E0E0D, surfaces #161615, #1D1D1B, #262523, borders
+parchment at 8% and 16%, `--fg` parchment #F1ECDC, `--fg-2` #B3AFA5, `--mute` #938F86,
+`--faint` #4B4944. Contrast: fg 16.3:1 and fg-2 8.8:1 on bg, mute 5.2:1 on surface-2 and
+4.8:1 on surface-3. Kept from the forest in the app: parchment type, `--sun` for live states
+and played progress, the display face, and the tints on the library's kind filters.
+
+**The forest (D-004)** is the landing's theme, `[data-theme="forest"]` in `app/globals.css`,
+set by `app/(landing)/layout.tsx`; sign-in, sign-up and get-started keep the forest plate as
+the threshold into the app, with neutral panels. Its values:
 
 | Token | Value | Use |
 |---|---|---|

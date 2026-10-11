@@ -6,7 +6,6 @@ import { Upload } from "lucide-react";
 import { domMax, LazyMotion, m } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ForestPlate } from "@/components/forest-plate";
 import { ScreenHeader } from "@/components/shell/screen";
 import {
   acceptFiles,
@@ -243,14 +242,7 @@ export function StudioClient({
         </ScreenHeader>
 
         {empty ? (
-          <div className="relative isolate flex flex-1 flex-col items-center justify-center overflow-hidden px-6 pb-24">
-            {/* a trace of the forest from the landing, still, fading before the composer */}
-            <div
-              aria-hidden
-              className="absolute inset-0 -z-10 opacity-[.18] [mask-image:linear-gradient(to_bottom,black,transparent_70%)]"
-            >
-              <ForestPlate />
-            </div>
+          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-24">
             <div className="w-full max-w-[720px]">
               <h2 className="text-center font-display text-[clamp(36px,4vw,54px)] font-medium leading-[1.04] tracking-[-0.01em]">
                 What are we making?

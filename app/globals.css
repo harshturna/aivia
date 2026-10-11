@@ -2,32 +2,32 @@
 @import "tw-animate-css";
 
 /*
- * Aivia design tokens (docs/design/revamp.md §2, D-004): the forest. Moss-dark surfaces that
- * step up in lightness, parchment type, borders as parchment at low alpha, sunlight as the
- * one accent; four quiet tints tell the media apart. The old
+ * Aivia design tokens (docs/design/revamp.md §2, D-004). The app is warm neutral charcoal so
+ * the generated media is the colour (TICKET-031); parchment type, sunlight as the one accent,
+ * four quiet tints for the media. The landing wears the forest: `[data-theme="forest"]` below. The old
  * shadcn names (background, card, muted, primary, …) are mapped onto these so the screens the
  * revamp has not reached yet render on the same base until their tickets replace them.
  */
 @theme {
   --color-*: initial;
 
-  --color-bg: #0b1410;
-  --color-surface: #121d17;
-  --color-surface-2: #18261e;
-  --color-surface-3: #203027;
-  --color-border: rgb(241 236 220 / 0.09);
-  --color-border-strong: rgb(241 236 220 / 0.18);
+  --color-bg: #0e0e0d;
+  --color-surface: #161615;
+  --color-surface-2: #1d1d1b;
+  --color-surface-3: #262523;
+  --color-border: rgb(241 236 220 / 0.08);
+  --color-border-strong: rgb(241 236 220 / 0.16);
   --color-fg: #f1ecdc;
-  --color-fg-2: #b6bfae;
-  --color-mute: #8e9984;
-  --color-faint: #4c5a4f;
+  --color-fg-2: #b3afa5;
+  --color-mute: #938f86;
+  --color-faint: #4b4944;
   --color-white: #ffffff;
   --color-black: #000000;
   --color-good: #5cc489;
   --color-warn: #e0b15a;
   --color-poor: #f2756b;
-  --color-scrim: rgb(5 10 8 / 0.6);
-  --color-glass: rgb(11 20 16 / 0.72);
+  --color-scrim: rgb(0 0 0 / 0.6);
+  --color-glass: rgb(14 14 13 / 0.72);
   --color-transparent: transparent;
   --color-current: currentColor;
 
@@ -90,6 +90,40 @@
       transform: translateX(100%);
     }
   }
+}
+
+/*
+ * The forest (D-004): the landing's moss-dark ground. The legacy aliases resolve where they are
+ * declared, so the ones that read the surfaces are declared again here.
+ */
+[data-theme="forest"] {
+  --color-bg: #0b1410;
+  --color-surface: #121d17;
+  --color-surface-2: #18261e;
+  --color-surface-3: #203027;
+  --color-border: rgb(241 236 220 / 0.09);
+  --color-border-strong: rgb(241 236 220 / 0.18);
+  --color-fg-2: #b6bfae;
+  --color-mute: #8e9984;
+  --color-faint: #4c5a4f;
+  --color-scrim: rgb(5 10 8 / 0.6);
+  --color-glass: rgb(11 20 16 / 0.72);
+  --color-background: var(--color-bg);
+  --color-card: var(--color-surface);
+  --color-popover: var(--color-surface-2);
+  --color-secondary: var(--color-surface-2);
+  --color-muted: var(--color-surface);
+  --color-muted-foreground: var(--color-fg-2);
+  --color-accent: var(--color-surface-2);
+  --color-input: var(--color-border-strong);
+  --color-primary-foreground: var(--color-bg);
+  --color-destructive-foreground: var(--color-bg);
+  --color-sidebar: var(--color-surface);
+  --color-sidebar-primary-foreground: var(--color-bg);
+  --color-sidebar-accent: var(--color-surface-3);
+  --color-sidebar-border: var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg);
 }
 
 @layer base {
