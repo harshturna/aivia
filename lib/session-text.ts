@@ -25,6 +25,11 @@ export function titleFromBrief(text: string) {
   return cut.charAt(0).toUpperCase() + cut.slice(1);
 }
 
+/** A project's name as shown: a row not yet named by its first brief reads "New project". */
+export function projectTitle(title: string) {
+  return !title || title === "New session" ? "New project" : title;
+}
+
 /** The text of a UIMessage, for naming and for the listing. */
 export function messageText(message: UIMessage): string {
   return message.parts

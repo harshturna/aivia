@@ -3,7 +3,12 @@ import type { UIMessage } from "ai";
 import { isGuestId } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
 
-export { isSessionId, messageText, titleFromBrief } from "@/lib/session-text";
+export {
+  isSessionId,
+  messageText,
+  projectTitle,
+  titleFromBrief,
+} from "@/lib/session-text";
 
 /**
  * Sessions (design §12): a Studio conversation, its messages as the AI SDK's UIMessage[]
@@ -37,6 +42,31 @@ export async function listSessions(
     take: limit,
     select: summary,
   });
+}
+
+/** A project as Home shows it: its summary and its first three pieces (TICKET-062). */
+export type ProjectCard = SessionSummary & {
+  media: Array<{ url: string; kind: string; posterUrl: string | null }>;
+};
+
+export async function listProjects(
+  userId: string,
+  { limit = 24 }: { limit?: number } = {}
+): Promise<ProjectCard[]> {
+  const rows = await prismadb.session.findMany({
+    where: { userId, ...(isGuestId(userId) ? { pinned: true } : {}) },
+    orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+    select: {
+      ...summary,
+      assets: {
+        orderBy: { createdAt: "asc" },
+        take: 3,
+        select: { url: true, kind: true, posterUrl: true },
+      },
+    },
+  });
+  return rows.map(({ assets, ...rest }) => ({ ...rest, media: assets }));
 }
 
 export async function getSession(userId: string, id: string) {

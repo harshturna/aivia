@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Maximize2, Search } from "lucide-react";
+import { Heart, Maximize2, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -40,6 +40,7 @@ export function LibraryClient({
   kind,
   query,
   favorites,
+  project = null,
   readOnly = false,
 }: {
   initialItems: LibraryAsset[];
@@ -47,6 +48,8 @@ export function LibraryClient({
   kind: LibraryKind;
   query: string;
   favorites: boolean;
+  /** Showing one project's media (TICKET-062). */
+  project?: { id: string; title: string } | null;
   /** The shared guest account sees the curated examples and cannot change them. */
   readOnly?: boolean;
 }) {
@@ -64,18 +67,25 @@ export function LibraryClient({
   }, [initialItems, initialCursor]);
 
   const href = useCallback(
-    (next: { kind?: LibraryKind; q?: string; fav?: boolean }) => {
+    (next: {
+      kind?: LibraryKind;
+      q?: string;
+      fav?: boolean;
+      project?: string | null;
+    }) => {
       const p = new URLSearchParams();
       const k = next.kind ?? kind;
       const q = next.q ?? query;
       const f = next.fav ?? favorites;
+      const pr = next.project === undefined ? project?.id : next.project;
       if (k !== "all") p.set("kind", k);
       if (q) p.set("q", q);
       if (f) p.set("fav", "1");
+      if (pr) p.set("project", pr);
       const s = p.toString();
       return `/library${s ? `?${s}` : ""}`;
     },
-    [kind, query, favorites]
+    [kind, query, favorites, project]
   );
 
   // Search as you type, after a pause.
@@ -99,6 +109,7 @@ export function LibraryClient({
       if (kind !== "all") p.set("kind", kind);
       if (query) p.set("q", query);
       if (favorites) p.set("fav", "1");
+      if (project) p.set("project", project.id);
       const response = await fetch(`/api/assets?${p}`);
       if (response.ok) {
         const page = (await response.json()) as {
@@ -111,7 +122,7 @@ export function LibraryClient({
     } finally {
       setLoading(false);
     }
-  }, [cursor, loading, kind, query, favorites]);
+  }, [cursor, loading, kind, query, favorites, project]);
 
   useEffect(() => {
     const el = end.current;
@@ -156,7 +167,7 @@ export function LibraryClient({
       );
   };
 
-  const filtered = Boolean(query) || favorites || kind !== "all";
+  const filtered = Boolean(query) || favorites || kind !== "all" || !!project;
 
   return (
     <div className="min-h-dvh">
@@ -198,6 +209,17 @@ export function LibraryClient({
               </Link>
             ))}
           </nav>
+          {project && (
+            <Link
+              href={href({ project: null })}
+              replace
+              aria-label={`Show everything, not only ${project.title}`}
+              className="inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-control bg-surface-3 px-2.5 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2"
+            >
+              <span className="truncate">{project.title}</span>
+              <X className="size-3.5 shrink-0 text-mute" />
+            </Link>
+          )}
           <div className="flex w-full items-center gap-2 md:hidden">
             <SearchField value={search} onChange={setSearch} />
             {!readOnly && (

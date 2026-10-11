@@ -15,6 +15,7 @@ export async function GET(req: Request) {
       kind: kind && KINDS.has(kind) ? (kind as AssetKind | "audio") : undefined,
       query: q.get("q") ?? undefined,
       favorite: q.get("fav") === "1",
+      project: q.get("project") ?? undefined,
       cursor: q.get("cursor"),
     })
   );

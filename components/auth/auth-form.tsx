@@ -95,7 +95,7 @@ export function AuthForm({
     setClaimPending(false);
     const claimed = kept > 0 && bring ? await claimLocalSessions() : null;
     router.refresh();
-    router.push(claimed ? `/studio/${claimed}` : "/studio");
+    router.push(claimed ? `/p/${claimed}` : "/studio");
   };
 
   if (sent) {
@@ -195,7 +195,7 @@ export function AuthForm({
               className="mt-0.5 size-4 shrink-0 accent-primary"
             />
             <span>
-              Bring the {kept === 1 ? "session" : `${kept} sessions`} you made
+              Bring the {kept === 1 ? "project" : `${kept} projects`} you made
               as a guest in this browser
             </span>
           </label>

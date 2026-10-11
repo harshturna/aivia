@@ -126,7 +126,7 @@ export function Sidebar({
             )
           }
         >
-          New session
+          New project
         </Item>
         <SearchItem rail={rail} hint={!inSheet} />
       </div>

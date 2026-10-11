@@ -369,8 +369,8 @@ export function Lightbox({
           )}
           {asset.sessionId && (
             <Button asChild variant="secondary" size="sm">
-              <Link href={`/studio/${asset.sessionId}`}>
-                <MessageSquare /> Open the session
+              <Link href={`/p/${asset.sessionId}`}>
+                <MessageSquare /> Open the project
               </Link>
             </Button>
           )}

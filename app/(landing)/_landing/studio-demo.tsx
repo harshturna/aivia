@@ -80,7 +80,7 @@ export function StudioDemo() {
             </div>
             <div className="space-y-0.5">
               <div className="flex h-8 items-center gap-2.5 rounded-control px-2 text-fg-2">
-                <Plus className="size-4" /> New session
+                <Plus className="size-4" /> New project
                 <span className="ml-auto text-[11px] text-mute">⌘⇧O</span>
               </div>
               <div className="flex h-8 items-center gap-2.5 rounded-control px-2 text-fg-2">
@@ -102,7 +102,7 @@ export function StudioDemo() {
               ))}
             </div>
             <div>
-              <div className="px-2 pb-1 text-[12px] text-mute">Recent</div>
+              <div className="px-2 pb-1 text-[12px] text-mute">Projects</div>
               {RECENT.map((r, i) => (
                 <div
                   key={r}

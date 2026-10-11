@@ -78,6 +78,8 @@ export interface ListAssetsOptions {
   kind?: AssetKind | "audio";
   query?: string;
   favorite?: boolean;
+  /** One project's media (TICKET-062). */
+  project?: string;
   cursor?: string | null;
   limit?: number;
 }
@@ -85,7 +87,14 @@ export interface ListAssetsOptions {
 /** Newest first, by cursor (the last row's id), with the kind, a search and favourites. */
 export async function listAssets(
   userId: string,
-  { kind, query, favorite, cursor, limit = PAGE_SIZE }: ListAssetsOptions = {}
+  {
+    kind,
+    query,
+    favorite,
+    project,
+    cursor,
+    limit = PAGE_SIZE,
+  }: ListAssetsOptions = {}
 ) {
   const where: Prisma.AssetWhereInput = {
     userId,
@@ -96,6 +105,7 @@ export async function listAssets(
         ? { kind }
         : {}),
     ...(favorite ? { favorite: true } : {}),
+    ...(project ? { sessionId: project } : {}),
     ...(query?.trim()
       ? { prompt: { contains: query.trim(), mode: "insensitive" } }
       : {}),

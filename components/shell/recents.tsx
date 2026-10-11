@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { LOCAL_CHANGED, listLocalSessions } from "@/lib/guest-local";
+import { projectTitle } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 
 /** Must match `SESSIONS_CHANGED` in the Studio client. */
@@ -24,7 +25,6 @@ export function Recents({
   isGuest?: boolean;
 }) {
   const pathname = usePathname();
-  const localOpen = useSearchParams().get("local");
   const [items, setItems] = useState<Recent[] | null>(null);
   const [local, setLocal] = useState<Recent[]>([]);
   useEffect(() => {
@@ -65,11 +65,11 @@ export function Recents({
           <div className="px-2 pb-1 text-[12px] text-mute">On this device</div>
           <ul className="mb-3 space-y-0.5">
             {local.map((item) => {
-              const active = pathname === "/studio" && localOpen === item.id;
+              const active = pathname === `/p/${item.id}`;
               return (
                 <li key={item.id}>
                   <Link
-                    href={`/studio?local=${item.id}`}
+                    href={`/p/${item.id}`}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
                     data-recent-active={active || undefined}
@@ -80,7 +80,7 @@ export function Recents({
                         : "text-fg-2 hover:bg-surface-2 hover:text-fg"
                     )}
                   >
-                    <span className="truncate">{item.title}</span>
+                    <span className="truncate">{projectTitle(item.title)}</span>
                   </Link>
                 </li>
               );
@@ -90,12 +90,12 @@ export function Recents({
       )}
       {(items?.length ?? 0) > 0 && (
         <div className="px-2 pb-1 text-[12px] text-mute">
-          {isGuest ? "Examples" : "Recent"}
+          {isGuest ? "Examples" : "Projects"}
         </div>
       )}
       <ul className="space-y-0.5">
         {(items ?? []).map((item) => {
-          const href = `/studio/${item.id}`;
+          const href = `/p/${item.id}`;
           const active = pathname === href;
           return (
             <li key={item.id}>
@@ -111,12 +111,22 @@ export function Recents({
                     : "text-fg-2 hover:bg-surface-2 hover:text-fg"
                 )}
               >
-                <span className="truncate">{item.title}</span>
+                <span className="truncate">{projectTitle(item.title)}</span>
               </Link>
             </li>
           );
         })}
       </ul>
+      {/* the list shows eight; Home has them all */}
+      {!isGuest && (items?.length ?? 0) >= 8 && (
+        <Link
+          href="/studio"
+          onClick={onNavigate}
+          className="mt-1 flex h-8 items-center rounded-control px-2 text-mute transition-colors hover:bg-surface-2 hover:text-fg"
+        >
+          All projects
+        </Link>
+      )}
     </div>
   );
 }

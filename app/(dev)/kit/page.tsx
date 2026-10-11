@@ -140,7 +140,7 @@ export default function KitPage() {
             <Plus /> Attach
           </Pill>
           <span className="ml-4 inline-flex items-center gap-1.5 text-[13px] text-fg-2">
-            New session <Kbd>⌘</Kbd>
+            New project <Kbd>⌘</Kbd>
             <Kbd>N</Kbd>
           </span>
         </div>

@@ -94,7 +94,7 @@ if (process.env.STATES !== "0" && process.env.GUEST !== "0") {
     [390, 844],
   ])
     await shoot("thread-end", w, h, async () => {
-      await open(`/studio?local=${thread.id}`);
+      await open(`/p/${thread.id}`);
       await page.evaluate(() =>
         window.scrollTo(0, document.documentElement.scrollHeight)
       );

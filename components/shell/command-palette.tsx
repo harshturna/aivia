@@ -27,6 +27,7 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
 import { listLocalSessions } from "@/lib/guest-local";
+import { projectTitle } from "@/lib/session-text";
 import { isTyping, SHORTCUTS } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 
@@ -175,7 +176,7 @@ function Palette({ onClose }: { onClose: () => void }) {
     const actions: Item[] = [
       {
         id: "new",
-        label: "New session",
+        label: "New project",
         hint: (
           <span className="flex gap-0.5">
             <Kbd>⌘</Kbd>
@@ -253,20 +254,20 @@ function Palette({ onClose }: { onClose: () => void }) {
         .slice(0, q ? 5 : 3)
         .map((s) => ({
           id: `l-${s.id}`,
-          label: s.title,
+          label: projectTitle(s.title),
           icon: Sparkles,
           group: "On this device",
-          run: () => go(`/studio?local=${s.id}`),
+          run: () => go(`/p/${s.id}`),
         })),
       ...sessions
         .filter((s) => match(s.title))
         .slice(0, q ? 8 : 5)
         .map((s) => ({
           id: `s-${s.id}`,
-          label: s.title,
+          label: projectTitle(s.title),
           icon: Sparkles,
-          group: "Sessions",
-          run: () => go(`/studio/${s.id}`),
+          group: "Projects",
+          run: () => go(`/p/${s.id}`),
         })),
       ...assets.map((a) => ({
         id: `a-${a.id}`,
@@ -317,7 +318,7 @@ function Palette({ onClose }: { onClose: () => void }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Search sessions, what you made, or type a command…"
+          placeholder="Search projects, what you made, or type a command…"
           aria-label="Search and commands"
           aria-controls="palette-list"
           aria-activedescendant={

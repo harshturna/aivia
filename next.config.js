@@ -9,6 +9,8 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/dashboard", destination: "/studio", permanent: true },
+      // a session is a project now, at its own address (D-005, TICKET-062)
+      { source: "/studio/:id", destination: "/p/:id", permanent: true },
       { source: "/generative", destination: "/studio", permanent: true },
       {
         source: "/generative/settings",

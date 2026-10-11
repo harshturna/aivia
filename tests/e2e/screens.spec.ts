@@ -95,7 +95,7 @@ test.describe("as the guest", () => {
       await page.request.get("/api/sessions")
     ).json()) as Array<{ id: string }>;
     test.skip(sessions.length === 0, "no saved session for the guest");
-    await page.goto(`/studio/${sessions[0].id}`, { waitUntil: "networkidle" });
+    await page.goto(`/p/${sessions[0].id}`, { waitUntil: "networkidle" });
     await fits(page);
     expect(await axe(page)).toEqual([]);
   });

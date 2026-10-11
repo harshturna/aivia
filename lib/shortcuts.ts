@@ -9,7 +9,7 @@ export interface Shortcut {
 
 export const SHORTCUTS: Shortcut[] = [
   { keys: ["⌘", "K"], label: "Search and commands" },
-  { keys: ["⌘", "⇧", "O"], label: "New session" },
+  { keys: ["⌘", "⇧", "O"], label: "New project" },
   { keys: ["⌘", "B"], label: "Collapse or expand the sidebar" },
   { keys: ["/"], label: "Write in the composer" },
   { keys: ["Enter"], label: "Send" },

@@ -4,6 +4,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Upload } from "lucide-react";
 import { domMax, LazyMotion, MotionConfig, m } from "motion/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScreenHeader } from "@/components/shell/screen";
@@ -21,6 +22,10 @@ import {
   ModeParamPills,
   type ModeParams,
 } from "@/components/studio/params";
+import {
+  type ProjectCardData,
+  ProjectGrid,
+} from "@/components/studio/project-grid";
 import { Run } from "@/components/studio/run";
 import { Button } from "@/components/ui/button";
 import { userProModal } from "@/hooks/useProModal";
@@ -199,13 +204,14 @@ export function StudioClient({
   id,
   initialMessages = [],
   initialPrompt = "",
-  initialTitle = "New session",
+  initialTitle = "New project",
   initialMode = "auto",
   isNew,
   isGuest = false,
   initialAnimate,
   localId,
   sendOnArrival = false,
+  projects = [],
 }: {
   id: string;
   initialMessages?: UIMessage[];
@@ -226,6 +232,8 @@ export function StudioClient({
   localId?: string;
   /** The landing's composer was sent: send its prompt once, on arrival (TICKET-055). */
   sendOnArrival?: boolean;
+  /** Home's projects, shown under its composer (TICKET-062). */
+  projects?: ProjectCardData[];
 }) {
   const router = useRouter();
   const proModal = userProModal();
@@ -494,7 +502,7 @@ export function StudioClient({
       if (isGuest && !localKey) {
         const fork = crypto.randomUUID();
         setLocalKey(fork);
-        window.history.replaceState(null, "", `/studio?local=${fork}`);
+        window.history.replaceState(null, "", `/p/${fork}`);
         // named after what they asked, so it is not a second "Owl over a frozen lake"
         if (messages.length > 0) setTitle(titleFromBrief(text));
       }
@@ -504,13 +512,13 @@ export function StudioClient({
         // run is not stored on the server (TICKET-038); it is kept in this browser and gets a
         // local address instead (TICKET-041).
         if (isNew && !isGuest) {
-          window.history.replaceState(null, "", `/studio/${id}`);
+          window.history.replaceState(null, "", `/p/${id}`);
           setTimeout(
             () => window.dispatchEvent(new Event(SESSIONS_CHANGED)),
             1500
           );
         } else if (isNew && isGuest)
-          window.history.replaceState(null, "", `/studio?local=${id}`);
+          window.history.replaceState(null, "", `/p/${id}`);
       }
     },
     [
@@ -711,7 +719,8 @@ export function StudioClient({
               title={
                 <EditableTitle
                   id={id}
-                  title={title}
+                  // Home until the first brief makes it a project (TICKET-062)
+                  title={isNew && empty ? "Home" : title}
                   onChange={isGuest ? renameLocal : setTitle}
                   enabled={!empty && (!isGuest || localKey !== null)}
                   local={isGuest}
@@ -724,6 +733,15 @@ export function StudioClient({
                   Running
                 </span>
               )}
+              {/* a saved project's media in the library; a browser copy has none there */}
+              {!empty && !busy && localKey === null && (
+                <Link
+                  href={`/library?project=${id}`}
+                  className="rounded-control px-2 py-1 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
+                >
+                  Media
+                </Link>
+              )}
               {!empty && !busy && (!isGuest || localKey !== null) && (
                 <DeleteSession onConfirm={isGuest ? removeLocal : remove} />
               )}
@@ -731,7 +749,7 @@ export function StudioClient({
 
             {empty ? (
               // a fixed top, so the heading stays put as the composer grows (TICKET-052)
-              <div className="flex flex-1 flex-col items-center px-6 pb-24 pt-[max(48px,calc(50dvh-220px))] max-sm:pt-[10dvh]">
+              <div className="flex flex-1 flex-col items-center px-6 pb-24 pt-[max(48px,calc(34dvh-160px))] max-sm:pt-[8dvh]">
                 <div className="w-full max-w-[720px]">
                   <h2 className="text-center font-display text-[clamp(36px,4vw,54px)] font-medium leading-[1.04] tracking-[-0.01em]">
                     What are we making?
@@ -765,6 +783,12 @@ export function StudioClient({
                     ))}
                   </ul>
                 </div>
+                {/* Home: the projects, wider than the composer's column (TICKET-062) */}
+                {isNew && (
+                  <div className="w-full max-w-[1040px]">
+                    <ProjectGrid projects={projects} isGuest={isGuest} />
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -859,7 +883,7 @@ function DeleteSession({ onConfirm }: { onConfirm: () => void }) {
   }, [asking]);
   return asking ? (
     <Button variant="destructive" size="sm" onClick={onConfirm} autoFocus>
-      Delete this session
+      Delete this project
     </Button>
   ) : (
     <Button variant="ghost" size="sm" onClick={() => setAsking(true)}>
@@ -906,7 +930,7 @@ function EditableTitle({
       <input
         // biome-ignore lint/a11y/noAutofocus: entering rename mode is the user's action
         autoFocus
-        aria-label="Session name"
+        aria-label="Project name"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}

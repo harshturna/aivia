@@ -48,7 +48,7 @@ test.describe("in use, as the guest", () => {
   test("a long thread ends just above the composer", async ({ page }) => {
     const session = longSession("55555555-5555-4555-8555-555555555555");
     await seedLocal(page, [session]);
-    await page.goto(`/studio?local=${session.id}`, {
+    await page.goto(`/p/${session.id}`, {
       waitUntil: "networkidle",
     });
     await expect(page.getByText("Brief 7")).toBeVisible();
