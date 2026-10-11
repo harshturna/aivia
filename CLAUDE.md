@@ -48,8 +48,10 @@ directories; take the highest existing `TICKET-NNN` and add one. Never reuse a n
    was actually run and its result. Outcome says what shipped, what was left out, and which
    follow-up tickets were created. Then set `done`, move to `done/`, and run `npm run verify`.
    A ticket that changes what a screen looks like also records a screenshot review at 1440 and
-   390 (`npm run shots` writes them to `.shots/`). A ticket is not closed until the file has
-   moved and the named checks pass.
+   390 (`npm run shots` writes them to `.shots/`), in use as well as fresh: long content, a
+   short window, phone-width dialogs, the state after the action (the `state-*` shots, and
+   `tests/e2e/in-use.spec.ts`). A ticket is not closed until the file has moved and the
+   named checks pass.
 7. **Commit when a ticket closes, before the next one starts.** One ticket, one commit (or a
    few, each naming `TICKET-NNN` in the subject). Never begin a ticket with uncommitted changes
    from another. The commit includes the moved ticket file.
@@ -111,7 +113,8 @@ ticket that changes a model records its price per call in that file.
 
 ## Deploys
 
-Vercel, from the GitHub remote. `main` is the live site and stays untouched; the revamp is
+Railway, from the GitHub remote (the commit status reads "Railway is deploying"; there is no
+Vercel project). `main` is the live site and stays untouched; the revamp is
 built on the `revamp` branch and merged when the owner says so. A push to `main` is a deploy
 unless the project has been set to manual; check before assuming either. A ticket's
 Verification says "pushed" or "deployed" as appropriate, never one for the other.

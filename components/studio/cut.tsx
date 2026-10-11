@@ -68,7 +68,7 @@ export function CutAction({
   );
 }
 
-/** What the library route accepts (Vercel's request limit, TICKET-042). */
+/** What the library route accepts: set under Vercel's 4.5 MB limit (TICKET-042); the site runs on Railway now and the cap stays, keeping uploads small. */
 const KEEP_BYTES = 4 * 1024 * 1024;
 
 type Done = { at: "done"; result: Rendered; url: string };

@@ -2,7 +2,10 @@
 // as the guest, written to .shots/. Needs a running dev server:
 //   PORT=3005 npm run dev &  then  npm run shots
 // Options: BASE (default http://localhost:3005), PAGES (comma list),
-// WIDTHS (default 1440,1024,768,390), FULL=0 for viewport-only, GUEST=0 to stay signed out.
+// WIDTHS (default 1440,1024,768,390), FULL=0 for viewport-only, GUEST=0 to stay signed out,
+// STATES=0 to skip the in-use states (TICKET-056): a long thread at its end, a short window
+// with the mode menu open, the palette with long results, a sound's page on a phone, the
+// landing with reduced motion. Fresh screens hid every problem the TICKET-050 audit found.
 import { mkdirSync } from "node:fs";
 import { chromium } from "@playwright/test";
 
@@ -49,5 +52,77 @@ for (const width of WIDTHS) {
       console.log("fail", name, String(error).slice(0, 160));
     }
   }
+}
+if (process.env.STATES !== "0" && process.env.GUEST !== "0") {
+  const thread = {
+    id: "77777777-7777-4777-8777-777777777777",
+    title: "A long thread",
+    updatedAt: Date.now(),
+    messages: Array.from({ length: 7 }, (_, i) => [
+      {
+        id: `u${i}`,
+        role: "user",
+        parts: [{ type: "text", text: `Brief ${i + 1}` }],
+      },
+      {
+        id: `a${i}`,
+        role: "assistant",
+        parts: [{ type: "text", text: "A paragraph of notes. ".repeat(40) }],
+      },
+    ]).flat(),
+  };
+  await context.addInitScript((t) => {
+    localStorage.setItem("aivia:guest-sessions", JSON.stringify([t]));
+  }, thread);
+  const shoot = async (name, width, height, go) => {
+    try {
+      await page.setViewportSize({ width, height });
+      await go();
+      await page.waitForTimeout(600);
+      await page.screenshot({
+        path: `${OUT}/state-${name}@${width}x${height}.png`,
+      });
+      console.log("ok  ", `state-${name}`, width, height);
+    } catch (error) {
+      console.log("fail", `state-${name}`, String(error).slice(0, 160));
+    }
+  };
+  const open = (path) =>
+    page.goto(BASE + path, { waitUntil: "networkidle", timeout: 45_000 });
+  for (const [w, h] of [
+    [1440, 900],
+    [390, 844],
+  ])
+    await shoot("thread-end", w, h, async () => {
+      await open(`/studio?local=${thread.id}`);
+      await page.evaluate(() =>
+        window.scrollTo(0, document.documentElement.scrollHeight)
+      );
+    });
+  await shoot("short-window-menu", 1440, 600, async () => {
+    await open("/studio");
+    await page.getByRole("button", { name: /^Mode:/ }).click();
+  });
+  for (const [w, h] of [
+    [1440, 900],
+    [390, 844],
+  ])
+    await shoot("palette", w, h, async () => {
+      await open("/studio");
+      await page.keyboard.press("Meta+k");
+      await page.getByRole("combobox").fill("forest");
+      await page.waitForTimeout(800);
+    });
+  await shoot("sound-page", 390, 844, async () => {
+    const list = await (
+      await page.request.get(`${BASE}/api/assets?kind=audio`)
+    ).json();
+    const sound = (list.items ?? list)[0];
+    if (sound) await open(`/library/a/${sound.id}`);
+  });
+  await shoot("landing-reduced", 390, 844, async () => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await open("/");
+  });
 }
 await browser.close();

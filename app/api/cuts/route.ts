@@ -5,7 +5,7 @@ import { getUser } from "@/lib/getUser";
 import { isGuestId } from "@/lib/guest-user";
 import { getSession, isSessionId } from "@/lib/sessions";
 
-/** Vercel caps a function's request body at about 4.5 MB; the dialog keeps cuts under this. */
+/** The cut size cap, set under Vercel's 4.5 MB request limit (TICKET-042); the site runs on Railway now and the cap stays, keeping uploads small. The dialog keeps cuts under it. */
 const MAX_BYTES = 4 * 1024 * 1024;
 const TYPES = new Set(["video/mp4", "video/webm"]);
 
