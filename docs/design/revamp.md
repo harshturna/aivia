@@ -451,8 +451,7 @@ Asset     id, userId, sessionId?, kind (image|video|music|sound), url, posterUrl
 - A guest's own work lives in their browser instead (TICKET-041, `lib/guest-local.ts`): up to
   five sessions, saved as runs finish, without pasted attachments; a guest session's address
   is `/studio?local=<id>` and reopens after a reload; Recents show them under "On this device"
-  above the examples; after a run a quiet note says it lives only in this browser and offers
-  an account. Signing up or signing in claims them (`POST /api/claim`): each becomes a session
+  above the examples. Signing up or signing in claims them (`POST /api/claim`): each becomes a session
   of the new account under a fresh id, with an asset per output (https or the site's own
   media only), and the browser copy is cleared.
 - `/api/sessions` (list, create), `/api/sessions/[id]` (get, rename, delete), `/api/assets`

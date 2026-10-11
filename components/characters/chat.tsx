@@ -127,7 +127,7 @@ export function CharacterChat({
           ))}
       </ScreenHeader>
 
-      <div className="flex-1 px-6 pb-44 pt-8">
+      <div className="flex-1 px-6 pb-6 pt-8">
         <div className="mx-auto max-w-[680px] space-y-6">
           <Line
             who={character}
@@ -176,8 +176,8 @@ export function CharacterChat({
               talking.
             </div>
           )}
-          <div ref={bottom} className="scroll-mb-44" />
         </div>
+        <div ref={bottom} className="scroll-mb-44" />
       </div>
 
       <div className="sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10">

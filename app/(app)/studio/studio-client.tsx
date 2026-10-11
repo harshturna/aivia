@@ -4,7 +4,6 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Upload } from "lucide-react";
 import { domMax, LazyMotion, MotionConfig, m } from "motion/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScreenHeader } from "@/components/shell/screen";
@@ -530,7 +529,7 @@ export function StudioClient({
               </div>
             ) : (
               <>
-                <div className="flex-1 px-6 pb-48 pt-8">
+                <div className="flex-1 px-6 pb-6 pt-8">
                   <div className="mx-auto max-w-[760px] space-y-10">
                     {runs.map((run, i) => {
                       const last = i === runs.length - 1;
@@ -557,17 +556,6 @@ export function StudioClient({
                         </div>
                       );
                     })}
-                    {localKey && !busy && runs.length > 0 && (
-                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-media border border-border bg-surface p-4 text-[13.5px]">
-                        <span className="max-w-[52ch] text-fg-2">
-                          This lives only in this browser. Create an account to
-                          keep it, and everything you make next.
-                        </span>
-                        <Button asChild size="sm">
-                          <Link href="/signup">Create an account</Link>
-                        </Button>
-                      </div>
-                    )}
                     {error && !limit && (
                       <div className="flex items-center justify-between gap-4 rounded-media border border-border bg-surface p-4 text-[13px]">
                         <span className="text-fg-2">
@@ -583,8 +571,9 @@ export function StudioClient({
                     {limit && (
                       <LimitMessage kind={limit} onUpgrade={proModal.onOpen} />
                     )}
-                    <div ref={bottomRef} className="scroll-mb-48" />
                   </div>
+                  {/* outside the list, so it adds no gap of its own */}
+                  <div ref={bottomRef} className="scroll-mb-48" />
                 </div>
                 <div className="sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_55%,transparent)] px-6 pb-4 pt-10">
                   <m.div layoutId="composer" className="mx-auto max-w-[760px]">
