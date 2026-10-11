@@ -15,6 +15,11 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActionButtons,
+  MediaHandlersProvider,
+} from "@/components/media/actions";
+import { useLibraryHandlers } from "@/components/media/library-handlers";
 import { AudioRow } from "@/components/studio/audio-row";
 import { titleFrom } from "@/components/studio/outputs";
 import { Button } from "@/components/ui/button";
@@ -162,6 +167,10 @@ export function Lightbox({
       (opener.current as HTMLElement | null)?.focus?.();
     };
   }, [modal, close]);
+
+  const handlers = useLibraryHandlers({
+    favourite: readOnly ? undefined : () => void toggleFavorite(),
+  });
 
   const toggleFavorite = async () => {
     const next = !favorite;
@@ -332,49 +341,25 @@ export function Lightbox({
           )}
         </dl>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() =>
-              downloadFile(asset.url, fileNameFrom(asset.prompt, asset.kind))
-            }
-          >
-            <Download /> Download
+        {/* the same actions as everywhere else (TICKET-063), then the way back to its project */}
+        <MediaHandlersProvider value={handlers}>
+          <ActionButtons
+            item={{
+              url: asset.url,
+              kind: asset.kind,
+              prompt: asset.prompt,
+              assetId: asset.id,
+              favorite,
+            }}
+          />
+        </MediaHandlersProvider>
+        {asset.sessionId && (
+          <Button asChild variant="secondary" size="sm" className="w-fit">
+            <Link href={`/p/${asset.sessionId}`}>
+              <MessageSquare /> Open the project
+            </Link>
           </Button>
-          {!readOnly && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={toggleFavorite}
-              aria-pressed={favorite}
-            >
-              <Heart className={cn(favorite && "fill-current")} />
-              {favorite ? "In favourites" : "Add to favourites"}
-            </Button>
-          )}
-          {asset.kind === "image" && (
-            <Button asChild variant="secondary" size="sm">
-              <Link href={`/studio?animate=${asset.id}`}>
-                <Film /> Animate
-              </Link>
-            </Button>
-          )}
-          {asset.kind === "image" && (
-            <Button asChild variant="secondary" size="sm">
-              <Link href={`/edit?asset=${asset.id}`}>
-                <Wand2 /> Edit
-              </Link>
-            </Button>
-          )}
-          {asset.sessionId && (
-            <Button asChild variant="secondary" size="sm">
-              <Link href={`/p/${asset.sessionId}`}>
-                <MessageSquare /> Open the project
-              </Link>
-            </Button>
-          )}
-        </div>
+        )}
 
         {!readOnly && (
           <div className="mt-auto border-t border-border pt-4">

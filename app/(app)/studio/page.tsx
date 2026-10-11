@@ -26,16 +26,19 @@ export default async function NewSessionPage({
     send?: string;
     animate?: string;
     local?: string;
+    /** A library piece to attach to the first brief (TICKET-063). */
+    ref?: string;
   }>;
 }) {
-  const { prompt, mode, animate, local, send } = await searchParams;
+  const { prompt, mode, animate, local, send, ref } = await searchParams;
   // a guest's browser project has its own address now (TICKET-062)
   if (local && isSessionId(local)) redirect(`/p/${local}`);
   // From the library: a still to animate as the Studio opens (TICKET-039)
   const user = await getUser("SERVER_COMPONENT");
-  const [still, projects] = await Promise.all([
+  const [still, projects, reference] = await Promise.all([
     user && animate ? getAsset(user.id, animate) : null,
     user ? listProjects(user.id) : [],
+    user && ref ? getAsset(user.id, ref) : null,
   ]);
   const initialAnimate =
     still?.kind === "image"
@@ -61,6 +64,11 @@ export default async function NewSessionPage({
       sendOnArrival={send === "1" && Boolean(prompt?.trim())}
       initialAnimate={initialAnimate}
       initialMode={initialMode}
+      initialRef={
+        reference?.kind === "image"
+          ? { url: reference.url, prompt: reference.prompt }
+          : undefined
+      }
       projects={projects.map((p) => ({
         ...p,
         createdAt: p.createdAt.toISOString(),

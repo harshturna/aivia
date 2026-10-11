@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getUser } from "@/lib/getUser";
 import { isGuestUser } from "@/lib/guest-user";
@@ -27,6 +28,8 @@ export default async function ProjectPage({ params }: Params) {
   if (!isSessionId(id)) notFound();
   const isGuest = await isGuestUser("SERVER_COMPONENT");
   const session = await getSession(user.id, id);
+  // the media tray stays as it was left (TICKET-063)
+  const trayOpen = (await cookies()).get("aivia_tray")?.value !== "closed";
   if (session)
     return (
       <StudioClient
@@ -36,8 +39,18 @@ export default async function ProjectPage({ params }: Params) {
         isGuest={isGuest}
         initialMessages={session.messages}
         initialTitle={projectTitle(session.title)}
+        trayOpen={trayOpen}
       />
     );
   if (!isGuest) notFound();
-  return <StudioClient key={id} id={id} isNew isGuest localId={id} />;
+  return (
+    <StudioClient
+      key={id}
+      id={id}
+      isNew
+      isGuest
+      localId={id}
+      trayOpen={trayOpen}
+    />
+  );
 }

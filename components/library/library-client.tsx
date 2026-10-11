@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Maximize2, Search, X } from "lucide-react";
+import { Check, Heart, Maximize2, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -11,6 +11,13 @@ import {
   useState,
   useTransition,
 } from "react";
+import {
+  actionsFor,
+  HoverActions,
+  MediaHandlersProvider,
+  MediaMenu,
+} from "@/components/media/actions";
+import { useLibraryHandlers } from "@/components/media/library-handlers";
 import { ScreenHeader } from "@/components/shell/screen";
 import { AudioRow } from "@/components/studio/audio-row";
 import { titleFrom } from "@/components/studio/outputs";
@@ -18,6 +25,7 @@ import { RevealImage } from "@/components/studio/reveal-image";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { groupByDay } from "@/lib/day-groups";
+import { downloadFile, fileNameFrom } from "@/lib/download";
 import { formatDuration } from "@/lib/duration";
 import { cn } from "@/lib/utils";
 import type { LibraryAsset, LibraryKind } from "./types";
@@ -167,60 +175,55 @@ export function LibraryClient({
       );
   };
 
+  // ── several at once (TICKET-063): ⌘ or ⇧ on a tile selects it ───────────────────────
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const select = useCallback(
+    (asset: LibraryAsset, toggle: boolean) => {
+      if (!toggle && selected.size === 0) return false;
+      setSelected((s) => {
+        const next = new Set(s);
+        if (next.has(asset.id)) next.delete(asset.id);
+        else next.add(asset.id);
+        return next;
+      });
+      setConfirmDelete(false);
+      return true;
+    },
+    [selected.size]
+  );
+  const chosen = items.filter((a) => selected.has(a.id));
+  const deleteChosen = async () => {
+    const results = await Promise.all(
+      chosen.map((a) =>
+        fetch(`/api/assets/${a.id}`, { method: "DELETE" }).then((r) => r.ok)
+      )
+    );
+    const gone = new Set(chosen.filter((_, i) => results[i]).map((a) => a.id));
+    setItems((current) => current.filter((a) => !gone.has(a.id)));
+    setSelected(new Set());
+    setConfirmDelete(false);
+    router.refresh();
+  };
+
+  const handlers = useLibraryHandlers({
+    favourite: readOnly
+      ? undefined
+      : (item) => {
+          const asset = items.find((a) => a.id === item.assetId);
+          if (asset) void toggleFavorite(asset);
+        },
+    open: (item) =>
+      router.push(`/library/a/${item.assetId}`, { scroll: false }),
+  });
+
   const filtered = Boolean(query) || favorites || kind !== "all" || !!project;
 
   return (
-    <div className="min-h-dvh">
-      <ScreenHeader title="Library">
-        <div className="hidden items-center gap-2 md:flex">
-          <SearchField value={search} onChange={setSearch} />
-          {!readOnly && (
-            <FavouritesToggle on={favorites} href={href({ fav: !favorites })} />
-          )}
-        </div>
-      </ScreenHeader>
-
-      <div className="px-3 pt-4 lg:px-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <nav
-            aria-label="Kind"
-            className="inline-flex rounded-control border border-border p-0.5 text-[13px] font-medium"
-          >
-            {TABS.map((tab) => (
-              <Link
-                key={tab.id}
-                href={href({ kind: tab.id })}
-                aria-current={tab.id === kind ? "page" : undefined}
-                replace
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-chip px-3 py-1 transition-colors duration-150",
-                  tab.id === kind
-                    ? "bg-surface-3 text-fg"
-                    : "text-fg-2 hover:text-fg"
-                )}
-              >
-                {tab.tint && (
-                  <span
-                    aria-hidden
-                    className={cn("h-2 w-1.5 rounded-t-full", tab.tint)}
-                  />
-                )}
-                {tab.label}
-              </Link>
-            ))}
-          </nav>
-          {project && (
-            <Link
-              href={href({ project: null })}
-              replace
-              aria-label={`Show everything, not only ${project.title}`}
-              className="inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-control bg-surface-3 px-2.5 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2"
-            >
-              <span className="truncate">{project.title}</span>
-              <X className="size-3.5 shrink-0 text-mute" />
-            </Link>
-          )}
-          <div className="flex w-full items-center gap-2 md:hidden">
+    <MediaHandlersProvider value={handlers}>
+      <div className="min-h-dvh">
+        <ScreenHeader title="Library">
+          <div className="hidden items-center gap-2 md:flex">
             <SearchField value={search} onChange={setSearch} />
             {!readOnly && (
               <FavouritesToggle
@@ -229,135 +232,251 @@ export function LibraryClient({
               />
             )}
           </div>
-        </div>
-      </div>
+        </ScreenHeader>
 
-      <div
-        aria-busy={searching}
-        className={cn(
-          "px-3 pb-16 pt-6 transition-opacity duration-150 lg:px-6",
-          searching && "opacity-60"
-        )}
-      >
-        {items.length === 0 ? (
-          <div className="mx-auto max-w-[420px] py-24 text-center">
-            <p className="text-[15px]">
-              {filtered ? "Nothing matches." : "Nothing made yet."}
-            </p>
-            <p className="mt-1 text-[13px] text-mute">
-              {filtered
-                ? "Try another word, or clear the filters."
-                : "Everything you make in the Studio lands here."}
-            </p>
-            <Link
-              href={filtered ? "/library" : "/studio"}
-              className={cn(buttonVariants({ variant: "secondary" }), "mt-5")}
+        <div className="px-3 pt-4 lg:px-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <nav
+              aria-label="Kind"
+              className="inline-flex rounded-control border border-border p-0.5 text-[13px] font-medium"
             >
-              {filtered ? "Clear the filters" : "Open the Studio"}
-            </Link>
+              {TABS.map((tab) => (
+                <Link
+                  key={tab.id}
+                  href={href({ kind: tab.id })}
+                  aria-current={tab.id === kind ? "page" : undefined}
+                  replace
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-chip px-3 py-1 transition-colors duration-150",
+                    tab.id === kind
+                      ? "bg-surface-3 text-fg"
+                      : "text-fg-2 hover:text-fg"
+                  )}
+                >
+                  {tab.tint && (
+                    <span
+                      aria-hidden
+                      className={cn("h-2 w-1.5 rounded-t-full", tab.tint)}
+                    />
+                  )}
+                  {tab.label}
+                </Link>
+              ))}
+            </nav>
+            {project && (
+              <Link
+                href={href({ project: null })}
+                replace
+                aria-label={`Show everything, not only ${project.title}`}
+                className="inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-control bg-surface-3 px-2.5 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2"
+              >
+                <span className="truncate">{project.title}</span>
+                <X className="size-3.5 shrink-0 text-mute" />
+              </Link>
+            )}
+            <div className="flex w-full items-center gap-2 md:hidden">
+              <SearchField value={search} onChange={setSearch} />
+              {!readOnly && (
+                <FavouritesToggle
+                  on={favorites}
+                  href={href({ fav: !favorites })}
+                />
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="space-y-10">
-            {groups.map((group) => {
-              const visual = group.items.filter(
-                (a) => a.kind === "image" || a.kind === "video"
-              );
-              const audio = group.items.filter(
-                (a) => a.kind === "music" || a.kind === "sound"
-              );
-              return (
-                <section key={group.day} aria-labelledby={`day-${group.day}`}>
-                  <h2
-                    id={`day-${group.day}`}
-                    className="mb-3 text-[13px] font-medium text-mute"
-                  >
-                    {group.label}
-                  </h2>
-                  {visual.length > 0 && (
-                    <div className="columns-2 gap-2 md:columns-3 xl:columns-4">
-                      {visual.map((a) => (
-                        <Tile
-                          readOnly={readOnly}
-                          key={a.id}
-                          asset={{ ...a, createdAt: a.createdAt.toISOString() }}
-                          onFavorite={() =>
-                            toggleFavorite({
+        </div>
+
+        <div
+          aria-busy={searching}
+          className={cn(
+            "px-3 pb-16 pt-6 transition-opacity duration-150 lg:px-6",
+            searching && "opacity-60"
+          )}
+        >
+          {items.length === 0 ? (
+            <div className="mx-auto max-w-[420px] py-24 text-center">
+              <p className="text-[15px]">
+                {filtered ? "Nothing matches." : "Nothing made yet."}
+              </p>
+              <p className="mt-1 text-[13px] text-mute">
+                {filtered
+                  ? "Try another word, or clear the filters."
+                  : "Everything you make in the Studio lands here."}
+              </p>
+              <Link
+                href={filtered ? "/library" : "/studio"}
+                className={cn(buttonVariants({ variant: "secondary" }), "mt-5")}
+              >
+                {filtered ? "Clear the filters" : "Open the Studio"}
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {groups.map((group) => {
+                const visual = group.items.filter(
+                  (a) => a.kind === "image" || a.kind === "video"
+                );
+                const audio = group.items.filter(
+                  (a) => a.kind === "music" || a.kind === "sound"
+                );
+                return (
+                  <section key={group.day} aria-labelledby={`day-${group.day}`}>
+                    <h2
+                      id={`day-${group.day}`}
+                      className="mb-3 text-[13px] font-medium text-mute"
+                    >
+                      {group.label}
+                    </h2>
+                    {visual.length > 0 && (
+                      <div className="columns-2 gap-2 md:columns-3 xl:columns-4">
+                        {visual.map((a) => (
+                          <Tile
+                            key={a.id}
+                            asset={{
                               ...a,
                               createdAt: a.createdAt.toISOString(),
-                            })
-                          }
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {audio.length > 0 && (
-                    // one column until there is room for two full rows (TICKET-053)
-                    <div
-                      className={cn(
-                        "grid gap-2 xl:grid-cols-2",
-                        visual.length > 0 && "mt-2"
-                      )}
-                    >
-                      {audio.map((a) => (
-                        <AudioRow
-                          key={a.id}
-                          className="min-w-0"
-                          src={a.url}
-                          title={
-                            titleFrom(a.prompt) ||
-                            (a.kind === "music" ? "Track" : "Sound")
-                          }
-                          subtitle={
-                            a.kind === "music" ? "Music" : "Sound effect"
-                          }
-                          seconds={a.durationSec ?? undefined}
-                          action={
-                            <Link
-                              href={`/library/a/${a.id}`}
-                              scroll={false}
-                              aria-label={`Open details for ${
-                                titleFrom(a.prompt) ||
-                                (a.kind === "music" ? "the track" : "the sound")
-                              }`}
-                              className="grid size-8 shrink-0 place-items-center rounded-control text-mute transition-colors hover:bg-surface-2 hover:text-fg"
-                            >
-                              <Maximize2 className="size-4" />
-                            </Link>
-                          }
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
-              );
-            })}
-            {cursor && (
-              <div
-                ref={end}
-                className="columns-2 gap-2 md:columns-3 xl:columns-4"
+                            }}
+                            selected={selected.has(a.id)}
+                            onSelect={select}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {audio.length > 0 && (
+                      // one column until there is room for two full rows (TICKET-053)
+                      <div
+                        className={cn(
+                          "grid gap-2 xl:grid-cols-2",
+                          visual.length > 0 && "mt-2"
+                        )}
+                      >
+                        {audio.map((a) => (
+                          <AudioRow
+                            key={a.id}
+                            className="min-w-0"
+                            src={a.url}
+                            title={
+                              titleFrom(a.prompt) ||
+                              (a.kind === "music" ? "Track" : "Sound")
+                            }
+                            subtitle={
+                              a.kind === "music" ? "Music" : "Sound effect"
+                            }
+                            seconds={a.durationSec ?? undefined}
+                            action={
+                              <>
+                                <MediaMenu
+                                  actions={actionsFor(
+                                    {
+                                      url: a.url,
+                                      kind: a.kind,
+                                      prompt: a.prompt,
+                                      assetId: a.id,
+                                      favorite: a.favorite,
+                                    },
+                                    handlers
+                                  ).filter((x) => x.id !== "download")}
+                                  label={titleFrom(a.prompt) || "the track"}
+                                  className="size-8 bg-transparent text-mute hover:bg-surface-2 hover:text-fg"
+                                />
+                                <Link
+                                  href={`/library/a/${a.id}`}
+                                  scroll={false}
+                                  aria-label={`Open details for ${
+                                    titleFrom(a.prompt) ||
+                                    (a.kind === "music"
+                                      ? "the track"
+                                      : "the sound")
+                                  }`}
+                                  className="grid size-8 shrink-0 place-items-center rounded-control text-mute transition-colors hover:bg-surface-2 hover:text-fg"
+                                >
+                                  <Maximize2 className="size-4" />
+                                </Link>
+                              </>
+                            }
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+              {cursor && (
+                <div
+                  ref={end}
+                  className="columns-2 gap-2 md:columns-3 xl:columns-4"
+                >
+                  {loading &&
+                    Array.from({ length: 4 }, (_, i) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: placeholders
+                      <Skeleton key={i} className="mb-2 aspect-square" />
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {selected.size > 0 && (
+          <div className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
+            <div className="flex items-center gap-2 rounded-panel border border-border bg-surface-2 px-3 py-2 text-[13px] shadow-float">
+              <span className="tabular px-1 text-fg-2">
+                {selected.size} selected
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  for (const a of chosen)
+                    void downloadFile(a.url, fileNameFrom(a.prompt, a.kind));
+                }}
+                className="rounded-control px-2.5 py-1.5 text-fg transition-colors hover:bg-surface-3"
               >
-                {loading &&
-                  Array.from({ length: 4 }, (_, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: placeholders
-                    <Skeleton key={i} className="mb-2 aspect-square" />
-                  ))}
-              </div>
-            )}
+                Download
+              </button>
+              {!readOnly &&
+                (confirmDelete ? (
+                  <button
+                    type="button"
+                    onClick={deleteChosen}
+                    className="rounded-control bg-destructive px-2.5 py-1.5 text-destructive-foreground"
+                  >
+                    Delete {selected.size} for good
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    className="rounded-control px-2.5 py-1.5 text-fg transition-colors hover:bg-surface-3"
+                  >
+                    Delete
+                  </button>
+                ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelected(new Set());
+                  setConfirmDelete(false);
+                }}
+                className="rounded-control px-2.5 py-1.5 text-fg-2 transition-colors hover:bg-surface-3 hover:text-fg"
+              >
+                Clear
+              </button>
+            </div>
           </div>
         )}
       </div>
-    </div>
+    </MediaHandlersProvider>
   );
 }
 
 function Tile({
-  readOnly = false,
   asset,
-  onFavorite,
+  selected,
+  onSelect,
 }: {
   asset: LibraryAsset;
-  onFavorite: () => void;
-  readOnly?: boolean;
+  selected: boolean;
+  /** ⌘ or ⇧ selects instead of opening (TICKET-063). */
+  onSelect: (asset: LibraryAsset, toggle: boolean) => boolean;
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const ratio =
@@ -368,7 +487,10 @@ function Tile({
         : undefined;
   return (
     <figure
-      className="group relative mb-2 overflow-hidden rounded-media bg-surface [break-inside:avoid]"
+      className={cn(
+        "group relative mb-2 overflow-hidden rounded-media bg-surface [break-inside:avoid]",
+        selected && "ring-2 ring-fg ring-offset-2 ring-offset-bg"
+      )}
       style={ratio ? { aspectRatio: ratio } : undefined}
       onMouseEnter={() => video.current?.play().catch(() => {})}
       onMouseLeave={() => video.current?.pause()}
@@ -376,6 +498,11 @@ function Tile({
       <Link
         href={`/library/a/${asset.id}`}
         scroll={false}
+        onClick={(event) => {
+          if (onSelect(asset, event.metaKey || event.ctrlKey || event.shiftKey))
+            event.preventDefault();
+        }}
+        aria-pressed={selected || undefined}
         // inset: the figure clips anything drawn outside it
         className="block size-full focus-visible:outline-offset-[-3px]"
         aria-label={asset.prompt}
@@ -406,24 +533,27 @@ function Tile({
           {formatDuration(asset.durationSec)}
         </span>
       )}
-      {!readOnly && (
-        <button
-          type="button"
-          onClick={onFavorite}
-          aria-pressed={asset.favorite}
-          aria-label={
-            asset.favorite ? "Remove from favourites" : "Add to favourites"
-          }
-          className={cn(
-            "absolute right-2 top-2 grid size-8 place-items-center rounded-control bg-bg/60 text-fg backdrop-blur transition-opacity duration-150 focus-visible:opacity-100",
-            asset.favorite
-              ? "opacity-100"
-              : "opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
-          )}
-        >
-          <Heart className={cn("size-4", asset.favorite && "fill-current")} />
-        </button>
+      {asset.favorite && (
+        <Heart
+          aria-label="In favourites"
+          className="absolute left-2 top-2 size-4 fill-current text-fg drop-shadow"
+        />
       )}
+      {selected && (
+        <span className="absolute left-2 top-2 grid size-6 place-items-center rounded-full bg-fg text-bg">
+          <Check className="size-3.5" />
+        </span>
+      )}
+      <HoverActions
+        item={{
+          url: asset.url,
+          kind: asset.kind,
+          prompt: asset.prompt,
+          assetId: asset.id,
+          favorite: asset.favorite,
+        }}
+        label={asset.prompt}
+      />
     </figure>
   );
 }

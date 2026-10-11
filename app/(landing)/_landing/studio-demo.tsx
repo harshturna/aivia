@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from "react";
 import Logo from "@/components/Logo";
 import { Composer } from "@/components/studio/composer";
 import { RunDemo } from "@/components/studio/run-demo";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CLIPS, STILLS, TRACKS } from "@/lib/landing-media";
 import { cn } from "@/lib/utils";
 import { H2, LEDE, WRAP } from "./type";
 
@@ -70,7 +72,7 @@ export function StudioDemo() {
       {/* a fixed frame: the run scrolls inside it, so nothing around it grows */}
       <div className="mt-12 h-[620px] overflow-hidden rounded-window border border-border bg-surface shadow-float md:h-[720px]">
         {/* one explicit column on a phone: the run cannot widen the frame (TICKET-055) */}
-        <div className="grid h-full grid-cols-[minmax(0,1fr)] md:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="grid h-full grid-cols-[minmax(0,1fr)] md:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[200px_minmax(0,1fr)_200px]">
           <aside
             aria-hidden
             className="hidden flex-col gap-5 border-r border-border px-3 py-4 text-[13px] md:flex"
@@ -175,6 +177,44 @@ export function StudioDemo() {
               />
             </div>
           </div>
+          {/* the project's media, as the tray shows it (TICKET-063) */}
+          <aside
+            aria-hidden
+            className="hidden flex-col gap-3 border-l border-border px-3 py-4 text-[13px] xl:flex"
+          >
+            <div className="px-1 font-medium">Media</div>
+            <div className="truncate px-1 text-[12px] text-mute">
+              A poster, a short teaser and a soundtrack
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {done ? (
+                <>
+                  {/* biome-ignore lint/performance/noImgElement: a thumbnail in a picture of the app */}
+                  <img
+                    src={STILLS[0].src}
+                    alt=""
+                    className="aspect-square rounded-control object-cover"
+                  />
+                  {/* biome-ignore lint/performance/noImgElement: as above */}
+                  <img
+                    src={CLIPS[0].poster}
+                    alt=""
+                    className="aspect-square rounded-control object-cover"
+                  />
+                  <div className="col-span-2 flex h-9 items-center gap-2 truncate rounded-control bg-surface-2 px-2.5 text-[12px] text-fg-2">
+                    <span aria-hidden>♪</span>
+                    <span className="truncate">{TRACKS[0].title}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Skeleton className="aspect-square rounded-control" />
+                  <Skeleton className="aspect-square rounded-control" />
+                  <Skeleton className="col-span-2 h-9 rounded-control" />
+                </>
+              )}
+            </div>
+          </aside>
         </div>
       </div>
     </section>

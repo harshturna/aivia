@@ -2,11 +2,17 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { Upload } from "lucide-react";
+import { PanelRight, Upload } from "lucide-react";
 import { domMax, LazyMotion, MotionConfig, m } from "motion/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type MediaHandlers,
+  MediaHandlersProvider,
+  type MediaIndex,
+  MediaIndexProvider,
+} from "@/components/media/actions";
+import { MEDIA_DRAG, MediaTray } from "@/components/media/tray";
 import { ScreenHeader } from "@/components/shell/screen";
 import { StudioActionsProvider } from "@/components/studio/actions";
 import {
@@ -28,6 +34,7 @@ import {
 } from "@/components/studio/project-grid";
 import { Run } from "@/components/studio/run";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { userProModal } from "@/hooks/useProModal";
 import { ANIMATE_BRIEF, aspectOfSize } from "@/lib/ai/direct";
 import {
@@ -35,6 +42,13 @@ import {
   getLocalSession,
   saveLocalSession,
 } from "@/lib/guest-local";
+import {
+  fileFromUrl,
+  frameOf,
+  type MediaItem,
+  mediaByBrief,
+  nameFrom,
+} from "@/lib/media";
 import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 
@@ -212,6 +226,8 @@ export function StudioClient({
   localId,
   sendOnArrival = false,
   projects = [],
+  trayOpen: initialTray = true,
+  initialRef,
 }: {
   id: string;
   initialMessages?: UIMessage[];
@@ -234,6 +250,10 @@ export function StudioClient({
   sendOnArrival?: boolean;
   /** Home's projects, shown under its composer (TICKET-062). */
   projects?: ProjectCardData[];
+  /** The media tray's last state, from its cookie (TICKET-063). */
+  trayOpen?: boolean;
+  /** A piece from the library to attach as the brief's reference, on arrival. */
+  initialRef?: { url: string; prompt: string };
 }) {
   const router = useRouter();
   const proModal = userProModal();
@@ -635,6 +655,158 @@ export function StudioClient({
     return () => window.clearTimeout(timer);
   }, []);
 
+  // ── the project's media (D-005 §17.2, TICKET-063) ──────────────────────────────────
+  const [tray, setTray] = useState(initialTray);
+  const [traySheet, setTraySheet] = useState(false);
+  const groups = useMemo(
+    () =>
+      mediaByBrief(messages as unknown as Parameters<typeof mediaByBrief>[0]),
+    [messages]
+  );
+  const toggleTray = useCallback(() => {
+    if (window.matchMedia("(min-width: 1024px)").matches)
+      setTray((open) => {
+        const next = !open;
+        document.cookie = `aivia_tray=${next ? "open" : "closed"}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+        return next;
+      });
+    else setTraySheet(true);
+  }, []);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === ".") {
+        event.preventDefault();
+        toggleTray();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [toggleTray]);
+
+  // a saved project's pieces are library assets: found by address, for favourites and Edit
+  const [index, setIndex] = useState<MediaIndex>(new Map());
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refreshed as runs finish
+  useEffect(() => {
+    if (localKey || empty || busy) return;
+    let cancelled = false;
+    fetch(`/api/assets?project=${id}`)
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then(
+        (page: {
+          items: Array<{ id: string; url: string; favorite: boolean }>;
+        }) => {
+          if (cancelled) return;
+          setIndex(
+            new Map(
+              page.items.map((a) => [a.url, { id: a.id, favorite: a.favorite }])
+            )
+          );
+        }
+      )
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [id, localKey, empty, busy, messages.length]);
+
+  const attach = useCallback((file: File) => {
+    setFiles((current) => acceptFiles(current, [file]));
+    composerRef.current?.focus();
+  }, []);
+
+  const handlers = useMemo<MediaHandlers>(
+    () => ({
+      open: (item) => window.open(item.url, "_blank", "noopener,noreferrer"),
+      edit: (item) =>
+        router.push(
+          item.assetId
+            ? `/edit?asset=${item.assetId}`
+            : `/edit?url=${encodeURIComponent(item.url)}`
+        ),
+      animate:
+        busy || limit
+          ? undefined
+          : (item) => {
+              const img = document.querySelector<HTMLImageElement>(
+                `img[src="${CSS.escape(item.url)}"]`
+              );
+              animate({
+                url: item.url,
+                prompt: item.prompt,
+                width: img?.naturalWidth || 1,
+                height: img?.naturalHeight || 1,
+              });
+            },
+      attachToBrief: (item) => {
+        void fileFromUrl(item.url, nameFrom(item.prompt, "reference"))
+          .then(attach)
+          .catch(() => {});
+      },
+      frameToBrief: (item, video) => {
+        const el =
+          video ??
+          document.querySelector<HTMLVideoElement>(
+            `video[data-media-url="${CSS.escape(item.url)}"]`
+          );
+        if (!el) return;
+        void frameOf(el, nameFrom(item.prompt, "frame"))
+          .then(attach)
+          .catch(() => {});
+      },
+      reusePrompt: (item) => {
+        setInput(item.prompt);
+        composerRef.current?.focus();
+      },
+      favourite: isGuest
+        ? undefined
+        : (item) => {
+            if (!item.assetId) return;
+            const next = !item.favorite;
+            setIndex((m) =>
+              new Map(m).set(item.url, {
+                id: item.assetId as string,
+                favorite: next,
+              })
+            );
+            void fetch(`/api/assets/${item.assetId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ favorite: next }),
+            });
+          },
+    }),
+    [router, busy, limit, animate, attach, isGuest]
+  );
+
+  /** Shows a piece where it was made: the thread scrolls to it and marks it briefly. */
+  const openInThread = useCallback((item: MediaItem) => {
+    setTraySheet(false);
+    const el =
+      document.querySelector<HTMLElement>(
+        `[data-media-url="${CSS.escape(item.url)}"]`
+      ) ??
+      document.querySelector<HTMLElement>(`img[src="${CSS.escape(item.url)}"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.animate(
+      [
+        { outline: "2px solid var(--color-fg)", outlineOffset: "4px" },
+        { outline: "2px solid transparent", outlineOffset: "4px" },
+      ],
+      { duration: 1400, easing: "ease-out" }
+    );
+  }, []);
+
+  // a piece from the library, attached as the reference for the first brief
+  const refAttached = useRef(false);
+  useEffect(() => {
+    if (!initialRef || refAttached.current) return;
+    refAttached.current = true;
+    void fileFromUrl(initialRef.url, nameFrom(initialRef.prompt, "reference"))
+      .then(attach)
+      .catch(() => {});
+  }, [initialRef, attach]);
+
   const reuse = useCallback((prompt: string) => {
     setInput(prompt);
     composerRef.current?.focus();
@@ -694,181 +866,249 @@ export function StudioClient({
 
   return (
     <StudioActionsProvider value={actions}>
-      <LazyMotion features={domMax}>
-        <MotionConfig reducedMotion="user">
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: the drop target is the page; the composer's button is the keyboard path */}
-          <div
-            className="relative flex min-h-dvh flex-col lg:min-h-dvh"
-            onDragOver={(event) => {
-              if (!event.dataTransfer.types.includes("Files")) return;
-              event.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={(event) => {
-              if (event.currentTarget === event.target) setDragging(false);
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDragging(false);
-              setFiles((current) =>
-                acceptFiles(current, Array.from(event.dataTransfer.files))
-              );
-            }}
-          >
-            <ScreenHeader
-              title={
-                <EditableTitle
-                  id={id}
-                  // Home until the first brief makes it a project (TICKET-062)
-                  title={isNew && empty ? "Home" : title}
-                  onChange={isGuest ? renameLocal : setTitle}
-                  enabled={!empty && (!isGuest || localKey !== null)}
-                  local={isGuest}
-                />
-              }
-            >
-              {busy && (
-                <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
-                  <span className="size-1.5 animate-pulse rounded-full bg-sun" />
-                  Running
-                </span>
-              )}
-              {/* a saved project's media in the library; a browser copy has none there */}
-              {!empty && !busy && localKey === null && (
-                <Link
-                  href={`/library?project=${id}`}
-                  className="rounded-control px-2 py-1 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
-                >
-                  Media
-                </Link>
-              )}
-              {!empty && !busy && (!isGuest || localKey !== null) && (
-                <DeleteSession onConfirm={isGuest ? removeLocal : remove} />
-              )}
-            </ScreenHeader>
+      <MediaHandlersProvider value={handlers}>
+        <MediaIndexProvider value={index}>
+          <LazyMotion features={domMax}>
+            <MotionConfig reducedMotion="user">
+              {/* biome-ignore lint/a11y/noStaticElementInteractions: the drop target is the page; the composer's button is the keyboard path */}
+              <div
+                className="relative flex min-h-dvh"
+                onDragOver={(event) => {
+                  const types = event.dataTransfer.types;
+                  if (!types.includes("Files") && !types.includes(MEDIA_DRAG))
+                    return;
+                  event.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={(event) => {
+                  if (event.currentTarget === event.target) setDragging(false);
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDragging(false);
+                  // a piece dragged from the tray comes as a reference (TICKET-063)
+                  const piece = event.dataTransfer.getData(MEDIA_DRAG);
+                  if (piece) {
+                    try {
+                      const item = JSON.parse(piece) as MediaItem;
+                      if (item.kind === "image") handlers.attachToBrief?.(item);
+                    } catch {}
+                    return;
+                  }
+                  setFiles((current) =>
+                    acceptFiles(current, Array.from(event.dataTransfer.files))
+                  );
+                }}
+              >
+                <div className="relative flex min-w-0 flex-1 flex-col">
+                  <ScreenHeader
+                    title={
+                      <EditableTitle
+                        id={id}
+                        // Home until the first brief makes it a project (TICKET-062)
+                        title={isNew && empty ? "Home" : title}
+                        onChange={isGuest ? renameLocal : setTitle}
+                        enabled={!empty && (!isGuest || localKey !== null)}
+                        local={isGuest}
+                      />
+                    }
+                  >
+                    {busy && (
+                      <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
+                        <span className="size-1.5 animate-pulse rounded-full bg-sun" />
+                        Running
+                      </span>
+                    )}
+                    {/* the project's media: the tray at 1024 and up, a sheet below (TICKET-063) */}
+                    {!empty && (
+                      <button
+                        type="button"
+                        onClick={toggleTray}
+                        aria-label={tray ? "Hide the media" : "Show the media"}
+                        aria-keyshortcuts="Meta+."
+                        className={cn(
+                          "inline-flex h-8 items-center gap-1.5 rounded-control px-2 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg",
+                          tray && "lg:hidden"
+                        )}
+                      >
+                        <PanelRight className="size-4" /> Media
+                      </button>
+                    )}
+                    {!empty && !busy && (!isGuest || localKey !== null) && (
+                      <DeleteSession
+                        onConfirm={isGuest ? removeLocal : remove}
+                      />
+                    )}
+                  </ScreenHeader>
 
-            {empty ? (
-              // a fixed top, so the heading stays put as the composer grows (TICKET-052)
-              <div className="flex flex-1 flex-col items-center px-6 pb-24 pt-[max(48px,calc(34dvh-160px))] max-sm:pt-[8dvh]">
-                <div className="w-full max-w-[720px]">
-                  <h2 className="text-center font-display text-[clamp(36px,4vw,54px)] font-medium leading-[1.04] tracking-[-0.01em]">
-                    What are we making?
-                  </h2>
-                  <m.div layoutId="composer" className="mt-8">
-                    {composer}
-                  </m.div>
-                  {/* a brief sent back to shorten lands here, with the reason (TICKET-051) */}
-                  {failure && !limit && (
-                    <p
-                      role="alert"
-                      className="mt-3 text-center text-[13px] text-fg-2"
-                    >
-                      {failure.text}
-                    </p>
-                  )}
-                  <ul className="mt-4 flex flex-wrap justify-center gap-2 max-sm:flex-col max-sm:items-stretch">
-                    {EXAMPLES[mode].map((example) => (
-                      <li key={example}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setInput(example);
-                            composerRef.current?.focus();
-                          }}
-                          className="rounded-full border border-border px-3 py-1.5 text-[12.5px] leading-[18px] text-fg-2 transition-colors duration-150 hover:border-border-strong hover:text-fg max-sm:w-full max-sm:rounded-control max-sm:px-3 max-sm:py-2.5 max-sm:text-left"
+                  {empty ? (
+                    // a fixed top, so the heading stays put as the composer grows (TICKET-052)
+                    <div className="flex flex-1 flex-col items-center px-6 pb-24 pt-[max(48px,calc(34dvh-160px))] max-sm:pt-[8dvh]">
+                      <div className="w-full max-w-[720px]">
+                        <h2 className="text-center font-display text-[clamp(36px,4vw,54px)] font-medium leading-[1.04] tracking-[-0.01em]">
+                          What are we making?
+                        </h2>
+                        <m.div layoutId="composer" className="mt-8">
+                          {composer}
+                        </m.div>
+                        {/* a brief sent back to shorten lands here, with the reason (TICKET-051) */}
+                        {failure && !limit && (
+                          <p
+                            role="alert"
+                            className="mt-3 text-center text-[13px] text-fg-2"
+                          >
+                            {failure.text}
+                          </p>
+                        )}
+                        <ul className="mt-4 flex flex-wrap justify-center gap-2 max-sm:flex-col max-sm:items-stretch">
+                          {EXAMPLES[mode].map((example) => (
+                            <li key={example}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInput(example);
+                                  composerRef.current?.focus();
+                                }}
+                                className="rounded-full border border-border px-3 py-1.5 text-[12.5px] leading-[18px] text-fg-2 transition-colors duration-150 hover:border-border-strong hover:text-fg max-sm:w-full max-sm:rounded-control max-sm:px-3 max-sm:py-2.5 max-sm:text-left"
+                              >
+                                {example}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      {/* Home: the projects, wider than the composer's column (TICKET-062) */}
+                      {isNew && (
+                        <div className="w-full max-w-[1040px]">
+                          <ProjectGrid projects={projects} isGuest={isGuest} />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <div ref={threadRef} className="flex-1 px-6 pb-6 pt-8">
+                        <div className="mx-auto max-w-[760px] space-y-10">
+                          {runs.map((run, i) => {
+                            const last = i === runs.length - 1;
+                            return (
+                              <div
+                                key={run.user.id}
+                                data-run
+                                className={cn(
+                                  "scroll-mt-20",
+                                  i > 0 && "border-t border-border pt-10"
+                                )}
+                              >
+                                <Run
+                                  user={run.user}
+                                  assistant={run.assistant}
+                                  active={last && busy}
+                                  startedAt={started.current[run.user.id]}
+                                  waitingLabel={
+                                    sentWith(run.user).mode === "auto"
+                                      ? "Planning…"
+                                      : "Generating…"
+                                  }
+                                  onReusePrompt={reuse}
+                                  onRetry={last && !busy ? retry : undefined}
+                                  onRetryPiece={
+                                    last && !busy && !limit
+                                      ? retryPiece
+                                      : undefined
+                                  }
+                                />
+                              </div>
+                            );
+                          })}
+                          {error && !limit && failure && (
+                            <div className="flex items-center justify-between gap-4 rounded-media border border-border bg-surface p-4 text-[13px]">
+                              <span className="text-fg-2">{failure.text}</span>
+                              {failure.action === "retry" && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={retry}
+                                >
+                                  Try again
+                                </Button>
+                              )}
+                              {failure.action === "reload" && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => window.location.reload()}
+                                >
+                                  Reload
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                          {limit && (
+                            <LimitMessage
+                              kind={limit}
+                              onUpgrade={proModal.onOpen}
+                            />
+                          )}
+                        </div>
+                        {/* outside the list, so it adds no gap of its own */}
+                        <div ref={bottomRef} className="scroll-mb-48" />
+                      </div>
+                      <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_calc(100%-2.5rem),transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
+                        <m.div
+                          layoutId="composer"
+                          className="mx-auto max-w-[760px]"
                         >
-                          {example}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                          {composer}
+                        </m.div>
+                      </div>
+                    </>
+                  )}
                 </div>
-                {/* Home: the projects, wider than the composer's column (TICKET-062) */}
-                {isNew && (
-                  <div className="w-full max-w-[1040px]">
-                    <ProjectGrid projects={projects} isGuest={isGuest} />
+                {!empty && tray && (
+                  <aside
+                    aria-label="Media"
+                    className="sticky top-0 hidden h-dvh w-[300px] shrink-0 border-l border-border bg-bg lg:block"
+                  >
+                    <MediaTray
+                      groups={groups}
+                      onOpen={openInThread}
+                      onClose={toggleTray}
+                      libraryHref={
+                        localKey === null ? `/library?project=${id}` : null
+                      }
+                    />
+                  </aside>
+                )}
+                {!empty && (
+                  <Sheet open={traySheet} onOpenChange={setTraySheet}>
+                    <SheetContent
+                      side="right"
+                      className="w-[min(340px,92vw)] p-0"
+                    >
+                      <SheetTitle className="sr-only">Media</SheetTitle>
+                      <MediaTray
+                        groups={groups}
+                        onOpen={openInThread}
+                        libraryHref={
+                          localKey === null ? `/library?project=${id}` : null
+                        }
+                      />
+                    </SheetContent>
+                  </Sheet>
+                )}
+                {dragging && (
+                  <div className="pointer-events-none absolute inset-3 z-30 grid place-items-center rounded-window border border-dashed border-border-strong bg-bg/80 backdrop-blur-sm">
+                    <p className="flex items-center gap-2 text-[14px] text-fg-2">
+                      <Upload className="size-4" /> Drop images or a document to
+                      attach
+                    </p>
                   </div>
                 )}
               </div>
-            ) : (
-              <>
-                <div ref={threadRef} className="flex-1 px-6 pb-6 pt-8">
-                  <div className="mx-auto max-w-[760px] space-y-10">
-                    {runs.map((run, i) => {
-                      const last = i === runs.length - 1;
-                      return (
-                        <div
-                          key={run.user.id}
-                          data-run
-                          className={cn(
-                            "scroll-mt-20",
-                            i > 0 && "border-t border-border pt-10"
-                          )}
-                        >
-                          <Run
-                            user={run.user}
-                            assistant={run.assistant}
-                            active={last && busy}
-                            startedAt={started.current[run.user.id]}
-                            waitingLabel={
-                              sentWith(run.user).mode === "auto"
-                                ? "Planning…"
-                                : "Generating…"
-                            }
-                            onReusePrompt={reuse}
-                            onRetry={last && !busy ? retry : undefined}
-                            onRetryPiece={
-                              last && !busy && !limit ? retryPiece : undefined
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                    {error && !limit && failure && (
-                      <div className="flex items-center justify-between gap-4 rounded-media border border-border bg-surface p-4 text-[13px]">
-                        <span className="text-fg-2">{failure.text}</span>
-                        {failure.action === "retry" && (
-                          <Button variant="secondary" size="sm" onClick={retry}>
-                            Try again
-                          </Button>
-                        )}
-                        {failure.action === "reload" && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => window.location.reload()}
-                          >
-                            Reload
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                    {limit && (
-                      <LimitMessage kind={limit} onUpgrade={proModal.onOpen} />
-                    )}
-                  </div>
-                  {/* outside the list, so it adds no gap of its own */}
-                  <div ref={bottomRef} className="scroll-mb-48" />
-                </div>
-                <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_calc(100%-2.5rem),transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
-                  <m.div layoutId="composer" className="mx-auto max-w-[760px]">
-                    {composer}
-                  </m.div>
-                </div>
-              </>
-            )}
-
-            {dragging && (
-              <div className="pointer-events-none absolute inset-3 z-30 grid place-items-center rounded-window border border-dashed border-border-strong bg-bg/80 backdrop-blur-sm">
-                <p className="flex items-center gap-2 text-[14px] text-fg-2">
-                  <Upload className="size-4" /> Drop images or a document to
-                  attach
-                </p>
-              </div>
-            )}
-          </div>
-        </MotionConfig>
-      </LazyMotion>
+            </MotionConfig>
+          </LazyMotion>
+        </MediaIndexProvider>
+      </MediaHandlersProvider>
     </StudioActionsProvider>
   );
 }

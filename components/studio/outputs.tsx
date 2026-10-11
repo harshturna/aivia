@@ -1,22 +1,19 @@
 "use client";
 
 import { type DynamicToolUIPart, getToolName, type ToolUIPart } from "ai";
-import {
-  AlertTriangle,
-  Download,
-  Film,
-  Maximize2,
-  RotateCcw,
-  Search,
-  Square,
-} from "lucide-react";
+import { AlertTriangle, RotateCcw, Search, Square } from "lucide-react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { useStudioActions } from "@/components/studio/actions";
+import {
+  actionsFor,
+  HoverActions,
+  MediaMenu,
+  useIndexed,
+  useMediaHandlers,
+} from "@/components/media/actions";
 import { AudioRow } from "@/components/studio/audio-row";
 import { RevealImage } from "@/components/studio/reveal-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { plainFailure } from "@/lib/ai/failure";
-import { downloadFile, fileNameFrom } from "@/lib/download";
 import { cn } from "@/lib/utils";
 
 /**
@@ -162,50 +159,96 @@ export function ToolOutput({
   const urls = output.urls ?? (output.url ? [output.url] : []);
 
   if (name === "generate_image") {
-    return (
-      <Images
-        urls={urls}
-        prompt={prompt}
-        aspect={input?.aspect}
-        onReusePrompt={actions.onReusePrompt}
-      />
-    );
+    return <Images urls={urls} prompt={prompt} aspect={input?.aspect} />;
   }
   if (name === "generate_video" && urls[0]) {
-    return (
-      <figure>
-        <video
-          controls
-          playsInline
-          preload="metadata"
-          src={urls[0]}
-          // in its own shape: an animated portrait still stays portrait (TICKET-039)
-          style={box(input?.aspect, "16:9", 760)}
-          className="rounded-media bg-surface object-contain"
-        />
-        <Caption
-          prompt={prompt}
-          onReusePrompt={actions.onReusePrompt}
-          onDownload={() => downloadFile(urls[0], fileNameFrom(prompt, "clip"))}
-        />
-      </figure>
-    );
+    return <ClipOutput url={urls[0]} prompt={prompt} aspect={input?.aspect} />;
   }
   if (
     (name === "generate_music" || name === "generate_sound_effect") &&
     urls[0]
   ) {
     return (
-      <AudioRow
-        src={urls[0]}
-        title={
-          titleFrom(prompt) || (name === "generate_music" ? "Track" : "Sound")
-        }
-        subtitle={name === "generate_music" ? "Music" : "Sound effect"}
+      <AudioOutput
+        url={urls[0]}
+        prompt={prompt}
+        kind={name === "generate_music" ? "music" : "sound"}
       />
     );
   }
   return null;
+}
+
+/** A clip in the thread: its own shape, native controls, and the shared actions top right. */
+function ClipOutput({
+  url,
+  prompt,
+  aspect,
+}: {
+  url: string;
+  prompt: string;
+  aspect?: string;
+}) {
+  const video = useRef<HTMLVideoElement>(null);
+  return (
+    <figure>
+      <div className="group relative w-fit">
+        <video
+          ref={video}
+          controls
+          playsInline
+          preload="metadata"
+          crossOrigin="anonymous"
+          src={url}
+          data-media-url={url}
+          // in its own shape: an animated portrait still stays portrait (TICKET-039)
+          style={box(aspect, "16:9", 760)}
+          className="rounded-media bg-surface object-contain"
+        />
+        <HoverActions
+          item={{ url, kind: "video", prompt }}
+          label={prompt || "the clip"}
+          video={() => video.current}
+        />
+      </div>
+      <Caption prompt={prompt} />
+    </figure>
+  );
+}
+
+/** A track or a sound: the row, and its actions under "⋯". */
+function AudioOutput({
+  url,
+  prompt,
+  kind,
+}: {
+  url: string;
+  prompt: string;
+  kind: "music" | "sound";
+}) {
+  const item = useIndexed({ url, kind, prompt });
+  const actions = actionsFor(item, useMediaHandlers()).filter(
+    (a) => a.id !== "download"
+  );
+  const title = titleFrom(prompt) || (kind === "music" ? "Track" : "Sound");
+  return (
+    <div data-media-url={url}>
+      <AudioRow
+        src={url}
+        title={title}
+        subtitle={kind === "music" ? "Music" : "Sound effect"}
+        action={
+          actions.length > 0 ? (
+            <MediaMenu
+              actions={actions}
+              label={title}
+              className="size-8 bg-transparent text-mute hover:bg-surface-2 hover:text-fg"
+            />
+          ) : undefined
+        }
+      />
+    </div>
+  );
 }
 
 /**
@@ -226,12 +269,10 @@ function Images({
   urls,
   prompt,
   aspect,
-  onReusePrompt,
 }: {
   urls: string[];
   prompt: string;
   aspect?: string;
-  onReusePrompt?: (prompt: string) => void;
 }) {
   return (
     <figure>
@@ -251,7 +292,7 @@ function Images({
           />
         ))}
       </div>
-      <Caption prompt={prompt} onReusePrompt={onReusePrompt} />
+      <Caption prompt={prompt} />
     </figure>
   );
 }
@@ -270,7 +311,6 @@ function RevealedImage({
   aspect?: string;
   single: boolean;
 }) {
-  const { animate } = useStudioActions();
   // the buttons say which image they act on: a grid of four has four of each
   const label = alt.length > 48 ? `${alt.slice(0, 45).trimEnd()}…` : alt;
   const [natural, setNatural] = useState<string>();
@@ -306,106 +346,21 @@ function RevealedImage({
         onLoad={(event) => measure(event.currentTarget)}
         className="block size-full object-cover"
       />
-      <div
-        data-shown={shown}
-        className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-linear-to-t from-bg/70 to-transparent p-2 pt-8 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100 data-[shown=true]:pointer-events-auto data-[shown=true]:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100"
-      >
-        {animate && (
-          <button
-            type="button"
-            aria-label={`Animate ${label}`}
-            title="Animate"
-            onClick={(event) => {
-              const img = event.currentTarget
-                .closest(".group")
-                ?.querySelector("img");
-              animate({
-                url,
-                prompt,
-                width: img?.naturalWidth || 1,
-                height: img?.naturalHeight || 1,
-              });
-            }}
-            className="inline-flex h-8 items-center gap-1.5 rounded-control bg-bg/60 px-2.5 text-[12.5px] font-medium text-fg backdrop-blur transition-colors hover:bg-bg/80 [&_svg]:size-4"
-          >
-            <Film /> Animate
-          </button>
-        )}
-        <IconLink href={url} label={`Open ${label} full size`}>
-          <Maximize2 />
-        </IconLink>
-        <button
-          type="button"
-          aria-label={`Download ${label}`}
-          title="Download"
-          onClick={() => downloadFile(url, fileNameFrom(prompt, "image"))}
-          className={ICON_BUTTON}
-        >
-          <Download />
-        </button>
-      </div>
+      <HoverActions
+        item={{ url, kind: "image", prompt }}
+        label={label}
+        shown={shown}
+      />
     </div>
   );
 }
 
-const ICON_BUTTON =
-  "grid size-8 place-items-center rounded-control bg-bg/60 text-fg backdrop-blur transition-colors hover:bg-bg/80 [&_svg]:size-4";
-
-function IconLink({
-  href,
-  label,
-  children,
-}: {
-  href: string;
-  label: string;
-  children: React.ReactNode;
-}) {
+/** The prompt under a picture; its actions live in the picture's cluster (TICKET-063). */
+function Caption({ prompt }: { prompt: string }) {
+  if (!prompt) return null;
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      title={label}
-      className={ICON_BUTTON}
-    >
-      {children}
-    </a>
-  );
-}
-
-function Caption({
-  prompt,
-  onReusePrompt,
-  onDownload,
-}: {
-  prompt: string;
-  onReusePrompt?: (prompt: string) => void;
-  /** A clip has only native controls: its download sits here (TICKET-052). */
-  onDownload?: () => void;
-}) {
-  if (!prompt && !onDownload) return null;
-  return (
-    <figcaption className="mt-2 flex items-start gap-3 text-[12px] leading-4 text-mute">
-      <span className="line-clamp-2 min-w-0 flex-1">{prompt}</span>
-      {onDownload && (
-        <button
-          type="button"
-          onClick={onDownload}
-          className="shrink-0 text-fg-2 transition-colors hover:text-fg"
-        >
-          Download
-        </button>
-      )}
-      {onReusePrompt && (
-        <button
-          type="button"
-          onClick={() => onReusePrompt(prompt)}
-          className="shrink-0 text-fg-2 transition-colors hover:text-fg"
-        >
-          Reuse prompt
-        </button>
-      )}
+    <figcaption className="mt-2 line-clamp-2 text-[12px] leading-4 text-mute">
+      {prompt}
     </figcaption>
   );
 }
