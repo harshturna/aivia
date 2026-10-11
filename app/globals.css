@@ -297,6 +297,10 @@ body:has([data-screen-header]) [data-mobile-bar] {
   animation: w-rise linear infinite;
   will-change: transform;
 }
+/* the fog comes in with the dawn, rising to its own opacity, never ahead of it (TICKET-034) */
+.w-fog-in {
+  animation: w-fade-in 2.8s var(--ease-out) 0.4s backwards;
+}
 .w-drift {
   width: calc(100% + var(--tile, 1400px));
   animation: w-drift 140s linear infinite;
@@ -422,6 +426,7 @@ body:has([data-screen-header]) [data-mobile-bar] {
   .w-drift,
   .w-cue,
   .w-word,
+  .w-fog-in,
   .w-cue-wrap > span {
     animation: none;
   }

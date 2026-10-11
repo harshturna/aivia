@@ -827,7 +827,7 @@ export function Hero() {
         <div
           ref={mistRef}
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[50%] h-[44%] overflow-hidden opacity-[.14] will-change-transform"
+          className="w-fog-in pointer-events-none absolute inset-x-0 top-[50%] h-[44%] overflow-hidden opacity-[.14] will-change-transform"
         >
           <div className="w-drift w-drift-slow absolute inset-y-0 left-0 bg-[url(/landing/fog-mist.webp)] bg-[length:auto_100%] bg-repeat-x" />
         </div>
@@ -1028,7 +1028,7 @@ export function Hero() {
             }}
             aria-hidden
             data-on="false"
-            className="w-piece pointer-events-none absolute left-0 top-0 z-20 overflow-hidden shadow-[0_30px_80px_-24px_rgb(0_0_0/.7)] outline outline-1 -outline-offset-1 outline-fg/20 [contain:strict] will-change-transform"
+            className="w-piece pointer-events-none absolute left-0 top-0 z-20 h-16 w-16 overflow-hidden shadow-[0_30px_80px_-24px_rgb(0_0_0/.7)] outline outline-1 -outline-offset-1 outline-fg/20 [contain:strict] will-change-transform"
           >
             <PieceBody k={k} videoRef={videoRef} />
           </div>
@@ -1038,7 +1038,9 @@ export function Hero() {
         <div
           ref={fogRef}
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[32%] overflow-hidden opacity-75 will-change-transform md:h-[46%]"
+          className="w-fog-in pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[32%] overflow-hidden opacity-75 will-change-transform md:h-[46%]"
+          // its resting place at the top of the sequence, before the script takes over
+          style={{ transform: "translate3d(0, 22svh, 0)" }}
         >
           <div className="w-drift absolute inset-y-0 left-0 bg-[url(/landing/fog-near.webp)] bg-[length:auto_100%] bg-repeat-x" />
         </div>
