@@ -11,9 +11,8 @@ export const DirectRequest = z.object({
     .object({
       aspect: z.enum(["1:1", "3:4", "4:3", "16:9", "9:16"]).default("1:1"),
       count: z.number().int().min(1).max(4).default(1),
-      videoSeconds: z
-        .union([z.literal(6), z.literal(8), z.literal(10)])
-        .default(6),
+      // a clip is five seconds (TICKET-019); its shape is the choice
+      videoAspect: z.enum(["16:9", "9:16", "1:1"]).default("16:9"),
       musicSeconds: z
         .union([z.literal(15), z.literal(30), z.literal(60)])
         .default(30),
@@ -24,7 +23,7 @@ export const DirectRequest = z.object({
     .default({
       aspect: "1:1",
       count: 1,
-      videoSeconds: 6,
+      videoAspect: "16:9",
       musicSeconds: 30,
       soundSeconds: 0,
     }),

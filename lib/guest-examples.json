@@ -10,7 +10,7 @@
         "parts": [
           {
             "type": "text",
-            "text": "A poster, a ten-second teaser and a soundtrack for a forest older than memory, and three taglines. Keep it quiet.",
+            "text": "A poster, a short teaser and a soundtrack for a forest older than memory, and three taglines. Keep it quiet.",
             "state": "done"
           }
         ]
@@ -39,11 +39,11 @@
             "toolCallId": "ex1-t2",
             "state": "output-available",
             "input": {
-              "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, ten seconds"
+              "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, five seconds"
             },
             "output": {
               "url": "/landing/canyon.mp4",
-              "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, ten seconds"
+              "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, five seconds"
             }
           },
           {
@@ -63,7 +63,7 @@
           },
           {
             "type": "text",
-            "text": "Here is the set, all in the same hush.\n\n**Poster**: one ancient tree above the mist, the sun low behind it.\n\n**Teaser**: ten seconds of a waterfall in a mossy canyon, light moving through the spray.\n\n**Soundtrack**: thirty seconds of slow strings, a soft choir and distant bells.\n\n**Taglines:**\n1. Older than every map.\n2. Walk in before the world wakes.\n3. The light still finds its way down.",
+            "text": "Here is the set, all in the same hush.\n\n**Poster**: one ancient tree above the mist, the sun low behind it.\n\n**Teaser**: five seconds of a waterfall in a mossy canyon, light moving through the spray.\n\n**Soundtrack**: thirty seconds of slow strings, a soft choir and distant bells.\n\n**Taglines:**\n1. Older than every map.\n2. Walk in before the world wakes.\n3. The light still finds its way down.",
             "state": "done"
           }
         ]
@@ -82,7 +82,7 @@
         "kind": "video",
         "url": "/landing/canyon.mp4",
         "posterUrl": "/landing/canyon-poster.webp",
-        "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, ten seconds",
+        "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, five seconds",
         "model": "fal-ai/wan/v2.2-5b/image-to-video",
         "durationSec": 5
       },

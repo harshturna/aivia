@@ -105,9 +105,8 @@ export function ToolOutput({
       );
     }
     const ratio =
-      name === "generate_video"
-        ? "16/9"
-        : (input?.aspect?.replace(":", "/") ?? "1/1");
+      input?.aspect?.replace(":", "/") ??
+      (name === "generate_video" ? "16/9" : "1/1");
     const count =
       name === "generate_image" ? Math.min(input?.amount ?? 1, 4) : 1;
     return (

@@ -75,7 +75,7 @@ type Aspect = ModeParams["aspect"];
 export const SESSIONS_CHANGED = "aivia:sessions-changed";
 
 const EXAMPLES = [
-  "A poster, a ten-second teaser and a soundtrack for a forest older than memory",
+  "A poster, a short teaser and a soundtrack for a forest older than memory",
   "Album art for a quiet piano record, and a name for it",
   "A snowy owl over a frozen lake at dawn, as a poster and a short clip",
   "The sound of rain on a tin roof, twenty seconds",

@@ -25,14 +25,16 @@ export const IMAGE_MODEL = "fal-ai/flux/schnell";
 export const IMAGE_DEFAULT_EDGE = 992;
 
 /**
- * $0.04 per second at 1080p, minimum duration 6s, so ~$0.24 per clip.
+ * $0.15 per clip, flat (fal model page, checked 2026-10-11): 121 frames at 24 fps is five
+ * seconds at 720p. Pinned at five seconds, the length the flat price is stated for.
  *
- * Replaces bytedance/seedance-2.0/fast, which was $0.2419 *per second* — a
- * single 10s clip cost $2.42. Against a shared guest account with a 100
- * generation cap that was up to $240 of exposure from one surface.
+ * Replaces fal-ai/ltx-2/text-to-video/fast ($0.04 per second at 1080p, $0.24 to $0.40 a
+ * clip), which answered "Downstream service error" on every call from 2026-10-10
+ * (TICKET-019); that replaced bytedance/seedance-2.0/fast at $0.2419 per second.
  */
-export const VIDEO_MODEL = "fal-ai/ltx-2/text-to-video/fast";
-export const VIDEO_DURATION_SECONDS = 6;
+export const VIDEO_MODEL = "fal-ai/wan/v2.2-5b/text-to-video";
+export const VIDEO_SECONDS = 5;
+export type VideoAspect = "16:9" | "9:16" | "1:1";
 
 // $0.02 per output minute, so ~$0.01 for a 30s clip. Replaces
 // fal-ai/minimax-music/v2.6, which was $0.15 flat per generation — 15x more —
@@ -86,15 +88,16 @@ export async function generateImages({
 
 export async function generateVideo(
   prompt: string,
-  durationSeconds: number = VIDEO_DURATION_SECONDS
+  aspect: VideoAspect = "16:9"
 ): Promise<string> {
-  // duration is an enum (6, 8, 10, ...20) and resolution drives the rate, so
-  // both are pinned rather than left to the endpoint's defaults.
+  // length, rate and size are pinned rather than left to the endpoint's defaults (81 frames)
   const url = extractUrl(
     await runFal(VIDEO_MODEL, {
       prompt,
-      duration: durationSeconds,
-      resolution: "1080p",
+      resolution: "720p",
+      aspect_ratio: aspect,
+      num_frames: VIDEO_SECONDS * 24 + 1,
+      frames_per_second: 24,
     })
   );
 

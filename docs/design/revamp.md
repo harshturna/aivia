@@ -193,8 +193,8 @@ One layout for every signed-in route, `app/(app)/layout.tsx`, replacing the thre
 ┌──────────┬────────────────────────────────────────────────────────┐
 │ aivia    │  Night market teaser                         Running   │
 │          │                                                        │
-│ + New    │   a poster, a ten-second teaser and a soundtrack …     │
-│ ⌕ Search │   Steps 4 · 2 done ▾                                   │
+│ + New    │   a poster, a short teaser and a soundtrack …          │
+│ ⌕ Search │   4 steps, 2 done ▾                                    │
 │          │   ┌──────────────┐ ┌──────────────────────────────┐    │
 │ Studio   │   │              │ │                              │    │
 │ Library  │   │   poster     │ │   clip (16:9, shimmer)       │    │
@@ -234,7 +234,7 @@ One layout for every signed-in route, `app/(app)/layout.tsx`, replacing the thre
 
 A new session shows, vertically centred: one line at 32 px weight 500, "What are we
 making?"; under it the composer; under that four chips that fill the composer rather than
-send it, each showing a different kind of job: "A poster, a ten-second teaser and a
+send it, each showing a different kind of job: "A poster, a short teaser and a
 soundtrack for a night market", "Album art for a synthwave record, and name it", "A logo for a
 coffee roastery with three taglines", "The sound of rain on a tin roof, twenty seconds". A
 guest's first session opens on a finished example run instead, so the first thing seen is the
@@ -254,7 +254,7 @@ and the transcript scrolls beneath it. Top to bottom:
 3. A 40 px toolbar. Left: attach (a paperclip, plus a `+` menu on small screens), the mode
    pill (`Auto ▾` listing the five modes with a one-line description each), then that mode's
    parameter pills: Image: aspect (1:1, 3:4, 4:3, 16:9, 9:16) and count (1 to 4); Video:
-   length (6 to 20 s in the model's steps) and aspect; Music: length (15, 30, 60 s); Sound:
+   aspect (16:9, 9:16, 1:1; every clip is five seconds); Music: length (15, 30, 60 s); Sound:
    length (auto, 2, 5, 10 s). Right: the cost of the send in 12 px tabular `--mute` ("1
    generation", "4 generations" for four images) and a 32 px round send button, white with a
    black arrow, that becomes a square stop while a run is active; dimmed until there is text.
@@ -268,8 +268,8 @@ Each user turn and the assistant turn that answers it render as one run, 40 px b
 last, in the 760 px column:
 
 ```
-a poster, a ten-second teaser and a soundtrack for a night market           12:04
-Steps 4 · 2 done · 0:41 ▾
+a poster, a short teaser and a soundtrack for a night market           12:04
+4 steps, 2 done  0:41 ▾
 ┌───────────────────┐ ┌────────────────────────────────────┐
 │ poster 3:4        │ │ clip 16:9, shimmer, "lanterns…"     │
 └───────────────────┘ └────────────────────────────────────┘
@@ -279,7 +279,7 @@ Three taglines: …
 
 - **The prompt** is one line at 14 px `--fg-2` with the attachments as 40 px thumbnails before
   it and the time at 12 px `--mute` on the right. No bubble, no avatar, no label.
-- **Steps** is one compact line at 13 px: "Steps 4 · 2 done", the elapsed time while running,
+- **Steps** is one compact line at 13 px: "4 steps, 2 done", the elapsed time while running,
   a chevron; open, it lists the plan the agent wrote (the reasoning summary parsed into
   numbered lines by `lib/ai/plan.ts`, tool calls matched to them by order) with each line's
   status: queued, running with elapsed time, done with duration, failed. Closed by default once

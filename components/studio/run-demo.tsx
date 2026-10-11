@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  * run component fed by a recorded stream; the look is the same.
  */
 const PROMPT =
-  "A poster, a ten-second teaser and a soundtrack for a forest older than memory. Keep it quiet.";
+  "A poster, a short teaser and a soundtrack for a forest older than memory. Keep it quiet.";
 
 const STEPS = [
   "Look up old-growth forest photography for reference",

@@ -18,7 +18,7 @@ import type { ComposerMode } from "./composer";
 export interface ModeParams {
   aspect: "1:1" | "3:4" | "4:3" | "16:9" | "9:16";
   count: 1 | 2 | 3 | 4;
-  videoSeconds: 6 | 8 | 10;
+  videoAspect: "16:9" | "9:16" | "1:1";
   musicSeconds: 15 | 30 | 60;
   soundSeconds: 0 | 2 | 5 | 10;
 }
@@ -26,7 +26,7 @@ export interface ModeParams {
 export const DEFAULT_PARAMS: ModeParams = {
   aspect: "1:1",
   count: 1,
-  videoSeconds: 6,
+  videoAspect: "16:9",
   musicSeconds: 30,
   soundSeconds: 0,
 };
@@ -70,15 +70,12 @@ export function ModeParamPills({
   }
   if (mode === "video") {
     return (
+      // every clip is five seconds (TICKET-019): its shape is the choice
       <Choice
-        label="Length"
-        value={String(params.videoSeconds)}
-        display={`${params.videoSeconds} s`}
-        options={["6", "8", "10"]}
-        format={(v) => `${v} seconds`}
-        onChange={(v) =>
-          set("videoSeconds", Number(v) as ModeParams["videoSeconds"])
-        }
+        label="Aspect"
+        value={params.videoAspect}
+        options={["16:9", "9:16", "1:1"]}
+        onChange={(v) => set("videoAspect", v as ModeParams["videoAspect"])}
       />
     );
   }

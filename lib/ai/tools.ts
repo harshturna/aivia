@@ -10,6 +10,7 @@ import {
   MUSIC_MODEL,
   SFX_MODEL,
   VIDEO_MODEL,
+  VIDEO_SECONDS,
 } from "@/lib/ai/capabilities";
 import { keepAsset } from "@/lib/assets";
 
@@ -86,21 +87,22 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
       description:
         "Generate a short video clip from a text description. Call this when the " +
         "user asks for a video, clip, animation, or motion sequence. This is slow " +
-        "(tens of seconds) and by far the most expensive tool, so do not call it " +
-        "speculatively and keep clips short unless a longer one is asked for.",
+        "(about a minute) and by far the most expensive tool, so do not call it " +
+        "speculatively. Every clip is five seconds; say so if a longer one is asked for.",
       inputSchema: z.object({
         prompt: z
           .string()
           .describe("A detailed description of the scene, motion and camera."),
-        durationSeconds: z
-          // the same lengths as Video mode; longer clips cost more than a run is charged
-          .union([z.literal(6), z.literal(8), z.literal(10)])
-          .default(6)
-          .describe("Clip length in seconds. Prefer 6; cost scales with this."),
+        aspect: z
+          .enum(["16:9", "9:16", "1:1"])
+          .default("16:9")
+          .describe(
+            "The clip's shape: 16:9 unless the brief asks for vertical or square."
+          ),
       }),
-      execute: async ({ prompt, durationSeconds }) => {
+      execute: async ({ prompt, aspect }) => {
         spend(1);
-        const url = await generateVideo(prompt, durationSeconds);
+        const url = await generateVideo(prompt, aspect);
         await keepAsset({
           userId,
           sessionId,
@@ -108,8 +110,8 @@ export function createAgentTools({ userId, sessionId }: ToolContext) {
           url,
           prompt,
           model: VIDEO_MODEL,
-          params: { durationSeconds },
-          durationSec: durationSeconds,
+          params: { aspect },
+          durationSec: VIDEO_SECONDS,
         });
         return { url, prompt };
       },

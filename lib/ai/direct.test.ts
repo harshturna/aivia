@@ -23,9 +23,19 @@ describe("DirectRequest", () => {
       DirectRequest.safeParse({ mode: "image", params: { count: 9 } }).success
     ).toBe(false);
     expect(
-      DirectRequest.safeParse({ mode: "video", params: { videoSeconds: 20 } })
+      DirectRequest.safeParse({ mode: "video", params: { videoAspect: "4:3" } })
         .success
     ).toBe(false);
+  });
+
+  it("makes a landscape clip unless asked otherwise", () => {
+    expect(DirectRequest.parse({ mode: "video" }).params.videoAspect).toBe(
+      "16:9"
+    );
+    expect(
+      DirectRequest.parse({ mode: "video", params: { videoAspect: "9:16" } })
+        .params.videoAspect
+    ).toBe("9:16");
   });
 });
 

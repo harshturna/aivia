@@ -16,6 +16,7 @@ import {
   MUSIC_MODEL,
   SFX_MODEL,
   VIDEO_MODEL,
+  VIDEO_SECONDS,
 } from "@/lib/ai/capabilities";
 import {
   ASPECT_SIZES,
@@ -118,8 +119,10 @@ export async function POST(req: Request) {
                 ? {
                     prompt: animatePrompt(prompt, scene),
                     animate: true,
+                    // the placeholder takes the still's shape while it runs
+                    aspect: animateAspect(params.aspect),
                   }
-                : { prompt, durationSeconds: params.videoSeconds }
+                : { prompt, aspect: params.videoAspect }
               : request.mode === "music"
                 ? { prompt, durationSeconds: params.musicSeconds }
                 : { prompt, durationSeconds: params.soundSeconds || undefined };
@@ -228,7 +231,7 @@ async function run(
     return { url, prompt: motion };
   }
   if (mode === "video") {
-    const url = await generateVideo(prompt, params.videoSeconds);
+    const url = await generateVideo(prompt, params.videoAspect);
     await keepAsset({
       userId,
       sessionId,
@@ -236,8 +239,8 @@ async function run(
       url,
       prompt,
       model: VIDEO_MODEL,
-      params: { durationSeconds: params.videoSeconds },
-      durationSec: params.videoSeconds,
+      params: { aspect: params.videoAspect },
+      durationSec: VIDEO_SECONDS,
     });
     return { url, prompt };
   }
