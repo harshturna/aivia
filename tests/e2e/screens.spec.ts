@@ -39,6 +39,20 @@ test.describe("signed out", () => {
             await new Promise((r) => setTimeout(r, 120));
           }
         });
+        // axe reads opacity, so judge the page between fades, not halfway through one
+        // (TICKET-036: the demo's steps were caught mid-fade); looping ambience is ignored
+        await page.waitForFunction(
+          () =>
+            document
+              .getAnimations()
+              .every(
+                (a) =>
+                  a.playState !== "running" ||
+                  a.effect?.getTiming().iterations === Number.POSITIVE_INFINITY
+              ),
+          null,
+          { timeout: 15_000 }
+        );
       }
       await fits(page);
       expect(await axe(page)).toEqual([]);

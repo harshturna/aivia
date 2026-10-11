@@ -24,13 +24,16 @@ The landing's pricing section keeps only its heading and the line under it.
 - 2026-10-11 — Opened from the owner's note.
 - 2026-10-11 — `Pricing` is the heading and the lede in a section that keeps `id="pricing"`; the two plan columns and their buttons are gone. Design doc §11 item 7 updated.
 
+- 2026-10-11 — Correction: the first close was committed with `npm run test:e2e` failing 1 of 24 (`/` on desktop, axe colour-contrast on two run-demo step labels caught mid-fade: the shorter page now ends its scroll-through as the demo's steps animate in). The check now waits until no finite animation is running before axe reads the page (`tests/e2e/screens.spec.ts`); three runs of the landing check passed on desktop and phone, then the full suite.
+
 ## Verification
 Screens of the section at 1440x900 and 390x844: the heading and its line between the modes
 and the close.
 
 ```
 npm run verify    # lint, typecheck, check:tickets, 31 unit tests: passed
-npm run test:e2e  # 24 passed
+npm run test:e2e  # first run: 23 passed, 1 failed (see the correction above)
+npm run test:e2e  # after the fix: 24 passed
 ```
 
 ## Outcome
