@@ -287,7 +287,10 @@ function PieceBody({
         <p className="font-display text-[clamp(9px,min(26cqh,11cqw),22px)] italic leading-[1.15] text-fg">
           &ldquo;{TAGLINES[0].text}&rdquo;
         </p>
-        <div data-part="more" className="max-h-0 overflow-hidden opacity-0">
+        <div
+          data-part="more"
+          className="max-h-0 overflow-hidden opacity-0 @max-[240px]:hidden"
+        >
           <p className="mt-2 font-display text-[17px] italic leading-6 text-fg-2">
             &ldquo;{TAGLINES[1].text}&rdquo;
           </p>
@@ -565,6 +568,8 @@ export function Hero() {
         const dx = (g.s1.x - g.s0.x) * st;
         const dy = (g.s1.y - g.s0.y) * st;
         sentence.style.transform = `translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0) scale(${lerp(1, g.s1.s, st).toFixed(4)})`;
+        // the brief is swept into its windows: it shrinks and is gone before they land
+        sentence.style.opacity = (1 - span(p, 0.08, 0.24)).toFixed(3);
       }
 
       KEYS.forEach((k, i) => {
@@ -938,14 +943,14 @@ export function Hero() {
           ref={k1Ref}
           className="invisible absolute inset-0 z-10 opacity-0 will-change-[opacity]"
         >
-          <div className="mx-auto flex h-full max-w-[1280px] flex-col px-5 pb-6 pt-[78px] sm:px-8 sm:pt-[92px] md:pb-10">
-            <div className="flex items-start justify-between gap-6">
-              <div ref={captionRef} className="h-px w-[54%] sm:w-[460px]" />
-              <p className="hidden text-[13px] text-fg/75 sm:block">
-                Four things from one line
-              </p>
-            </div>
-            <div className="w-grid mt-auto md:my-auto">
+          <div className="mx-auto flex h-full max-w-[1280px] flex-col px-5 pb-6 pt-[72px] sm:px-8 sm:pt-[84px] md:pb-10">
+            {/* where the brief shrinks toward as it fades; nothing is drawn here */}
+            <div
+              ref={captionRef}
+              aria-hidden
+              className="h-px w-[54%] sm:w-[460px]"
+            />
+            <div className="w-grid my-auto">
               {KEYS.map((k) => (
                 <div
                   key={k}
@@ -981,7 +986,7 @@ export function Hero() {
           ref={k2Ref}
           className="invisible absolute inset-0 z-10 opacity-0 will-change-[opacity]"
         >
-          <div className="mx-auto flex h-full max-w-[1280px] flex-col justify-center px-5 pb-8 pt-[210px] sm:px-8 sm:pt-[240px]">
+          <div className="mx-auto flex h-full max-w-[1280px] flex-col justify-center px-5 pb-10 pt-20 sm:px-8 sm:pt-24">
             <div className="mb-5 flex items-center justify-between gap-4">
               <p className="font-display text-[19px] italic text-fg sm:text-[22px]">
                 Cut together on one timeline.

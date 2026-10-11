@@ -362,7 +362,7 @@ body:has([data-screen-header]) [data-mobile-bar] {
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto 1fr 1fr;
   grid-template-areas: "teaser teaser" "poster score" "poster words";
-  height: min(500px, calc(100svh - 350px));
+  height: min(560px, calc(100svh - 190px));
 }
 @media (min-width: 768px) {
   .w-grid {
@@ -370,7 +370,7 @@ body:has([data-screen-header]) [data-mobile-bar] {
     grid-template-columns: 3.2fr 5.8fr 3fr;
     grid-template-rows: 1fr 1fr;
     grid-template-areas: "poster teaser score" "poster teaser words";
-    height: min(470px, calc(100svh - 300px));
+    height: min(520px, calc(100svh - 220px));
   }
 }
 @keyframes w-blink {

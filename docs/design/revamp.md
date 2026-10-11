@@ -127,7 +127,8 @@ cubic-bezier(.32, .72, 0, 1)` for sheets. Never ease-in; never `transition: all`
 **The landing hero (D-004)** is one scroll-pinned sequence over 380svh: the brief types once
 (about 3 s, a pause at each noun while its window opens), then scroll drives the windows
 from their slots in the sentence to the triptych and on to the timeline; the brief shrinks
-into a caption. Ambient life: light shafts breathe (9 s), motes rise (14 to 30 s), fog drifts
+and fades as its windows leave it, so the triptych and the timeline have the screen to
+themselves (TICKET-025). Ambient life: light shafts breathe (9 s), motes rise (14 to 30 s), fog drifts
 (140 and 200 s), the tree rings turn with scroll. Frame budget rules: per-frame values are
 written straight onto the element that uses them, never through React state or an inherited
 custom property; what moves every frame is a transform or an opacity on its own layer; no
