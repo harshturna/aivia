@@ -43,7 +43,9 @@ export function ToolOutput({
   ...actions
 }: { part: ToolPart } & OutputActions) {
   const name = getToolName(part);
-  const input = part.input as { prompt?: string; amount?: number } | undefined;
+  const input = part.input as
+    | { prompt?: string; amount?: number; aspect?: string }
+    | undefined;
 
   if (name === "code_execution") return null;
 
@@ -87,7 +89,10 @@ export function ToolOutput({
         </Skeleton>
       );
     }
-    const ratio = name === "generate_video" ? "16/9" : "1/1";
+    const ratio =
+      name === "generate_video"
+        ? "16/9"
+        : (input?.aspect?.replace(":", "/") ?? "1/1");
     const count =
       name === "generate_image" ? Math.min(input?.amount ?? 1, 4) : 1;
     return (

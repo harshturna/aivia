@@ -6,6 +6,14 @@ export type ChangelogEntry = { date: string; text: string };
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-11",
+    text: "Image, Video, Music and Sound modes skip the plan and make the one thing.",
+  },
+  {
+    date: "2026-10-11",
+    text: "Sessions are kept. Reopen any run from the sidebar.",
+  },
+  {
     date: "2026-10-10",
     text: "A new look, built around the things you make.",
   },

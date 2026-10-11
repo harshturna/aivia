@@ -45,24 +45,28 @@ export function StudioClient({
   initialMessages = [],
   initialPrompt = "",
   initialTitle = "New session",
+  initialMode = "auto",
   isNew,
 }: {
   id: string;
   initialMessages?: UIMessage[];
   initialPrompt?: string;
   initialTitle?: string;
+  initialMode?: ComposerMode;
   isNew: boolean;
 }) {
   const router = useRouter();
   const proModal = userProModal();
   const [input, setInput] = useState(initialPrompt);
   const [files, setFiles] = useState<File[]>([]);
-  const [mode, setMode] = useState<ComposerMode>("auto");
+  const [mode, setMode] = useState<ComposerMode>(initialMode);
   const [params, setParams] = useState<ModeParams>(DEFAULT_PARAMS);
   const [limit, setLimit] = useState<Limit>(null);
   const [title, setTitle] = useState(initialTitle);
   const [dragging, setDragging] = useState(false);
   const started = useRef<Record<string, number>>({});
+  const sentMode = useRef<ComposerMode>("auto");
+  const modes = useRef<Record<string, ComposerMode>>({});
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +74,15 @@ export function StudioClient({
     useChat({
       id,
       messages: initialMessages,
-      transport: new DefaultChatTransport({ api: "/api/agent" }),
+      // Auto goes to the agent; a direct mode goes straight to its capability.
+      transport: new DefaultChatTransport({
+        api: "/api/agent",
+        prepareSendMessagesRequest: ({ id: chatId, messages: all, body }) => ({
+          api:
+            body?.mode && body.mode !== "auto" ? "/api/generate" : "/api/agent",
+          body: { ...body, id: chatId, messages: all },
+        }),
+      }),
       onFinish: () => window.dispatchEvent(new Event(SESSIONS_CHANGED)),
       onError: (err) => {
         const message = err?.message ?? "";
@@ -85,8 +97,10 @@ export function StudioClient({
   // Stamp each new brief with the time it was sent, for the elapsed clock.
   useEffect(() => {
     const last = messages[messages.length - 1];
-    if (busy && last?.role === "user" && !started.current[last.id])
+    if (busy && last?.role === "user" && !started.current[last.id]) {
       started.current[last.id] = Date.now();
+      modes.current[last.id] = sentMode.current;
+    }
   }, [messages, busy]);
 
   // Follow the run as it streams.
@@ -136,6 +150,7 @@ export function StudioClient({
         for (const f of attached) dt.items.add(f);
         list = dt.files;
       }
+      sentMode.current = chosen;
       sendMessage({ text, files: list }, { body: { mode: chosen, params } });
       setFiles([]);
       if (messages.length === 0) {
@@ -269,6 +284,11 @@ export function StudioClient({
                         assistant={run.assistant}
                         active={last && busy}
                         startedAt={started.current[run.user.id]}
+                        waitingLabel={
+                          (modes.current[run.user.id] ?? "auto") === "auto"
+                            ? "Planning…"
+                            : "Generating…"
+                        }
                         onReusePrompt={reuse}
                         onRetry={last ? () => regenerate() : undefined}
                       />

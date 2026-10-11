@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
+import { type ComposerMode, MODES } from "@/components/studio/modes";
 import { StudioClient } from "./studio-client";
 
 export const metadata: Metadata = { title: "Studio" };
@@ -11,9 +12,20 @@ export const metadata: Metadata = { title: "Studio" };
 export default async function NewSessionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ prompt?: string }>;
+  searchParams: Promise<{ prompt?: string; mode?: string }>;
 }) {
-  const { prompt } = await searchParams;
+  const { prompt, mode } = await searchParams;
+  const initialMode = MODES.some((m) => m.id === mode)
+    ? (mode as ComposerMode)
+    : "auto";
   const id = randomUUID();
-  return <StudioClient key={id} id={id} isNew initialPrompt={prompt ?? ""} />;
+  return (
+    <StudioClient
+      key={id}
+      id={id}
+      isNew
+      initialPrompt={prompt ?? ""}
+      initialMode={initialMode}
+    />
+  );
 }

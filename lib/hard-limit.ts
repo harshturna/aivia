@@ -2,29 +2,14 @@ import { type ContextType, HARD_LIMIT_COUNTS } from "@/constants";
 import { getUser } from "./getUser";
 import prismadb from "./prismadb";
 
-export const increaseHardLimit = async (context: ContextType) => {
+export const increaseHardLimit = async (context: ContextType, amount = 1) => {
   const user = await getUser(context);
-  if (!user) {
-    return;
-  }
-  const { id: userId } = user;
-  const userHardLimit = await prismadb.userApiLimit.findUnique({
-    where: {
-      userId,
-    },
+  if (!user) return;
+  await prismadb.userApiLimit.upsert({
+    where: { userId: user.id },
+    update: { hardLimitCount: { increment: amount } },
+    create: { userId: user.id, hardLimitCount: amount, count: 0 },
   });
-  if (userHardLimit) {
-    await prismadb.userApiLimit.update({
-      where: {
-        userId: userId,
-      },
-      data: { hardLimitCount: userHardLimit.hardLimitCount + 1 },
-    });
-  } else {
-    await prismadb.userApiLimit.create({
-      data: { hardLimitCount: 1, userId: userId, count: 1 },
-    });
-  }
 };
 
 export const checkHardLimit = async (context: ContextType) => {

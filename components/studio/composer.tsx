@@ -26,45 +26,9 @@ import { cn } from "@/lib/utils";
  * the Studio. A glass surface, a textarea that grows, attachments above it, the mode pill
  * and that mode's parameters on the left, the cost and the send button on the right.
  */
-export type ComposerMode = "auto" | "image" | "video" | "music" | "sound";
+export { type ComposerMode, MODES } from "./modes";
 
-export const MODES: Array<{
-  id: ComposerMode;
-  label: string;
-  hint: string;
-  placeholder: string;
-}> = [
-  {
-    id: "auto",
-    label: "Auto",
-    hint: "Aivia plans the work and picks the tools",
-    placeholder: "Describe what you want made…",
-  },
-  {
-    id: "image",
-    label: "Image",
-    hint: "One prompt, one to four images",
-    placeholder: "Describe the image…",
-  },
-  {
-    id: "video",
-    label: "Video",
-    hint: "A short clip, six seconds and up",
-    placeholder: "Describe the scene and the motion…",
-  },
-  {
-    id: "music",
-    label: "Music",
-    hint: "A track with melody and rhythm",
-    placeholder: "Describe the music…",
-  },
-  {
-    id: "sound",
-    label: "Sound",
-    hint: "A sound effect, no melody",
-    placeholder: "Describe the sound…",
-  },
-];
+import { type ComposerMode, MODES } from "./modes";
 
 export const ACCEPT =
   "image/*,application/pdf,text/plain,text/markdown,text/csv,.md,.txt,.csv";

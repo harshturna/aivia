@@ -35,7 +35,9 @@ export type GuardResult = GuardDenied | GuardAllowed;
  *   as Pro, so exempting Pro here would uncap public spend. See constants.ts.
  */
 export async function guardGeneration(
-  context: ContextType = "ROUTE_HANDLER"
+  context: ContextType = "ROUTE_HANDLER",
+  /** Generations this request will spend (four images are four). */
+  cost = 1
 ): Promise<GuardResult> {
   const user = await getUser(context);
 
@@ -47,7 +49,7 @@ export async function guardGeneration(
   }
 
   const [withinFreeTrial, isPro, withinHardLimit] = await Promise.all([
-    checkApiLimit(context),
+    checkApiLimit(context, cost),
     checkSubscription(context),
     checkHardLimit(context),
   ]);
@@ -76,8 +78,8 @@ export async function guardGeneration(
     isPro,
     consume: async () => {
       await Promise.all([
-        isPro ? Promise.resolve() : increaseApiLimit(context),
-        increaseHardLimit(context),
+        isPro ? Promise.resolve() : increaseApiLimit(context, cost),
+        increaseHardLimit(context, cost),
       ]);
     },
   };

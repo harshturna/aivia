@@ -2,32 +2,19 @@ import { type ContextType, MAX_FREE_COUNTS } from "@/constants";
 import { getUser } from "./getUser";
 import prismadb from "./prismadb";
 
-export const increaseApiLimit = async (context: ContextType) => {
+export const increaseApiLimit = async (context: ContextType, amount = 1) => {
   const user = await getUser(context);
-  if (!user) {
-    return;
-  }
-  const { id: userId } = user;
-  const userApiLimit = await prismadb.userApiLimit.findUnique({
-    where: {
-      userId,
-    },
+  if (!user) return;
+  // One atomic statement: two runs finishing together cannot both read the old count.
+  await prismadb.userApiLimit.upsert({
+    where: { userId: user.id },
+    update: { count: { increment: amount } },
+    create: { userId: user.id, count: amount },
   });
-  if (userApiLimit) {
-    await prismadb.userApiLimit.update({
-      where: {
-        userId: userId,
-      },
-      data: { count: userApiLimit.count + 1 },
-    });
-  } else {
-    await prismadb.userApiLimit.create({
-      data: { count: 1, userId: userId },
-    });
-  }
 };
 
-export const checkApiLimit = async (context: ContextType) => {
+/** True when `cost` more generations still fit in the free allowance. */
+export const checkApiLimit = async (context: ContextType, cost = 1) => {
   const user = await getUser(context);
 
   if (!user) {
@@ -42,7 +29,7 @@ export const checkApiLimit = async (context: ContextType) => {
     },
   });
 
-  if (!userApiLimit || userApiLimit.count < MAX_FREE_COUNTS) {
+  if (!userApiLimit || userApiLimit.count + cost <= MAX_FREE_COUNTS) {
     return true;
   } else {
     return false;

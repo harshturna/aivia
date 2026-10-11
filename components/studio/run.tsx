@@ -20,6 +20,8 @@ export interface RunProps {
   active: boolean;
   /** When this run was sent, if it was sent in this tab (for the elapsed time). */
   startedAt?: number;
+  /** What the run says while it waits for its first part: a direct mode has no plan. */
+  waitingLabel?: string;
   onReusePrompt?: (prompt: string) => void;
   onRetry?: () => void;
 }
@@ -29,6 +31,7 @@ export function Run({
   assistant,
   active,
   startedAt,
+  waitingLabel = "Planning…",
   onReusePrompt,
   onRetry,
 }: RunProps) {
@@ -56,7 +59,7 @@ export function Run({
 
       {thinking && (
         <p className="mt-4 flex items-center gap-2 text-[13px] text-fg-2">
-          <Spinner className="size-3" /> Planning…
+          <Spinner className="size-3" /> {waitingLabel}
           {elapsed !== null && (
             <span className="tabular text-mute">{clock(elapsed)}</span>
           )}

@@ -58,28 +58,10 @@ const SYSTEM_PROMPT = [
   "tell from an error message why a model rejected a request.",
 ].join("\n");
 
-/**
- * The composer's direct modes, until they get their own route (TICKET-007): the agent is
- * told to call the one tool with the user's words and nothing else.
- */
-const MODE_HINTS: Record<string, string> = {
-  image:
-    "The user chose Image mode: call generate_image once with their description, with no plan and no other tools, then say in one sentence what you made.",
-  video:
-    "The user chose Video mode: call generate_video once with their description, with no plan and no other tools, then say in one sentence what you made.",
-  music:
-    "The user chose Music mode: call generate_music once with their description, with no plan and no other tools, then say in one sentence what you made.",
-  sound:
-    "The user chose Sound mode: call generate_sound_effect once with their description, with no plan and no other tools, then say in one sentence what you made.",
-};
-
 export async function POST(req: Request) {
   try {
-    const {
-      id,
-      messages,
-      mode,
-    }: { id?: string; messages: UIMessage[]; mode?: string } = await req.json();
+    const { id, messages }: { id?: string; messages: UIMessage[] } =
+      await req.json();
 
     if (!messages?.length) {
       return new Response("Messages are required", { status: 400 });
@@ -110,10 +92,7 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model: anthropic("claude-sonnet-5"),
-      system:
-        mode && MODE_HINTS[mode]
-          ? `${SYSTEM_PROMPT}\n\n${MODE_HINTS[mode]}`
-          : SYSTEM_PROMPT,
+      system: SYSTEM_PROMPT,
       messages: await convertToModelMessages(messages),
       tools: {
         ...createAgentTools({ userId, sessionId }),
