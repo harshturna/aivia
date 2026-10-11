@@ -1,8 +1,9 @@
 "use client";
 
 import { Volume2, VolumeX } from "lucide-react";
-import Image, { getImageProps } from "next/image";
+import Image from "next/image";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { ForestPlate } from "@/components/forest-plate";
 import { cn } from "@/lib/utils";
 import { SCORE_PEAKS } from "./score-peaks";
 
@@ -115,38 +116,6 @@ const ease = (x: number) =>
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const fmt = (s: number) =>
   `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-
-/** The forest, art-directed: a portrait crop on tall screens, AVIF where it can. */
-function Plate() {
-  const common = { alt: "", sizes: "100vw", preload: true } as const;
-  const {
-    props: { srcSet: tall },
-  } = getImageProps({
-    ...common,
-    src: "/landing/forest-tall.jpg",
-    width: 1100,
-    height: 1834,
-  });
-  const {
-    props: { srcSet: wide, ...rest },
-  } = getImageProps({
-    ...common,
-    src: "/landing/forest.jpg",
-    width: 2752,
-    height: 1536,
-  });
-  return (
-    <picture>
-      <source media="(max-aspect-ratio: 3/4)" srcSet={tall} />
-      {/* biome-ignore lint/a11y/useAltText: alt comes from getImageProps, decorative */}
-      <img
-        {...rest}
-        srcSet={wide}
-        className="absolute inset-0 size-full object-cover object-[40%_50%]"
-      />
-    </picture>
-  );
-}
 
 /** The timeline always runs; this only switches the soundtrack on and off. */
 function SoundButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -819,7 +788,7 @@ export function Hero() {
           className="absolute inset-0 origin-[45%_85%] will-change-transform"
         >
           <div className="w-arrive absolute inset-0">
-            <Plate />
+            <ForestPlate />
           </div>
           <div className="w-shafts absolute inset-0 will-change-[opacity,transform]" />
           <div className="w-dawn pointer-events-none absolute inset-0 bg-bg" />

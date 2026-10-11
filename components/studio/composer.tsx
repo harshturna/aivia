@@ -290,7 +290,7 @@ export function Composer({
               onClick={onStop}
               aria-label="Stop"
               title="Stop (Esc)"
-              className="grid size-8 place-items-center rounded-full bg-white text-black transition-transform active:scale-[.96]"
+              className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-[.96]"
             >
               <Square className="size-3 fill-current" />
             </button>
@@ -299,7 +299,7 @@ export function Composer({
               type="submit"
               aria-label="Send"
               disabled={!text.trim() || disabled}
-              className="grid size-8 place-items-center rounded-full bg-white text-black transition-[opacity,transform] duration-150 active:scale-[.96] disabled:opacity-30"
+              className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground transition-[opacity,transform] duration-150 active:scale-[.96] disabled:opacity-30"
             >
               <ArrowUp className="size-4" strokeWidth={2} />
             </button>

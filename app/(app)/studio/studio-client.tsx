@@ -6,6 +6,7 @@ import { Upload } from "lucide-react";
 import { domMax, LazyMotion, m } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ForestPlate } from "@/components/forest-plate";
 import { ScreenHeader } from "@/components/shell/screen";
 import {
   acceptFiles,
@@ -28,9 +29,9 @@ import { cn } from "@/lib/utils";
 export const SESSIONS_CHANGED = "aivia:sessions-changed";
 
 const EXAMPLES = [
-  "A poster, a ten-second teaser and a soundtrack for a night market",
+  "A poster, a ten-second teaser and a soundtrack for a forest older than memory",
   "Album art for a quiet piano record, and a name for it",
-  "A logo for a coffee roastery with three taglines",
+  "A snowy owl over a frozen lake at dawn, as a poster and a short clip",
   "The sound of rain on a tin roof, twenty seconds",
 ];
 
@@ -234,7 +235,7 @@ export function StudioClient({
         >
           {busy && (
             <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
-              <span className="size-1.5 animate-pulse rounded-full bg-white" />
+              <span className="size-1.5 animate-pulse rounded-full bg-sun" />
               Running
             </span>
           )}
@@ -242,9 +243,16 @@ export function StudioClient({
         </ScreenHeader>
 
         {empty ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-24">
+          <div className="relative isolate flex flex-1 flex-col items-center justify-center overflow-hidden px-6 pb-24">
+            {/* a trace of the forest from the landing, still, fading before the composer */}
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 opacity-[.18] [mask-image:linear-gradient(to_bottom,black,transparent_70%)]"
+            >
+              <ForestPlate />
+            </div>
             <div className="w-full max-w-[720px]">
-              <h2 className="text-center text-[32px] font-medium leading-tight tracking-[-0.02em]">
+              <h2 className="text-center font-display text-[clamp(36px,4vw,54px)] font-medium leading-[1.04] tracking-[-0.01em]">
                 What are we making?
               </h2>
               <m.div layoutId="composer" className="mt-8">

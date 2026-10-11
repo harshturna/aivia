@@ -10,20 +10,24 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
 /**
- * The kit (TICKET-003): every token and primitive in every state, on one page, for review.
+ * The kit (TICKET-003, TICKET-022): every token and primitive in every state, on one page, for review.
  * Development only.
  */
 const SWATCHES: Array<[string, string, string]> = [
-  ["bg", "#0a0a0b", "the canvas"],
-  ["surface", "#141416", "sidebar, panels, inputs"],
-  ["surface-2", "#1c1c1f", "hover, popovers, composer"],
-  ["surface-3", "#242428", "pressed, selected"],
-  ["border", "rgb(255 255 255 / .08)", "hairlines"],
-  ["border-strong", "rgb(255 255 255 / .16)", "focused edges"],
-  ["fg", "#f4f4f5", "text 17:1"],
-  ["fg-2", "#a3a3a8", "secondary 8:1"],
-  ["mute", "#8e8e97", "captions 4.9:1 on surface-2"],
-  ["faint", "#4a4a52", "placeholders, never text"],
+  ["bg", "#0b1410", "moss-dark ground"],
+  ["surface", "#121d17", "sidebar, panels, inputs"],
+  ["surface-2", "#18261e", "hover, popovers, composer"],
+  ["surface-3", "#203027", "pressed, selected"],
+  ["border", "rgb(241 236 220 / .09)", "hairlines"],
+  ["border-strong", "rgb(241 236 220 / .18)", "focused edges"],
+  ["fg", "#f1ecdc", "parchment text 15.8:1"],
+  ["fg-2", "#b6bfae", "secondary 9.9:1"],
+  ["mute", "#8e9984", "captions 5.3:1 on surface-2"],
+  ["faint", "#4c5a4f", "placeholders, never text"],
+  ["sun", "#e2b962", "the one accent: live, playhead"],
+  ["tint-bark", "#e9a77c", "picture mark"],
+  ["tint-water", "#8fd0c0", "clip mark"],
+  ["tint-fern", "#c5d6a0", "words mark"],
   ["good", "#5cc489", "status"],
   ["warn", "#e0b15a", "status"],
   ["poor", "#f2756b", "status"],
@@ -162,7 +166,7 @@ export default function KitPage() {
               <span className="text-poor">failed</span>
             </div>
             <div className="h-1 w-48 overflow-hidden rounded-full bg-surface-3">
-              <div className="h-full w-1/3 bg-white" />
+              <div className="h-full w-1/3 bg-fg" />
             </div>
           </div>
         </div>

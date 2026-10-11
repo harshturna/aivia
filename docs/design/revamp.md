@@ -41,9 +41,10 @@ a lone tree), made with the app's own models. Everything around the sequence is 
 
 ### 2.2 Tokens
 
-**The forest theme (D-004),** in `app/globals.css` under `[data-theme="forest"]`: the landing
-now, the app in TICKET-022. The legacy aliases are declared again inside it so they resolve
-to the forest values.
+**The forest (D-004)** is the default in `app/globals.css` `@theme`, for the landing and the
+whole app (TICKET-022). Every text token passes AA: fg 15.8:1 and fg-2 9.9:1 on bg, mute
+5.3:1 on surface-2 and 4.7:1 on surface-3. Live states and played progress use `--sun`; the
+library's kind filters carry the tints.
 
 | Token | Value | Use |
 |---|---|---|
@@ -56,9 +57,9 @@ to the forest values.
 | `--sun-soft` | `#FFE3A6` | light in the forest: shafts and motes only |
 | `--tint-bark` / `-water` / `-light` / `-fern` | `#E9A77C` / `#8FD0C0` / `#E2B962` / `#C5D6A0` | tell picture, clip, score and words apart; marks and underlines only, never fills |
 
-The table below is D-003's dark set, still the app's default until TICKET-022.
+The table below is D-003's dark set, retired by TICKET-022 and kept for the record.
 
-Dark only (D-003). Surfaces step up in lightness; borders are white at low alpha so they read
+Dark only (D-003, retired). Surfaces step up in lightness; borders are white at low alpha so they read
 on any media behind them.
 
 | Token | Value | Use |
@@ -83,12 +84,14 @@ white. The primary button is white with black text (hover `#E6E6E6`); the second
 `--surface-2` with a border. Links are `--fg` underlined. Semantic colours appear only as a
 status dot or word.
 
-**Type (D-004).** Cormorant, one weight (500) in roman and italic, is the display face:
+**Type (D-004).** Cormorant, one weight (500) in roman and italic, loaded on the root, is the
+display face. In the app it sets the Studio's empty-state question, the sign-in headings and
+"Opening the Studio…"; on the landing:
 the hero brief `clamp(40px, 6.2vw, 100px)` at line height 0.98, 1000 px wide, section headings
 `clamp(34px, 4.2vw, 58px)` at 0.98, the composer and close headings at up to 80 px, and italics for made words
 (taglines, track titles, captions on the wall). Host Grotesk stays for everything else.
 
-**Type (D-003, the app until TICKET-022).** One family, Host Grotesk (variable 300 to 800, `next/font/google`), with JetBrains
+**Type (the interface).** Host Grotesk (variable 300 to 800, `next/font/google`), with JetBrains
 Mono for code only. Hero headline `clamp(44px, 6.5vw, 92px)` weight 500, tracking −0.03em,
 line height 0.98, at most two lines, no accented word. Section headings 36 to 56 px weight 500,
 −0.02em. Body 15 px / 24 px at 400; UI 13 px / 20 px, names and buttons at 500; captions 12 px
@@ -351,11 +354,13 @@ Keyboard shortcuts. Guests see the account section as "Guest session" with sign-
 
 ## 10. Auth
 
-`/login` and `/signup`: the canvas, a centred 400 px column, the wordmark, a one-line 28 px
-heading ("Welcome back", "Create your account"), the two fields, the primary button, a text
-link to the other page, and a quiet secondary link "Try it as a guest". Errors inline under
-the field. `/get-started` keeps its job (sign in as the guest and forward) with the shimmer
-rather than dots.
+`/login` and `/signup` (TICKET-022): the forest plate from the landing, darkened on the left;
+the form on a moss panel (440 px, `bg/75`, 20 px radius, a hairline) over the dark trunks;
+the wordmark above; the heading in the display face at 44 px ("Welcome back", "Create your
+account"), the two fields, the primary button, a text link to the other page, and a quiet
+secondary link "Try it as a guest". Errors inline under the field. `/get-started` keeps its
+job (sign in as the guest and forward) and says "Opening the Studio…" in the display face
+over the same plate, so leaving the landing never leaves the forest.
 
 ## 11. The landing page
 

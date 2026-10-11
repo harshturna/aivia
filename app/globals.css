@@ -2,31 +2,32 @@
 @import "tw-animate-css";
 
 /*
- * Aivia design tokens (docs/design/revamp.md §2, D-003; D-004 adds the forest theme below). Dark only, media-first: surfaces step
- * up in lightness, borders are white at low alpha, there is no chromatic accent. The old
+ * Aivia design tokens (docs/design/revamp.md §2, D-004): the forest. Moss-dark surfaces that
+ * step up in lightness, parchment type, borders as parchment at low alpha, sunlight as the
+ * one accent; four quiet tints tell the media apart. The old
  * shadcn names (background, card, muted, primary, …) are mapped onto these so the screens the
  * revamp has not reached yet render on the same base until their tickets replace them.
  */
 @theme {
   --color-*: initial;
 
-  --color-bg: #0a0a0b;
-  --color-surface: #141416;
-  --color-surface-2: #1c1c1f;
-  --color-surface-3: #242428;
-  --color-border: rgb(255 255 255 / 0.08);
-  --color-border-strong: rgb(255 255 255 / 0.16);
-  --color-fg: #f4f4f5;
-  --color-fg-2: #a3a3a8;
-  --color-mute: #8e8e97;
-  --color-faint: #4a4a52;
+  --color-bg: #0b1410;
+  --color-surface: #121d17;
+  --color-surface-2: #18261e;
+  --color-surface-3: #203027;
+  --color-border: rgb(241 236 220 / 0.09);
+  --color-border-strong: rgb(241 236 220 / 0.18);
+  --color-fg: #f1ecdc;
+  --color-fg-2: #b6bfae;
+  --color-mute: #8e9984;
+  --color-faint: #4c5a4f;
   --color-white: #ffffff;
   --color-black: #000000;
   --color-good: #5cc489;
   --color-warn: #e0b15a;
   --color-poor: #f2756b;
-  --color-scrim: rgb(0 0 0 / 0.6);
-  --color-glass: rgb(20 20 22 / 0.72);
+  --color-scrim: rgb(5 10 8 / 0.6);
+  --color-glass: rgb(11 20 16 / 0.72);
   --color-transparent: transparent;
   --color-current: currentColor;
 
@@ -45,8 +46,8 @@
   --color-card-foreground: var(--color-fg);
   --color-popover: var(--color-surface-2);
   --color-popover-foreground: var(--color-fg);
-  --color-primary: var(--color-white);
-  --color-primary-foreground: var(--color-black);
+  --color-primary: var(--color-fg);
+  --color-primary-foreground: var(--color-bg);
   --color-secondary: var(--color-surface-2);
   --color-secondary-foreground: var(--color-fg);
   --color-muted: var(--color-surface);
@@ -54,17 +55,17 @@
   --color-accent: var(--color-surface-2);
   --color-accent-foreground: var(--color-fg);
   --color-destructive: var(--color-poor);
-  --color-destructive-foreground: var(--color-black);
+  --color-destructive-foreground: var(--color-bg);
   --color-input: var(--color-border-strong);
-  --color-ring: var(--color-white);
+  --color-ring: var(--color-fg);
   --color-sidebar: var(--color-surface);
   --color-sidebar-foreground: var(--color-fg);
-  --color-sidebar-primary: var(--color-white);
-  --color-sidebar-primary-foreground: var(--color-black);
+  --color-sidebar-primary: var(--color-fg);
+  --color-sidebar-primary-foreground: var(--color-bg);
   --color-sidebar-accent: var(--color-surface-3);
   --color-sidebar-accent-foreground: var(--color-fg);
   --color-sidebar-border: var(--color-border);
-  --color-sidebar-ring: var(--color-white);
+  --color-sidebar-ring: var(--color-fg);
 
   --font-sans: var(--font-host), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
@@ -91,47 +92,6 @@
   }
 }
 
-/*
- * The forest (D-004): moss-dark ground, parchment type, sunlight. On the landing now
- * (TICKET-021); the app follows in TICKET-022. The legacy names resolve where they are
- * declared, so they are declared again here to pick up the forest values.
- */
-[data-theme="forest"] {
-  --color-bg: #0b1410;
-  --color-surface: #121d17;
-  --color-surface-2: #18261e;
-  --color-surface-3: #203027;
-  --color-border: rgb(241 236 220 / 0.09);
-  --color-border-strong: rgb(241 236 220 / 0.18);
-  --color-fg: #f1ecdc;
-  --color-fg-2: #b6bfae;
-  --color-mute: #8e9984;
-  --color-faint: #4c5a4f;
-  --color-scrim: rgb(5 10 8 / 0.6);
-  --color-glass: rgb(11 20 16 / 0.72);
-
-  --color-background: var(--color-bg);
-  --color-foreground: var(--color-fg);
-  --color-card: var(--color-surface);
-  --color-card-foreground: var(--color-fg);
-  --color-popover: var(--color-surface-2);
-  --color-popover-foreground: var(--color-fg);
-  --color-primary: var(--color-fg);
-  --color-primary-foreground: var(--color-bg);
-  --color-secondary: var(--color-surface-2);
-  --color-secondary-foreground: var(--color-fg);
-  --color-muted: var(--color-surface);
-  --color-muted-foreground: var(--color-fg-2);
-  --color-accent: var(--color-surface-2);
-  --color-accent-foreground: var(--color-fg);
-  --color-input: var(--color-border-strong);
-  --color-ring: var(--color-fg);
-  /* the face is loaded on this element, so the token resolves here too */
-  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  background: var(--color-bg);
-  color: var(--color-fg);
-}
-
 @layer base {
   html {
     color-scheme: dark;
@@ -154,7 +114,7 @@
     border-color: var(--color-border);
   }
   ::selection {
-    background: rgb(255 255 255 / 0.2);
+    background: color-mix(in srgb, var(--color-sun) 32%, transparent);
   }
   /* one focus ring everywhere (design §2.2); an element that sets its own ring keeps it */
   :focus-visible {

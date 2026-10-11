@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { ForestPlate } from "@/components/forest-plate";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,7 +70,7 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
   if (sent) {
     return (
       <Shell>
-        <h1 className="text-[28px] font-medium leading-tight tracking-[-0.02em]">
+        <h1 className="font-display text-[44px] font-medium leading-[1.02] tracking-[-0.01em]">
           Check your email
         </h1>
         <p className="mt-3 text-[14px] leading-6 text-fg-2">
@@ -87,7 +88,7 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
 
   return (
     <Shell>
-      <h1 className="text-[28px] font-medium leading-tight tracking-[-0.02em]">
+      <h1 className="font-display text-[44px] font-medium leading-[1.02] tracking-[-0.01em]">
         {login ? "Welcome back" : "Create your account"}
       </h1>
       <p className="mt-2 text-[14px] text-fg-2">
@@ -149,7 +150,7 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
         <Button type="submit" size="lg" className="w-full" disabled={busy}>
           {busy ? (
             <Spinner
-              className="size-4 border-black border-r-transparent"
+              className="size-4 border-primary-foreground border-r-transparent"
               label="Signing in"
             />
           ) : login ? (
@@ -186,14 +187,23 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-dvh flex-col px-6">
+    <main className="relative isolate flex min-h-dvh flex-col overflow-hidden px-6">
+      {/* the forest from the landing, darkened on the side the form sits */}
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <ForestPlate />
+        <div className="absolute inset-0 bg-linear-to-r from-bg/90 via-bg/70 via-45% to-bg/25 max-sm:bg-bg/70" />
+      </div>
       <header className="mx-auto flex h-16 w-full max-w-[1200px] items-center">
         <Link href="/" className="rounded-control">
           <Logo />
         </Link>
       </header>
-      <div className="flex flex-1 items-center justify-center pb-24">
-        <div className="w-full max-w-[400px]">{children}</div>
+      <div className="flex flex-1 items-center pb-20">
+        <div className="mx-auto w-full max-w-[1200px]">
+          <div className="w-full max-w-[440px] rounded-window border border-border bg-bg/75 p-7 shadow-float sm:p-10">
+            {children}
+          </div>
+        </div>
       </div>
     </main>
   );

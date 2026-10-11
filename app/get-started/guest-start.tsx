@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef } from "react";
 
+import { ForestPlate } from "@/components/forest-plate";
 import { Spinner } from "@/components/ui/spinner";
 import { useGuestLogin } from "@/hooks/useGuestLogin";
 
@@ -36,9 +37,13 @@ const Start = () => {
   }, [guestHandler, params]);
 
   return (
-    <div className="grid min-h-dvh place-items-center">
-      <p className="flex items-center gap-2.5 text-[14px] text-fg-2">
-        <Spinner className="size-4" label="Starting" /> Opening the Studio…
+    <div className="relative isolate grid min-h-dvh place-items-center overflow-hidden px-6">
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <ForestPlate />
+        <div className="absolute inset-0 bg-bg/60" />
+      </div>
+      <p className="flex items-center gap-4 font-display text-[clamp(28px,3.4vw,44px)] italic text-fg [text-shadow:0_4px_32px_color-mix(in_srgb,var(--color-bg)_70%,transparent)]">
+        <Spinner className="size-5" label="Starting" /> Opening the Studio…
       </p>
     </div>
   );

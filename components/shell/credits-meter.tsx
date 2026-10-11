@@ -15,7 +15,7 @@ export function CreditsMeter({ count, max }: { count: number; max: number }) {
     <div className="px-2">
       <div className="h-1 overflow-hidden rounded-full bg-surface-3">
         <div
-          className="h-full bg-white transition-[width] duration-300 ease-out"
+          className="h-full bg-fg transition-[width] duration-300 ease-out"
           style={{ width: `${(used / max) * 100}%` }}
         />
       </div>

@@ -14,11 +14,12 @@ import { groupByDay } from "@/lib/day-groups";
 import { cn } from "@/lib/utils";
 import type { LibraryAsset, LibraryKind } from "./types";
 
-const TABS: Array<{ id: LibraryKind; label: string }> = [
+/** Each kind carries its medium's tint from the landing (D-004): bark, water, light. */
+const TABS: Array<{ id: LibraryKind; label: string; tint?: string }> = [
   { id: "all", label: "All" },
-  { id: "image", label: "Images" },
-  { id: "video", label: "Video" },
-  { id: "audio", label: "Audio" },
+  { id: "image", label: "Images", tint: "bg-tint-bark" },
+  { id: "video", label: "Video", tint: "bg-tint-water" },
+  { id: "audio", label: "Audio", tint: "bg-tint-light" },
 ];
 
 /**
@@ -159,12 +160,18 @@ export function LibraryClient({
                 aria-current={tab.id === kind ? "page" : undefined}
                 replace
                 className={cn(
-                  "rounded-[6px] px-3 py-1 transition-colors duration-150",
+                  "inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1 transition-colors duration-150",
                   tab.id === kind
                     ? "bg-surface-3 text-fg"
                     : "text-fg-2 hover:text-fg"
                 )}
               >
+                {tab.tint && (
+                  <span
+                    aria-hidden
+                    className={cn("h-2 w-1.5 rounded-t-full", tab.tint)}
+                  />
+                )}
                 {tab.label}
               </Link>
             ))}

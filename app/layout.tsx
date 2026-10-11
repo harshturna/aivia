@@ -1,14 +1,21 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
-import { Host_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Cormorant, Host_Grotesk, JetBrains_Mono } from "next/font/google";
 import { ModalProvider } from "@/components/ModalProvider";
 import { ToasterProvider } from "@/components/ToasterProvider";
 
-/** One family for everything (design §2.2, D-003); the mono is for code blocks only. */
+/** Host Grotesk for the interface, Cormorant for display (D-004); the mono is for code only. */
 const host = Host_Grotesk({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-host",
+});
+const cormorant = Cormorant({
+  subsets: ["latin"],
+  weight: ["500"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
 });
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
@@ -41,7 +48,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0b",
+  themeColor: "#0b1410",
   colorScheme: "dark",
 };
 
@@ -51,7 +58,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${host.variable} ${jetbrains.variable}`}>
+    <html
+      lang="en"
+      className={`${host.variable} ${cormorant.variable} ${jetbrains.variable}`}
+    >
       <head>
         {/* Lynq analytics: one deferred tag, no cookies. docs-lynq.byharsh.com/install/nextjs */}
         <script

@@ -160,7 +160,7 @@ export function AudioRow({
             key={i}
             className={cn(
               "block flex-1 rounded-[1px] transition-colors duration-150",
-              i / BARS < progress ? "bg-fg" : "bg-fg/30"
+              i / BARS < progress ? "bg-sun" : "bg-fg/30"
             )}
             style={{ height: `${Math.round(p * 24)}px` }}
           />

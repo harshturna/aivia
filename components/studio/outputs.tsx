@@ -223,7 +223,7 @@ function RevealedImage({ url, alt }: { url: string; alt: string }) {
         loading="lazy"
         className="block w-full"
       />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-[linear-gradient(to_top,rgb(10_10_11/.7),transparent)] p-2 pt-8 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-linear-to-t from-bg/70 to-transparent p-2 pt-8 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
         <IconLink href={url} label="Open full size">
           <Maximize2 />
         </IconLink>

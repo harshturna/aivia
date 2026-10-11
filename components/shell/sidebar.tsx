@@ -166,7 +166,7 @@ export function Sidebar({
               rail ? "h-9 justify-center" : "h-10 px-2"
             )}
           >
-            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white text-[11px] font-medium text-black">
+            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-fg text-[11px] font-medium text-bg">
               {user.name.slice(0, 1).toUpperCase()}
             </span>
             {!rail && (

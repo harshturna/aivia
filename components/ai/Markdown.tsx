@@ -39,8 +39,8 @@ const CodeBlock = ({ children, ...props }: React.ComponentProps<"pre">) => {
         onClick={onCopy}
         aria-label={copied ? "Copied to clipboard" : "Copy code to clipboard"}
         className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-md
-                   bg-white/10 px-2 py-1 text-xs text-zinc-200 opacity-0 transition
-                   hover:bg-white/20 focus-visible:opacity-100 group-hover/code:opacity-100"
+                   bg-fg/10 px-2 py-1 text-xs text-fg-2 opacity-0 transition
+                   hover:bg-fg/20 focus-visible:opacity-100 group-hover/code:opacity-100"
       >
         {copied ? (
           <>
@@ -54,7 +54,7 @@ const CodeBlock = ({ children, ...props }: React.ComponentProps<"pre">) => {
       </button>
       <pre
         ref={preRef}
-        className="overflow-x-auto rounded-lg bg-[#0d1117] p-4 text-sm"
+        className="overflow-x-auto rounded-lg bg-surface-3 p-4 text-sm"
         {...props}
       >
         {children}

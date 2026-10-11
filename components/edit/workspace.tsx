@@ -408,7 +408,7 @@ function Result({
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 w-px bg-white/80"
+            className="pointer-events-none absolute inset-y-0 w-px bg-fg/80"
             style={{ left: `${split}%` }}
           />
           <span className="pointer-events-none absolute left-2 top-2 rounded-[5px] bg-bg/60 px-1.5 py-0.5 text-[11.5px] text-fg backdrop-blur">
