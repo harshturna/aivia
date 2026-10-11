@@ -1,6 +1,6 @@
 # TICKET-017: The guest's example session, and the landing frame on the real run
 
-**Status:** blocked
+**Status:** in-progress
 **Created:** 2026-10-11
 **Started:** 2026-10-11
 **Completed:** —
@@ -33,15 +33,20 @@ replay.
 ## Progress log
 - 2026-10-11 — Opened from TICKET-006's outcome.
 - 2026-10-11 — Started; the recording run showed four UI faults (TICKET-018) and a video outage (TICKET-019). Blocked on 019.
+- 2026-10-11 — The guest example part was delivered by TICKET-038 (curated pinned sessions); the rest no longer waits on video.
 
 ## Handoff
 Kept current while the ticket is in progress. Overwrite, do not append.
-- **State:** one real run recorded (session 9245d3b9-e579-4a20-98d8-27f72f0fe919): poster,
-  track and taglines came out; the clip failed three times (TICKET-019). Not pinned.
-- **Blocked on:** TICKET-019 (video), so the example and the landing replay show a clip.
-- **Next:** once video works, record the run again, pin it, record the transcript; the Edit
-  panel and Characters strip can be done before then.
-- **Read first:** `components/studio/run.tsx`, `lib/sessions.ts`
+- **State:** the guest's examples are done by TICKET-038 (four pinned sessions from the
+  landing's media, `lib/guest-examples.json`); the earlier recorded night-market run
+  (9245d3b9-...) is a hidden guest row now and will be cleaned up. What is left here: the
+  landing's Studio frame rendered by the real run component instead of the fixed replay
+  (`components/studio/run-demo.tsx`), and the landing's Edit panel and Characters strip.
+- **Blocked on:** nothing for the Edit panel and Characters strip; the real-run frame can use
+  the forest example from TICKET-038, so it no longer waits on TICKET-019.
+- **Next:** decide with the owner whether the landing should gain Edit and Characters
+  sections at all, then the frame on the real run component.
+- **Read first:** `components/studio/run.tsx`, `lib/guest-examples.json`
 
 ## Verification
 Filled in on completion. The command that was run, in a code block, and its result.
