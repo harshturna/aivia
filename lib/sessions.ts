@@ -1,5 +1,6 @@
 import type { Prisma, Session } from "@prisma/client";
 import type { UIMessage } from "ai";
+import { isGuestId } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
 
 export { isSessionId, messageText, titleFromBrief } from "@/lib/session-text";
@@ -7,9 +8,9 @@ export { isSessionId, messageText, titleFromBrief } from "@/lib/session-text";
 /**
  * Sessions (design §12): a Studio conversation, its messages as the AI SDK's UIMessage[]
  * in one JSON column. Every read and write is scoped by the owner's user id; a row that is
- * not the caller's reads as absent.
+ * not the caller's reads as absent. The shared guest account writes nothing and reads only its
+ * pinned examples (TICKET-038).
  */
-export const GUEST_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export type SessionSummary = Pick<
   Session,
@@ -25,23 +26,13 @@ const summary = {
   updatedAt: true,
 } as const;
 
-/** The guest account is shared, so a guest sees only the last day's sessions. */
+/** Recents. The guest account is shared, so a guest sees only the pinned examples. */
 export async function listSessions(
   userId: string,
-  { limit = 8, isGuest = false }: { limit?: number; isGuest?: boolean } = {}
+  { limit = 8 }: { limit?: number } = {}
 ): Promise<SessionSummary[]> {
   return prismadb.session.findMany({
-    where: {
-      userId,
-      ...(isGuest
-        ? {
-            OR: [
-              { pinned: true },
-              { updatedAt: { gte: new Date(Date.now() - GUEST_WINDOW_MS) } },
-            ],
-          }
-        : {}),
-    },
+    where: { userId, ...(isGuestId(userId) ? { pinned: true } : {}) },
     orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
     take: limit,
     select: summary,
@@ -49,7 +40,9 @@ export async function listSessions(
 }
 
 export async function getSession(userId: string, id: string) {
-  const session = await prismadb.session.findFirst({ where: { id, userId } });
+  const session = await prismadb.session.findFirst({
+    where: { id, userId, ...(isGuestId(userId) ? { pinned: true } : {}) },
+  });
   if (!session) return null;
   return {
     ...session,
@@ -57,12 +50,16 @@ export async function getSession(userId: string, id: string) {
   };
 }
 
-/** Creates the row if the id is new to this user; the client makes the id up front. */
+/**
+ * Creates the row if the id is new to this user; the client makes the id up front. The guest
+ * never gets a row: callers run a guest unsaved and do not call this (it throws if they do).
+ */
 export async function ensureSession(
   userId: string,
   id: string,
   mode = "auto"
 ): Promise<Session> {
+  if (isGuestId(userId)) throw new Error("Guest sessions are not stored");
   const existing = await prismadb.session.findFirst({ where: { id, userId } });
   if (existing) return existing;
   return prismadb.session.create({ data: { id, userId, mode } });
@@ -73,6 +70,7 @@ export async function saveMessages(
   id: string,
   messages: UIMessage[]
 ) {
+  if (isGuestId(userId)) return;
   await prismadb.session.updateMany({
     where: { id, userId },
     data: { messages: messages as unknown as Prisma.InputJsonValue },
@@ -81,7 +79,7 @@ export async function saveMessages(
 
 export async function renameSession(userId: string, id: string, title: string) {
   const clean = title.trim().slice(0, 80);
-  if (!clean) return 0;
+  if (!clean || isGuestId(userId)) return 0;
   const { count } = await prismadb.session.updateMany({
     where: { id, userId },
     data: { title: clean },
@@ -91,6 +89,7 @@ export async function renameSession(userId: string, id: string, title: string) {
 
 /** A pinned session (the guest's example) cannot be deleted by its viewers. */
 export async function deleteSession(userId: string, id: string) {
+  if (isGuestId(userId)) return 0;
   const { count } = await prismadb.session.deleteMany({
     where: { id, userId, pinned: false },
   });

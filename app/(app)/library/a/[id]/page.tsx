@@ -4,6 +4,7 @@ import { Lightbox } from "@/components/library/lightbox";
 import { toLibraryAsset } from "@/components/library/types";
 import { getAsset } from "@/lib/assets";
 import { getUser } from "@/lib/getUser";
+import { isGuestUser } from "@/lib/guest-user";
 
 export const metadata: Metadata = { title: "Library" };
 
@@ -17,5 +18,10 @@ export default async function AssetPage({
   if (!user) redirect("/login");
   const asset = await getAsset(user.id, (await params).id);
   if (!asset) notFound();
-  return <Lightbox asset={toLibraryAsset(asset)} />;
+  return (
+    <Lightbox
+      asset={toLibraryAsset(asset)}
+      readOnly={await isGuestUser("SERVER_COMPONENT")}
+    />
+  );
 }

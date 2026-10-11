@@ -7,6 +7,7 @@ import {
   type UIMessage,
 } from "ai";
 import { guardGeneration } from "@/lib/ai/guard";
+import { isGuestId } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
 import { messageText } from "@/lib/session-text";
 
@@ -90,7 +91,9 @@ export async function POST(
         originalMessages: messages,
         onFinish: async ({ responseMessage, isAborted }) => {
           const reply = messageText(responseMessage).trim();
-          if (!briefText || !reply || isAborted) return;
+          // the shared guest account keeps no history (TICKET-038)
+          if (!briefText || !reply || isAborted || isGuestId(guard.user.id))
+            return;
           try {
             await prismadb.message.createMany({
               data: [

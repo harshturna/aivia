@@ -32,12 +32,15 @@ export function LibraryClient({
   kind,
   query,
   favorites,
+  readOnly = false,
 }: {
   initialItems: LibraryAsset[];
   initialCursor: string | null;
   kind: LibraryKind;
   query: string;
   favorites: boolean;
+  /** The shared guest account sees the curated examples and cannot change them. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
@@ -143,7 +146,9 @@ export function LibraryClient({
       <ScreenHeader title="Library">
         <div className="hidden items-center gap-2 md:flex">
           <SearchField value={search} onChange={setSearch} />
-          <FavouritesToggle on={favorites} href={href({ fav: !favorites })} />
+          {!readOnly && (
+            <FavouritesToggle on={favorites} href={href({ fav: !favorites })} />
+          )}
         </div>
       </ScreenHeader>
 
@@ -178,7 +183,12 @@ export function LibraryClient({
           </nav>
           <div className="flex w-full items-center gap-2 md:hidden">
             <SearchField value={search} onChange={setSearch} />
-            <FavouritesToggle on={favorites} href={href({ fav: !favorites })} />
+            {!readOnly && (
+              <FavouritesToggle
+                on={favorites}
+                href={href({ fav: !favorites })}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -222,6 +232,7 @@ export function LibraryClient({
                     <div className="columns-2 gap-2 md:columns-3 xl:columns-4">
                       {visual.map((a) => (
                         <Tile
+                          readOnly={readOnly}
                           key={a.id}
                           asset={{ ...a, createdAt: a.createdAt.toISOString() }}
                           onFavorite={() =>
@@ -293,11 +304,13 @@ export function LibraryClient({
 }
 
 function Tile({
+  readOnly = false,
   asset,
   onFavorite,
 }: {
   asset: LibraryAsset;
   onFavorite: () => void;
+  readOnly?: boolean;
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const ratio =
@@ -345,20 +358,22 @@ function Tile({
           0:{String(Math.round(asset.durationSec)).padStart(2, "0")}
         </span>
       )}
-      <button
-        type="button"
-        onClick={onFavorite}
-        aria-pressed={asset.favorite}
-        aria-label={
-          asset.favorite ? "Remove from favourites" : "Add to favourites"
-        }
-        className={cn(
-          "absolute right-2 top-2 grid size-8 place-items-center rounded-control bg-bg/60 text-fg backdrop-blur transition-opacity duration-150 focus-visible:opacity-100",
-          asset.favorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        )}
-      >
-        <Heart className={cn("size-4", asset.favorite && "fill-current")} />
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          onClick={onFavorite}
+          aria-pressed={asset.favorite}
+          aria-label={
+            asset.favorite ? "Remove from favourites" : "Add to favourites"
+          }
+          className={cn(
+            "absolute right-2 top-2 grid size-8 place-items-center rounded-control bg-bg/60 text-fg backdrop-blur transition-opacity duration-150 focus-visible:opacity-100",
+            asset.favorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          )}
+        >
+          <Heart className={cn("size-4", asset.favorite && "fill-current")} />
+        </button>
+      )}
     </figure>
   );
 }

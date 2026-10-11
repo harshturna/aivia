@@ -1,0 +1,308 @@
+[
+  {
+    "id": "5c3a9d1e-7f4b-4c2a-9e61-0b8d4f2a6c11",
+    "title": "A forest older than memory",
+    "mode": "auto",
+    "messages": [
+      {
+        "id": "ex1-u",
+        "role": "user",
+        "parts": [
+          {
+            "type": "text",
+            "text": "A poster, a ten-second teaser and a soundtrack for a forest older than memory, and three taglines. Keep it quiet.",
+            "state": "done"
+          }
+        ]
+      },
+      {
+        "id": "ex1-a",
+        "role": "assistant",
+        "parts": [
+          {
+            "type": "step-start"
+          },
+          {
+            "type": "tool-generate_image",
+            "toolCallId": "ex1-t1",
+            "state": "output-available",
+            "input": {
+              "prompt": "A vertical poster: one colossal ancient tree alone on a green hill above a sea of morning mist, birds circling, the low sun behind its branches, painterly natural light, no lettering"
+            },
+            "output": {
+              "urls": ["/landing/tree.jpg"],
+              "prompt": "A vertical poster: one colossal ancient tree alone on a green hill above a sea of morning mist, birds circling, the low sun behind its branches, painterly natural light, no lettering"
+            }
+          },
+          {
+            "type": "tool-generate_video",
+            "toolCallId": "ex1-t2",
+            "state": "output-available",
+            "input": {
+              "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, ten seconds"
+            },
+            "output": {
+              "url": "/landing/canyon.mp4",
+              "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, ten seconds"
+            }
+          },
+          {
+            "type": "tool-generate_music",
+            "toolCallId": "ex1-t3",
+            "state": "output-available",
+            "input": {
+              "prompt": "Slow ambient strings with a soft choir, distant bells and harp, the feeling of first light in an old forest, instrumental, thirty seconds"
+            },
+            "output": {
+              "url": "/landing/score.mp3",
+              "prompt": "Slow ambient strings with a soft choir, distant bells and harp, the feeling of first light in an old forest, instrumental, thirty seconds"
+            }
+          },
+          {
+            "type": "step-start"
+          },
+          {
+            "type": "text",
+            "text": "Here is the set, all in the same hush.\n\n**Poster**: one ancient tree above the mist, the sun low behind it.\n\n**Teaser**: ten seconds of a waterfall in a mossy canyon, light moving through the spray.\n\n**Soundtrack**: thirty seconds of slow strings, a soft choir and distant bells.\n\n**Taglines:**\n1. Older than every map.\n2. Walk in before the world wakes.\n3. The light still finds its way down.",
+            "state": "done"
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "kind": "image",
+        "url": "/landing/tree.jpg",
+        "prompt": "A vertical poster: one colossal ancient tree alone on a green hill above a sea of morning mist, birds circling, the low sun behind its branches, painterly natural light, no lettering",
+        "model": "fal-ai/flux-pro/v1.1-ultra",
+        "width": 1200,
+        "height": 1800
+      },
+      {
+        "kind": "video",
+        "url": "/landing/canyon.mp4",
+        "posterUrl": "/landing/canyon-poster.webp",
+        "prompt": "A tall waterfall pouring into an emerald pool in a mossy canyon, mist rising, shafts of morning light, locked-off camera, ten seconds",
+        "model": "fal-ai/wan/v2.2-5b/image-to-video",
+        "durationSec": 5
+      },
+      {
+        "kind": "music",
+        "url": "/landing/score.mp3",
+        "prompt": "Slow ambient strings with a soft choir, distant bells and harp, the feeling of first light in an old forest, instrumental, thirty seconds",
+        "model": "cassetteai/music-generator",
+        "durationSec": 30
+      }
+    ]
+  },
+  {
+    "id": "a71e2b64-3c9d-4f08-8b25-6d4e1c9f7a32",
+    "title": "Owl over a frozen lake",
+    "mode": "auto",
+    "messages": [
+      {
+        "id": "ex2-u",
+        "role": "user",
+        "parts": [
+          {
+            "type": "text",
+            "text": "A snowy owl gliding over a frozen lake at dawn as a poster, and the aurora over a fjord as a short clip.",
+            "state": "done"
+          }
+        ]
+      },
+      {
+        "id": "ex2-a",
+        "role": "assistant",
+        "parts": [
+          {
+            "type": "step-start"
+          },
+          {
+            "type": "tool-generate_image",
+            "toolCallId": "ex2-t1",
+            "state": "output-available",
+            "input": {
+              "prompt": "A snowy owl gliding low over a frozen lake at dawn, wings spread wide, soft pink and blue light, mist over the ice, wildlife photograph"
+            },
+            "output": {
+              "urls": ["/landing/owl.jpg"],
+              "prompt": "A snowy owl gliding low over a frozen lake at dawn, wings spread wide, soft pink and blue light, mist over the ice, wildlife photograph"
+            }
+          },
+          {
+            "type": "tool-generate_video",
+            "toolCallId": "ex2-t2",
+            "state": "output-available",
+            "input": {
+              "prompt": "Green and violet aurora rippling over a still fjord at night, the snowy mountains mirrored in black water, locked-off camera"
+            },
+            "output": {
+              "url": "/landing/aurora.mp4",
+              "prompt": "Green and violet aurora rippling over a still fjord at night, the snowy mountains mirrored in black water, locked-off camera"
+            }
+          },
+          {
+            "type": "step-start"
+          },
+          {
+            "type": "text",
+            "text": "The owl comes in low over the ice in dawn's pink and blue; the clip picks up after dark, the aurora moving slowly over a fjord that holds the mountains like a mirror. Together they read as one cold, quiet night, dusk to dawn.",
+            "state": "done"
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "kind": "image",
+        "url": "/landing/owl.jpg",
+        "prompt": "A snowy owl gliding low over a frozen lake at dawn, wings spread wide, soft pink and blue light, mist over the ice, wildlife photograph",
+        "model": "fal-ai/flux-pro/v1.1-ultra",
+        "width": 1211,
+        "height": 1600
+      },
+      {
+        "kind": "video",
+        "url": "/landing/aurora.mp4",
+        "posterUrl": "/landing/aurora-poster.webp",
+        "prompt": "Green and violet aurora rippling over a still fjord at night, the snowy mountains mirrored in black water, locked-off camera",
+        "model": "fal-ai/wan/v2.2-5b/image-to-video",
+        "durationSec": 5
+      }
+    ]
+  },
+  {
+    "id": "e4b8c7d2-9a1f-4e63-a0b4-7f2c5d8e9b43",
+    "title": "Dawn chorus by a stream",
+    "mode": "auto",
+    "messages": [
+      {
+        "id": "ex3-u",
+        "role": "user",
+        "parts": [
+          {
+            "type": "text",
+            "text": "Twelve seconds of a dawn chorus by a stream, and a still of a dew drop to go with it.",
+            "state": "done"
+          }
+        ]
+      },
+      {
+        "id": "ex3-a",
+        "role": "assistant",
+        "parts": [
+          {
+            "type": "step-start"
+          },
+          {
+            "type": "tool-generate_sound_effect",
+            "toolCallId": "ex3-t1",
+            "state": "output-available",
+            "input": {
+              "prompt": "A dawn chorus in an old forest, songbirds near and far, a small stream trickling, a soft breeze in the leaves, twelve seconds"
+            },
+            "output": {
+              "url": "/landing/birdsong.mp3",
+              "prompt": "A dawn chorus in an old forest, songbirds near and far, a small stream trickling, a soft breeze in the leaves, twelve seconds"
+            }
+          },
+          {
+            "type": "tool-generate_image",
+            "toolCallId": "ex3-t2",
+            "state": "output-available",
+            "input": {
+              "prompt": "Macro photograph of a single dew drop on a fern frond, the sunrise forest reflected inside it, soft green bokeh"
+            },
+            "output": {
+              "urls": ["/landing/dew.jpg"],
+              "prompt": "Macro photograph of a single dew drop on a fern frond, the sunrise forest reflected inside it, soft green bokeh"
+            }
+          },
+          {
+            "type": "step-start"
+          },
+          {
+            "type": "text",
+            "text": "Twelve seconds of birds waking near and far over a small stream, and one dew drop holding the whole sunrise forest upside down. Pair them for a slow open, or loop the chorus under the still.",
+            "state": "done"
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "kind": "sound",
+        "url": "/landing/birdsong.mp3",
+        "prompt": "A dawn chorus in an old forest, songbirds near and far, a small stream trickling, a soft breeze in the leaves, twelve seconds",
+        "model": "fal-ai/elevenlabs/sound-effects/v2",
+        "durationSec": 12
+      },
+      {
+        "kind": "image",
+        "url": "/landing/dew.jpg",
+        "prompt": "Macro photograph of a single dew drop on a fern frond, the sunrise forest reflected inside it, soft green bokeh",
+        "model": "fal-ai/flux-pro/v1.1-ultra",
+        "width": 1600,
+        "height": 1600
+      }
+    ]
+  },
+  {
+    "id": "9d2f6a18-b5c3-4d7e-8f19-2a6b3c4d5e54",
+    "title": "A whale above the mountains",
+    "mode": "auto",
+    "messages": [
+      {
+        "id": "ex4-u",
+        "role": "user",
+        "parts": [
+          {
+            "type": "text",
+            "text": "A storybook illustration of a whale swimming through clouds above the mountains, and a title for the book.",
+            "state": "done"
+          }
+        ]
+      },
+      {
+        "id": "ex4-a",
+        "role": "assistant",
+        "parts": [
+          {
+            "type": "step-start"
+          },
+          {
+            "type": "tool-generate_image",
+            "toolCallId": "ex4-t1",
+            "state": "output-available",
+            "input": {
+              "prompt": "A storybook illustration in gouache: a giant whale swimming through soft clouds above a mountain range at sunset, tiny birds alongside, warm gold and rose light"
+            },
+            "output": {
+              "urls": ["/landing/whale.jpg"],
+              "prompt": "A storybook illustration in gouache: a giant whale swimming through soft clouds above a mountain range at sunset, tiny birds alongside, warm gold and rose light"
+            }
+          },
+          {
+            "type": "step-start"
+          },
+          {
+            "type": "text",
+            "text": "A whale drifting over the peaks at sunset, birds keeping it company, in warm gouache.\n\n**Titles to choose from:**\n1. The Whale Who Swam Through the Sky\n2. Above the Mountains, Below the Stars\n3. Where the Clouds Go Swimming",
+            "state": "done"
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "kind": "image",
+        "url": "/landing/whale.jpg",
+        "prompt": "A storybook illustration in gouache: a giant whale swimming through soft clouds above a mountain range at sunset, tiny birds alongside, warm gold and rose light",
+        "model": "fal-ai/flux-pro/v1.1-ultra",
+        "width": 1211,
+        "height": 1600
+      }
+    ]
+  }
+]

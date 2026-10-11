@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CharacterChat } from "@/components/characters/chat";
 import { getUser } from "@/lib/getUser";
-import { isGuestUser } from "@/lib/guest-user";
+import { isGuestId, isGuestUser } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
 
 type Params = { params: Promise<{ id: string }> };
@@ -15,10 +15,11 @@ async function load(id: string, userId: string) {
   return prismadb.character.findFirst({
     where: { id, userId: { in: owners } },
     include: {
+      // the shared guest account keeps no history to load (TICKET-038)
       messages: {
         where: { userId },
         orderBy: { createdAt: "asc" },
-        take: 200,
+        take: isGuestId(userId) ? 0 : 200,
       },
     },
   });

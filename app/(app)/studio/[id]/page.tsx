@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getUser } from "@/lib/getUser";
+import { isGuestUser } from "@/lib/guest-user";
 import { getSession, isSessionId } from "@/lib/sessions";
 import { StudioClient } from "../studio-client";
 
@@ -27,6 +28,7 @@ export default async function SessionPage({ params }: Params) {
       key={session.id}
       id={session.id}
       isNew={false}
+      isGuest={await isGuestUser("SERVER_COMPONENT")}
       initialMessages={session.messages}
       initialTitle={session.title}
     />

@@ -33,9 +33,12 @@ const KIND_LABEL: Record<LibraryAsset["kind"], string> = {
 export function Lightbox({
   asset,
   modal = false,
+  readOnly = false,
 }: {
   asset: LibraryAsset;
   modal?: boolean;
+  /** The shared guest account: a curated example it can view but not change or delete. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [favorite, setFavorite] = useState(asset.favorite);
@@ -228,15 +231,17 @@ export function Lightbox({
               <Download /> Download
             </a>
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={toggleFavorite}
-            aria-pressed={favorite}
-          >
-            <Heart className={cn(favorite && "fill-current")} />
-            {favorite ? "Favourite" : "Add to favourites"}
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={toggleFavorite}
+              aria-pressed={favorite}
+            >
+              <Heart className={cn(favorite && "fill-current")} />
+              {favorite ? "Favourite" : "Add to favourites"}
+            </Button>
+          )}
           {asset.kind === "image" && (
             <Button asChild variant="secondary" size="sm">
               <Link href={`/edit?asset=${asset.id}`}>
@@ -253,30 +258,32 @@ export function Lightbox({
           )}
         </div>
 
-        <div className="mt-auto border-t border-border pt-4">
-          {confirming ? (
-            <div className="flex items-center gap-2">
-              <Button variant="destructive" size="sm" onClick={remove}>
-                Delete for good
-              </Button>
+        {!readOnly && (
+          <div className="mt-auto border-t border-border pt-4">
+            {confirming ? (
+              <div className="flex items-center gap-2">
+                <Button variant="destructive" size="sm" onClick={remove}>
+                  Delete for good
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirming(false)}
+                >
+                  Keep it
+                </Button>
+              </div>
+            ) : (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setConfirming(false)}
+                onClick={() => setConfirming(true)}
               >
-                Keep it
+                <Trash2 /> Delete
               </Button>
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setConfirming(true)}
-            >
-              <Trash2 /> Delete
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </aside>
     </div>
   );

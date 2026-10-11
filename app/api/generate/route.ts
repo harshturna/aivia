@@ -22,6 +22,7 @@ import {
 } from "@/lib/ai/direct";
 import { guardGeneration } from "@/lib/ai/guard";
 import { recordAsset } from "@/lib/assets";
+import { isGuestId } from "@/lib/guest-user";
 import {
   ensureSession,
   isSessionId,
@@ -66,7 +67,9 @@ export async function POST(req: Request) {
     if (!guard.ok) return guard.response;
     const userId = guard.user.id;
 
-    const sessionId = body.id && isSessionId(body.id) ? body.id : null;
+    // a guest run is never stored: the account is shared (TICKET-038)
+    const sessionId =
+      body.id && isSessionId(body.id) && !isGuestId(userId) ? body.id : null;
     if (sessionId) {
       const session = await ensureSession(userId, sessionId, request.mode);
       if (session.title === "New session")

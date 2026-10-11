@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { type ComposerMode, MODES } from "@/components/studio/modes";
+import { isGuestUser } from "@/lib/guest-user";
 import { StudioClient } from "./studio-client";
 
 export const metadata: Metadata = { title: "Studio" };
@@ -24,6 +25,7 @@ export default async function NewSessionPage({
       key={id}
       id={id}
       isNew
+      isGuest={await isGuestUser("SERVER_COMPONENT")}
       initialPrompt={prompt ?? ""}
       initialMode={initialMode}
     />

@@ -47,6 +47,7 @@ export function StudioClient({
   initialTitle = "New session",
   initialMode = "auto",
   isNew,
+  isGuest = false,
 }: {
   id: string;
   initialMessages?: UIMessage[];
@@ -54,6 +55,8 @@ export function StudioClient({
   initialTitle?: string;
   initialMode?: ComposerMode;
   isNew: boolean;
+  /** The shared guest account: its runs are not stored, its examples are not editable. */
+  isGuest?: boolean;
 }) {
   const router = useRouter();
   const proModal = userProModal();
@@ -83,7 +86,9 @@ export function StudioClient({
           body: { ...body, id: chatId, messages: all },
         }),
       }),
-      onFinish: () => window.dispatchEvent(new Event(SESSIONS_CHANGED)),
+      onFinish: () => {
+        if (!isGuest) window.dispatchEvent(new Event(SESSIONS_CHANGED));
+      },
       onError: (err) => {
         const message = err?.message ?? "";
         if (message.includes("Free trial")) setLimit("free");
@@ -155,15 +160,28 @@ export function StudioClient({
       setFiles([]);
       if (messages.length === 0) {
         setTitle(titleFromBrief(text));
-        // A new session gets its address on the first send, so a reload resumes it.
-        if (isNew) window.history.replaceState(null, "", `/studio/${id}`);
-        setTimeout(
-          () => window.dispatchEvent(new Event(SESSIONS_CHANGED)),
-          1500
-        );
+        // A new session gets its address on the first send, so a reload resumes it. A guest's
+        // run is not stored (TICKET-038), so it gets no address and no place in Recents.
+        if (isNew && !isGuest) {
+          window.history.replaceState(null, "", `/studio/${id}`);
+          setTimeout(
+            () => window.dispatchEvent(new Event(SESSIONS_CHANGED)),
+            1500
+          );
+        }
       }
     },
-    [busy, limit, clearError, sendMessage, params, messages.length, isNew, id]
+    [
+      busy,
+      limit,
+      clearError,
+      sendMessage,
+      params,
+      messages.length,
+      isNew,
+      isGuest,
+      id,
+    ]
   );
 
   const reuse = useCallback((prompt: string) => {
@@ -228,7 +246,7 @@ export function StudioClient({
               id={id}
               title={title}
               onChange={setTitle}
-              enabled={!empty}
+              enabled={!empty && !isGuest}
             />
           }
         >
@@ -238,7 +256,7 @@ export function StudioClient({
               Running
             </span>
           )}
-          {!empty && !busy && <DeleteSession onConfirm={remove} />}
+          {!empty && !busy && !isGuest && <DeleteSession onConfirm={remove} />}
         </ScreenHeader>
 
         {empty ? (

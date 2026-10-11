@@ -356,7 +356,8 @@ Guests see the shared characters and cannot create or delete; the controls say s
 
 `/settings`, one page at 640 px: Account (email, "Signed in as", sign out), Plan (Free or
 Pro, the allowance used, "Manage subscription" through the Stripe portal or "Upgrade"), and
-Keyboard shortcuts. Guests see the account section as "Guest session" with sign-up.
+Keyboard shortcuts. Guests see the account section as "Guest session": many people share
+the account, so nothing they make is kept; sign up to keep your work.
 
 ## 10. Auth
 
@@ -419,8 +420,13 @@ Asset     id, userId, sessionId?, kind (image|video|music|sound), url, posterUrl
   finish; the first turn names the session with a cheap call (Haiku) from the brief.
 - Asset URLs are fal's for now; a follow-up ticket mirrors them to Cloudinary if they prove
   to expire (routine choice, logged in TICKET-005).
-- Guest sessions and assets belong to the guest user and are listed for every guest; a daily
-  job deletes guest rows older than seven days (TICKET-005).
+- The guest account is shared by every visitor, so it stores nothing (TICKET-038): a guest's
+  runs are not saved as sessions, its outputs are not kept as assets, its character chats
+  are not kept. A guest reads only the pinned examples (four curated sessions from the
+  landing's media, `lib/guest-examples.json`, written by `scripts/guest-examples.mjs`): they
+  are its Recents and its library, viewable but not renamed, deleted or favourited. A daily
+  job deletes every other guest session, asset and character message. The rule lives in the
+  storage layer (`lib/sessions.ts`, `lib/assets.ts`, `isGuestId`), so no route can leak it.
 - `/api/sessions` (list, create), `/api/sessions/[id]` (get, rename, delete), `/api/assets`
   (list with cursor, kind, query), `/api/assets/[id]` (favourite, delete).
 

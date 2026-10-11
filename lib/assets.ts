@@ -1,9 +1,13 @@
+import { randomUUID } from "node:crypto";
 import type { Asset, AssetKind, Prisma } from "@prisma/client";
+import { isGuestId } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
 
 /**
  * Assets (design §12): every image, clip, track or sound the tools made, written by the
  * tool itself so it is kept even when the stream is abandoned. Scoped by owner everywhere.
+ * The shared guest account keeps nothing: its outputs are returned unsaved, and it reads only
+ * the assets of its pinned example sessions (TICKET-038).
  */
 export type { Asset, AssetKind };
 
@@ -22,6 +26,23 @@ export interface RecordAssetInput {
 }
 
 export async function recordAsset(input: RecordAssetInput): Promise<Asset> {
+  if (isGuestId(input.userId))
+    return {
+      id: randomUUID(),
+      userId: input.userId,
+      sessionId: null,
+      kind: input.kind,
+      url: input.url,
+      posterUrl: input.posterUrl ?? null,
+      prompt: input.prompt,
+      model: input.model,
+      params: (input.params ?? {}) as Prisma.JsonValue,
+      width: input.width ?? null,
+      height: input.height ?? null,
+      durationSec: input.durationSec ?? null,
+      favorite: false,
+      createdAt: new Date(),
+    };
   return prismadb.asset.create({
     data: {
       userId: input.userId,
@@ -56,6 +77,7 @@ export async function listAssets(
 ) {
   const where: Prisma.AssetWhereInput = {
     userId,
+    ...(isGuestId(userId) ? { session: { pinned: true } } : {}),
     ...(kind === "audio"
       ? { kind: { in: ["music", "sound"] } }
       : kind
@@ -78,7 +100,13 @@ export async function listAssets(
 }
 
 export async function getAsset(userId: string, id: string) {
-  return prismadb.asset.findFirst({ where: { id, userId } });
+  return prismadb.asset.findFirst({
+    where: {
+      id,
+      userId,
+      ...(isGuestId(userId) ? { session: { pinned: true } } : {}),
+    },
+  });
 }
 
 export async function setFavorite(
@@ -86,6 +114,7 @@ export async function setFavorite(
   id: string,
   favorite: boolean
 ) {
+  if (isGuestId(userId)) return 0;
   const { count } = await prismadb.asset.updateMany({
     where: { id, userId },
     data: { favorite },
@@ -94,6 +123,7 @@ export async function setFavorite(
 }
 
 export async function deleteAsset(userId: string, id: string) {
+  if (isGuestId(userId)) return 0;
   const { count } = await prismadb.asset.deleteMany({ where: { id, userId } });
   return count;
 }

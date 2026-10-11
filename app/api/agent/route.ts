@@ -10,6 +10,7 @@ import {
 
 import { guardGeneration } from "@/lib/ai/guard";
 import { createAgentTools } from "@/lib/ai/tools";
+import { isGuestId } from "@/lib/guest-user";
 import {
   ensureSession,
   isSessionId,
@@ -74,9 +75,10 @@ export async function POST(req: Request) {
     if (!guard.ok) return guard.response;
 
     // The chat id the client made is the session id (design §12). A new one becomes a row
-    // named after its first brief; anything that is not a uuid runs unsaved.
+    // named after its first brief; anything that is not a uuid runs unsaved, and so does
+    // every guest run: the account is shared (TICKET-038).
     const userId = guard.user.id;
-    const sessionId = id && isSessionId(id) ? id : null;
+    const sessionId = id && isSessionId(id) && !isGuestId(userId) ? id : null;
     if (sessionId) {
       const session = await ensureSession(userId, sessionId);
       if (session.title === "New session") {

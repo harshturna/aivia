@@ -4,6 +4,7 @@ import { LibraryClient } from "@/components/library/library-client";
 import { type LibraryKind, toLibraryAsset } from "@/components/library/types";
 import { listAssets } from "@/lib/assets";
 import { getUser } from "@/lib/getUser";
+import { isGuestUser } from "@/lib/guest-user";
 
 export const metadata: Metadata = { title: "Library" };
 
@@ -34,6 +35,7 @@ export default async function LibraryPage({
       kind={kind}
       query={q ?? ""}
       favorites={fav === "1"}
+      readOnly={await isGuestUser("SERVER_COMPONENT")}
     />
   );
 }
