@@ -88,7 +88,7 @@ Accepted decisions are immutable except for their status and a pointer to a supe
   on fal's asset URLs until they are mirrored (a follow-up, logged in TICKET-005).
 
 ## D-003 — The direction is dark and media-first; D-001 is withdrawn
-- **Status:** Accepted
+- **Status:** Superseded by D-004
 - **Date:** 2026-10-10
 - **Context:** The owner saw the D-001 mockup (studio white, a serif voice, the "job sheet")
   and rejected it outright: the layout and the direction. Read back, the mockup was a
@@ -116,3 +116,36 @@ Accepted decisions are immutable except for their status and a pointer to a supe
   it; the chrome is simple; the hero is the product. Harder: the hero clips must be genuinely
   good and kept small; a dark UI needs careful contrast and no "zinc plus violet" tells; every
   surface and border must be tuned by eye in the real app, which is why the work moves there.
+
+## D-004 — Wonder: one brief unfolding in an old forest at first light
+- **Status:** Accepted
+- **Date:** 2026-10-11
+- **Context:** The owner called D-003's build "too generic, literally every image/video
+  generation platform is like that". Three direction studies followed on the real site
+  (TICKET-020): Multitrack, Print shop (rejected outright) and Rebus, then Unfold (the brief
+  becomes the set, then the timeline), then Wonder in two worlds. The owner liked Unfold's idea
+  but not its graphic, asked for "wonder ... nature and tech in between, like it gives u awe",
+  turned down the castle-and-clouds version ("it shouldn't be castle or clouds like that"), and
+  chose the forest version: "I like this".
+- **Decision:** The landing opens on one pinned sequence: the brief writes itself over an old
+  forest at first light; each noun opens a round-headed window onto what it became (poster,
+  teaser, soundtrack, words); on scroll the windows gather into a triptych in low fog before a
+  set of tree rings, then flatten into lanes on one timeline with a playhead. The page is
+  moss-dark (`#0B1410`) with parchment type (`#F1ECDC`) and one accent, sunlight gold
+  (`#E2B962`); the four media carry quiet natural tints (bark, water, light, fern) used only to
+  tell them apart. Display type is Cormorant (a Garamond cut), the UI stays Host Grotesk. The
+  generated media is nature with scale (forest, canyon water, valley, a lone tree), made with
+  the app's own models. Motion is one orchestrated sequence plus ambient life (light shafts,
+  motes, drifting fog), compositor-only, paused when unseen, and absent under reduced motion.
+  The app follows in its own ticket. D-002 (the information architecture) stands.
+- **Rejected alternatives:** D-003 as built (generic for the category). Print shop (the owner:
+  "def not the print one"). Multitrack and Rebus on their own (liked, but not a wow). Unfold
+  in its neutral dark graphic (right idea, wrong world). The castle above the clouds (too
+  fantasy; the owner wanted nature).
+- **Consequences:** Easier: the hero shows what only Aivia does (one line, several media, one
+  timeline) in a world nobody else in the category uses; the serif and the forest give the
+  brand a voice. Harder: the hero depends on large plates and a clip, so weight and frame time
+  need a budget and a perf pass; a second display face to load; every surface in the app must
+  be retuned to the moss palette and the medium tints kept from turning into a rainbow; the
+  page's media must be regenerated in the same world when it changes.
+

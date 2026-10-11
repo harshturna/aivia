@@ -1,9 +1,9 @@
 # TICKET-020: Three distinctive directions, built on the real site
 
-**Status:** blocked
+**Status:** done
 **Created:** 2026-10-11
 **Started:** 2026-10-11
-**Completed:** —
+**Completed:** 2026-10-11
 **Area:** ui
 
 ## Goal
@@ -30,10 +30,11 @@ instead of from a mockup.
 - [x] Media prep: film-strip frames from the clips (`public/lab/*.jpg`), waveform peaks for
       the two tracks (`public/lab/*-peaks.json`).
 - [x] The three pages, hero and one more section each, with their motion.
-- [ ] Screenshots at 1440 and 390 taken and reviewed; the owner picks.
+- [x] Screenshots at 1440 and 390 taken and reviewed; the owner picks.
 
 ## Progress log
 - 2026-10-11 — Opened from the owner's feedback on D-003.
+- 2026-10-11 — Owner chose the forest `/lab/wonder`: "I like this". Recorded as D-004 (supersedes D-003). Deleted `/lab/multitrack`, `/lab/print`, `/lab/rebus`, `/lab/unfold` and the `public/lab` frames and peaks only they used; the lab layout keeps only Cormorant.
 - 2026-10-11 — Owner on `/lab/wonder`: "it shouldn't be castle or clouds like that ... more like nature but with still some awe, wonder"; and the "make something today" section "has like start and end which feels weird, it should blend with the page". Rebuilt `/lab/wonder` as an old forest at first light (flux-pro ultra: forest, valley, lone-tree poster, waterfall canyon, low fog; wan 2.2 5b static-camera loops of the canyon and the valley; about $0.45). Light shafts breathe over the plate, seeded motes rise through them, low fog replaces the cloud bank, tree rings replace the astrolabe, tints are bark, water, light and fern, and the page tokens are moss-dark. The castle assets are deleted. Close (shared, `app/(landing)/_landing/sections.tsx`): the clip now fades with a mask instead of a gradient painted in the old background colour, which is what showed its edges; it takes an optional clip and heading class, and the landing keeps its default clip. Checked at 1440 and 390 at five scroll points, both handoffs, and the landing's close.
 - 2026-10-11 — Built `/lab/wonder` (`app/(lab)/lab/wonder/page.tsx`, media in `public/lab/wonder/`). Same sticky stage as unfold; the brief is set in Cormorant across a dawn sky plate over a sea of clouds with a citadel; nouns open round-headed arched windows; the set gathers into a triptych floating on near clouds behind a slowly turning astrolabe ring; the arches flatten into timeline lanes. Near clouds and mist are generated cloud-on-black plates turned into tileable alpha layers that drift; the sky settles in once on load. The dawn palette is laid over the app tokens for this page only, so the reused landing sections show it too. Media: flux-pro v1.1 ultra for the sky, poster, clouds, mist, forest and a waterfall-bridge still (6 x about $0.06); wan 2.2 5b image-to-video for the waterfall teaser (static camera, 5 s, loops) and for the sky (3.4 s push-in, unused: it cannot loop); cassetteai for a 30 s ambient score (about $0.01). Generation scripts stayed in the session scratchpad; prompts to be moved into a repo script if this is chosen. Checked at 1440 and 390 at five scroll points plus the handoff; no console errors.
 - 2026-10-11 — Owner on `/lab/unfold`: "I like the idea but not the current graphic", wants a "wonder" vibe: "medieval, cloud, mountain, nature ... nature and tech in between, like it gives u awe to look at". Next: `/lab/wonder`, the same unfold sequence in a new world. Dawn above a sea of clouds with peaks and a citadel (generated plates, flux-pro ultra, about $0.06 each; an image-to-video loop of the plate on wan 2.2 5b; an ambient score). Arched windows for the nouns, a triptych for the set, flattening into timeline lanes. Cormorant display, gold accent, cloud layers in parallax.
@@ -45,15 +46,19 @@ instead of from a mockup.
   muddy at 230 px; now 0.014em) and moved the pink ink into the midtones so both inks show;
   fixed the rebus words window squeezing its text.
 
-## Handoff
-- **State:** `/lab/wonder` built and reviewed; waiting on the owner.
-- **Blocked on:** the owner's verdict on `/lab/wonder`.
-- **Next:** record the choice as a decision superseding D-003; restyle the landing and the
-  app tokens to it; delete the other two studies and `public/lab` files they alone use.
-- **Read first:** the three pages under `app/(lab)/lab/`
-
 ## Verification
-Filled in on completion. The command that was run, in a code block, and its result.
+Screens reviewed from a Playwright script that scrolls `/lab/wonder` to five points of the
+sequence (0, 0.18, 0.47, 0.68, 0.95) and the handoffs, at 1440x900 and 390x844, with console
+errors collected (none). The same review ran for each earlier study before the owner saw it.
+
+```
+npm run verify    # lint, typecheck, check:tickets, 31 unit tests: passed
+npm run test:e2e  # 24 passed (after the shared Close change)
+```
 
 ## Outcome
-Filled in on completion: what shipped, what was deliberately left out, follow-up tickets created.
+The owner chose the forest Wonder study, recorded as D-004. It stays at `/lab/wonder` until
+TICKET-021 moves it onto the landing; the other four studies and their assets are deleted.
+The shared Close section now fades with a mask so it blends into any page. Left out: the app
+in the new direction (TICKET-022). Follow-ups: TICKET-021 (the landing on D-004, with the perf
+pass and the section rewrite the owner asked for), TICKET-022 (the app on D-004).
