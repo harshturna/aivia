@@ -4,40 +4,35 @@ import Logo from "@/components/Logo";
 import { AmbientVideo } from "@/components/studio/ambient-video";
 import { AudioRow } from "@/components/studio/audio-row";
 import { buttonVariants } from "@/components/ui/button";
-import { CHANGELOG, formatChangelogDate } from "@/lib/changelog";
 import { CLIPS, STILLS, TRACKS } from "@/lib/landing-media";
 import { cn } from "@/lib/utils";
+import { H2, LEDE, WRAP } from "./type";
 
-const H2 =
-  "max-w-[22ch] text-[clamp(32px,4vw,48px)] font-medium leading-[1.05] tracking-[-0.02em] [text-wrap:balance]";
-const LEDE = "mt-4 max-w-[52ch] text-[16px] leading-6 text-fg-2";
-const WRAP = "mx-auto max-w-[1200px] px-6 sm:px-8";
-
-/** The four modes with real outputs (design §11.5). */
+/** The four direct modes with real outputs (design §11.5). */
 export function Modes() {
-  const still = STILLS[4];
+  const still = STILLS[2];
   const clip = CLIPS[1];
   return (
     <section className={WRAP}>
-      <h2 className={H2}>Or make just the one thing.</h2>
+      <h2 className={H2}>Need just one thing? Ask for just that.</h2>
       <p className={LEDE}>
-        Switch the composer to Image, Video, Music or Sound and skip the plan.
-        Same session, same library.
+        Switch to Image, Video, Music or Sound and Aivia makes exactly that,
+        with no plan in between.
       </p>
-      <div className="mt-10 grid gap-3 md:grid-cols-2">
-        <Plate title="Image" caption={`${still.prompt}, ${still.seconds} s`}>
+      <div className="mt-12 grid gap-x-4 gap-y-8 md:grid-cols-2">
+        <Plate title="Image" caption={still.prompt}>
           <div className="aspect-video overflow-hidden rounded-media bg-surface">
             <Image
               src={still.src}
               alt={still.prompt}
               width={still.width}
               height={still.height}
-              sizes="(max-width: 760px) 100vw, 580px"
-              className="size-full object-cover"
+              sizes="(max-width: 768px) 100vw, 580px"
+              className="size-full object-cover object-[50%_45%]"
             />
           </div>
         </Plate>
-        <Plate title="Video" caption={`${clip.prompt}, ${clip.seconds} s clip`}>
+        <Plate title="Video" caption={clip.prompt}>
           <div className="aspect-video overflow-hidden rounded-media bg-surface">
             <AmbientVideo
               src={clip.src}
@@ -46,22 +41,24 @@ export function Modes() {
             />
           </div>
         </Plate>
-        <Plate title="Music" caption={`${TRACKS[0].prompt}, 30 s`}>
-          <AudioRow
-            src={TRACKS[0].src}
-            title={TRACKS[0].title}
-            subtitle="Instrumental, thirty seconds"
-            seconds={30}
-          />
-        </Plate>
-        <Plate title="Sound" caption={`${TRACKS[1].prompt}, 10 s`}>
-          <AudioRow
-            src={TRACKS[1].src}
-            title={TRACKS[1].title}
-            subtitle="Ten seconds"
-            seconds={10}
-          />
-        </Plate>
+        {TRACKS.map((track) => (
+          <Plate
+            key={track.src}
+            title={track.kind === "music" ? "Music" : "Sound"}
+            caption={track.prompt}
+          >
+            <AudioRow
+              src={track.src}
+              title={track.title}
+              subtitle={
+                track.kind === "music"
+                  ? "Instrumental, thirty seconds"
+                  : "Twelve seconds"
+              }
+              seconds={track.seconds}
+            />
+          </Plate>
+        ))}
       </div>
     </section>
   );
@@ -87,81 +84,23 @@ function Plate({
   );
 }
 
-/** The library, as a frame (design §11.6). */
-export function LibraryPanel() {
-  const tiles = [
-    STILLS[1],
-    STILLS[3],
-    STILLS[5],
-    STILLS[0],
-    STILLS[4],
-    STILLS[7],
-    STILLS[6],
-    STILLS[2],
-  ];
-  return (
-    <section className={WRAP}>
-      <div className="grid items-end gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div>
-          <h2 className={H2}>Everything you make, kept.</h2>
-          <p className={LEDE}>
-            Every image, clip and track lands in your library the moment it is
-            made, with the line that made it. Search it, favourite it, reopen
-            the session it came from.
-          </p>
-        </div>
-      </div>
-      <div className="mt-10 overflow-hidden rounded-window border border-border bg-surface">
-        <div className="flex h-13 items-center gap-4 border-b border-border px-6 text-[15px] font-medium">
-          Library
-          <span className="inline-flex overflow-hidden rounded-control border border-border text-[12.5px] font-medium">
-            <span className="bg-surface-3 px-3 py-1 text-fg">All</span>
-            <span className="px-3 py-1 text-fg-2">Images</span>
-            <span className="px-3 py-1 text-fg-2">Video</span>
-            <span className="px-3 py-1 text-fg-2">Audio</span>
-          </span>
-          <span className="ml-auto hidden text-[13px] font-normal text-mute sm:inline">
-            Search what you have made
-          </span>
-        </div>
-        <div className="p-6">
-          <div className="text-[12.5px] font-medium text-mute">Today</div>
-          <div className="mt-3 columns-2 gap-3 md:columns-4">
-            {tiles.map((t) => (
-              <div
-                key={t.src}
-                className="mb-3 overflow-hidden rounded-media bg-surface-2 [break-inside:avoid]"
-              >
-                <Image
-                  src={t.src}
-                  alt={t.prompt}
-                  width={t.width}
-                  height={t.height}
-                  sizes="(max-width: 760px) 50vw, 280px"
-                  className="w-full"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/** Pricing (design §11.7): two columns on one rule, honest. */
+/** Pricing (design §11.7): two columns on one rule. */
 export function Pricing() {
   return (
     <section id="pricing" className={WRAP}>
-      <h2 className={H2}>Pricing</h2>
-      <div className="mt-8 grid gap-10 border-t border-border-strong pt-8 md:grid-cols-2">
+      <h2 className={H2}>Start free.</h2>
+      <p className={LEDE}>
+        Five generations in every mode to begin. Go Pro when one sentence turns
+        into a habit.
+      </p>
+      <div className="mt-12 grid gap-10 border-t border-border-strong pt-8 md:grid-cols-2">
         <div>
           <h3 className="text-[15px] font-medium">Free</h3>
-          <div className="mt-3 text-[44px] font-medium leading-none tracking-[-0.02em]">
+          <div className="mt-3 font-display text-[64px] font-medium leading-none">
             $0
           </div>
-          <p className="mt-4 max-w-[36ch] text-[14px] leading-6 text-fg-2">
-            Five generations to start, in every mode. Your library kept.
+          <p className="mt-4 max-w-[36ch] text-[15px] leading-6 text-fg-2">
+            Five generations to start, in every mode.
           </p>
           <Link
             href="/get-started"
@@ -172,14 +111,14 @@ export function Pricing() {
         </div>
         <div>
           <h3 className="text-[15px] font-medium">Pro</h3>
-          <div className="mt-3 text-[44px] font-medium leading-none tracking-[-0.02em]">
+          <div className="mt-3 font-display text-[64px] font-medium leading-none">
             $20
-            <span className="ml-2 text-[15px] font-normal tracking-normal text-mute">
+            <span className="ml-2 font-sans text-[15px] font-normal text-mute">
               a month
             </span>
           </div>
-          <p className="mt-4 max-w-[36ch] text-[14px] leading-6 text-fg-2">
-            Unlimited generations. Cancel any time.
+          <p className="mt-4 max-w-[36ch] text-[15px] leading-6 text-fg-2">
+            Unlimited generations in every mode. Cancel any time.
           </p>
           <Link href="/login" className={cn(buttonVariants(), "mt-6")}>
             Go Pro
@@ -190,44 +129,17 @@ export function Pricing() {
   );
 }
 
-/** What changed (design §11.8): the last five entries. */
-export function Changelog() {
-  return (
-    <section id="changelog" className={WRAP}>
-      <h2 className={H2}>What changed</h2>
-      <ol className="mt-8 border-t border-border-strong">
-        {CHANGELOG.slice(0, 5).map((entry) => (
-          <li
-            key={`${entry.date}-${entry.text}`}
-            className="grid gap-1 border-b border-border py-4 text-[14px] leading-6 sm:grid-cols-[140px_minmax(0,1fr)] sm:gap-6"
-          >
-            <time
-              dateTime={entry.date}
-              className="tabular text-[13px] text-mute"
-            >
-              {formatChangelogDate(entry.date)}
-            </time>
-            <span>{entry.text}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
 /**
  * The close (design §11.9): one line over a clip, the button. The clip fades out at both
  * edges with a mask, not a painted gradient, so it melts into whatever page is behind it.
  */
 export function Close({
   media = CLIPS[2],
-  headingClassName,
 }: {
   media?: { src: string; poster: string };
-  headingClassName?: string;
 }) {
   return (
-    <section className="relative isolate mt-16 overflow-hidden py-56">
+    <section className="relative isolate overflow-hidden py-56">
       <div
         aria-hidden
         className="absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,transparent_0%,rgb(0_0_0/.12)_14%,rgb(0_0_0/.45)_30%,black_50%,rgb(0_0_0/.45)_70%,rgb(0_0_0/.12)_86%,transparent_100%)]"
@@ -239,13 +151,8 @@ export function Close({
         />
       </div>
       <div className={cn(WRAP, "text-center")}>
-        <h2
-          className={cn(
-            "mx-auto text-[clamp(36px,5vw,64px)] font-medium leading-[1] tracking-[-0.03em]",
-            headingClassName
-          )}
-        >
-          Make something today.
+        <h2 className="mx-auto font-display text-[clamp(48px,7vw,104px)] font-medium leading-[1] tracking-[-0.015em]">
+          Begin with one sentence.
         </h2>
         <Link
           href="/get-started"
@@ -268,7 +175,6 @@ export function LandingFooter() {
         ["Library", "/library"],
         ["Edit", "/edit"],
         ["Pricing", "#pricing"],
-        ["Changelog", "#changelog"],
       ],
     ],
     [

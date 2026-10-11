@@ -37,6 +37,8 @@ const nextConfig = {
     ];
   },
   images: {
+    // AVIF first: the landing plates are large and AVIF halves them at the same look (TICKET-021).
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       // Cloudinary holds character portraits and transformation uploads.
       { protocol: "https", hostname: "res.cloudinary.com" },

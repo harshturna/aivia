@@ -12,6 +12,7 @@ import Logo from "@/components/Logo";
 import { Composer } from "@/components/studio/composer";
 import { RunDemo } from "@/components/studio/run-demo";
 import { cn } from "@/lib/utils";
+import { H2, LEDE, WRAP } from "./type";
 
 /**
  * The Studio, shown running (design §11.4): the product's frame with a presentational
@@ -24,24 +25,22 @@ const NAV = [
   { label: "Characters", icon: Users },
 ];
 const RECENT = [
-  "Night market teaser",
-  "Poster series for the bakery",
-  "Rain on a tin roof",
+  "A forest older than memory",
+  "Owl over a frozen lake",
   "Quiet piano record, album art",
+  "Dawn chorus by a stream",
 ];
 
 export function StudioDemo() {
   return (
-    <section className="mx-auto max-w-[1200px] px-6 sm:px-8">
-      <h2 className="max-w-[22ch] text-[clamp(32px,4vw,48px)] font-medium leading-[1.05] tracking-[-0.02em] [text-wrap:balance]">
-        One line in. A plan, then the work.
-      </h2>
-      <p className="mt-4 max-w-[52ch] text-[16px] leading-6 text-fg-2">
-        Aivia writes the steps before it spends anything, then runs them. Watch
-        each one land.
+    <section className={WRAP}>
+      <h2 className={H2}>It plans the work, then does it.</h2>
+      <p className={LEDE}>
+        Aivia writes the steps before it spends a thing, then makes each piece
+        in front of you. Every run stays a session you can reopen.
       </p>
 
-      <div className="mt-10 overflow-hidden rounded-window border border-border bg-surface shadow-float">
+      <div className="mt-12 overflow-hidden rounded-window border border-border bg-surface shadow-float">
         <div className="grid md:grid-cols-[220px_minmax(0,1fr)]">
           <aside
             aria-hidden
@@ -93,14 +92,14 @@ export function StudioDemo() {
             <div className="mt-auto space-y-3 px-2">
               <div>
                 <div className="h-1 overflow-hidden rounded-full bg-surface-3">
-                  <div className="h-full w-1/3 bg-white" />
+                  <div className="h-full w-1/3 bg-fg" />
                 </div>
                 <div className="tabular mt-1.5 text-[12px] text-mute">
                   34 of 100 generations
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
-                <span className="grid size-6 place-items-center rounded-full bg-white text-[11px] font-medium text-black">
+                <span className="grid size-6 place-items-center rounded-full bg-fg text-[11px] font-medium text-bg">
                   H
                 </span>
                 <span className="leading-tight">
@@ -115,9 +114,9 @@ export function StudioDemo() {
 
           <div className="relative flex min-h-[560px] flex-col">
             <div className="flex h-13 items-center gap-3 border-b border-border px-6 text-[15px] font-medium">
-              Night market teaser
+              A forest older than memory
               <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
-                <span className="size-1.5 rounded-full bg-white" /> Running
+                <span className="size-1.5 rounded-full bg-sun" /> Running
               </span>
               <span className="ml-auto text-[13px] font-normal text-mute">
                 Rename
@@ -126,7 +125,8 @@ export function StudioDemo() {
             <div className="flex-1 px-6 py-6 md:px-10">
               <RunDemo className="mx-auto max-w-[720px]" />
             </div>
-            <div className="sticky bottom-0 px-6 pb-5 md:px-10">
+            {/* a picture of the composer, not a working one: out of the tab order */}
+            <div className="sticky bottom-0 px-6 pb-5 md:px-10" inert>
               <Composer
                 className="mx-auto max-w-[720px]"
                 onSubmit={() => {}}

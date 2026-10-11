@@ -17,13 +17,13 @@ import { cn } from "@/lib/utils";
  * run component fed by a recorded stream; the look is the same.
  */
 const PROMPT =
-  "A poster, a ten-second teaser and a soundtrack for a night market. Keep it warm, nothing neon.";
+  "A poster, a ten-second teaser and a soundtrack for a forest older than memory. Keep it quiet.";
 
 const STEPS = [
-  "Look up night-market photography for reference",
+  "Look up old-growth forest photography for reference",
   "Generate the poster, 3:4",
-  "Generate a 10 s clip of lanterns in rain",
-  "Compose 30 s of lo-fi with field recording",
+  "Generate a 10 s clip of a waterfall in a mossy canyon",
+  "Compose 30 s of slow ambient strings",
   "Write three taglines",
 ];
 
@@ -191,13 +191,13 @@ export function RunDemo({ className }: { className?: string }) {
             show={m.outputs >= 1}
             ready={m.outputs >= 2}
             ratio="3/4"
-            label="the poster, lanterns over a wet alley"
+            label="the poster, one ancient tree above the mist"
           >
             <Image
               src={STILLS[0].src}
-              alt="Poster: lanterns over a wet night market alley"
-              width={768}
-              height={1024}
+              alt="Poster: one ancient tree on a hill above morning mist"
+              width={STILLS[0].width}
+              height={STILLS[0].height}
               sizes="320px"
               className="size-full object-cover"
             />
@@ -206,7 +206,7 @@ export function RunDemo({ className }: { className?: string }) {
             show={m.outputs >= 2}
             ready={m.outputs >= 3}
             ratio="16/9"
-            label="lanterns swaying in light rain, 10 s"
+            label="a waterfall in a mossy canyon, 10 s"
           >
             <AmbientVideo
               src={CLIPS[0].src}
@@ -228,11 +228,11 @@ export function RunDemo({ className }: { className?: string }) {
       )}
       {m.outputs >= 4 && (
         <div className="mt-5 max-w-[68ch] text-[15px] leading-6 text-fg animate-in fade-in-0 slide-in-from-bottom-1 duration-200">
-          <p>Three taglines, in the same warm register as the poster:</p>
+          <p>Three taglines, in the same quiet register as the poster:</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-fg-2">
-            <li>Lanterns on, kitchen open.</li>
-            <li>Come hungry. Leave at midnight.</li>
-            <li>The street is the restaurant.</li>
+            <li>Older than every map.</li>
+            <li>Walk in before the world wakes.</li>
+            <li>The light still finds its way down.</li>
           </ol>
         </div>
       )}

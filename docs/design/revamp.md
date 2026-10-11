@@ -1,8 +1,9 @@
 # The revamp: direction, product, every screen, sequence
 
-Version 2, 2026-10-10. Owner: harsh. Status: the design the implementation tickets are written
-from (TICKET-002). Decisions it rests on: D-003 (direction; D-001 withdrawn after the owner
-rejected its mockup), D-002 (information architecture). Design is judged in the running app on
+Version 3, 2026-10-11. Owner: harsh. Status: the design the implementation tickets are written
+from (TICKET-002). Decisions it rests on: D-004 (direction: Wonder, the forest at first light;
+it supersedes D-003, whose dark tokens stay the app's default until TICKET-022), D-002
+(information architecture). Design is judged in the running app on
 the `revamp` branch, from screenshots, not from mockups.
 
 Aivia is rebuilt from the tokens up. This document is what each ticket cites. The research it
@@ -30,14 +31,32 @@ floor).
 
 ### 2.1 The subject and the one bold thing
 
-Aivia makes images, video, music and sound from a line of text. The most characteristic thing
-in its world is the output: a cinematic clip, a still with real light, a track you can play.
-So the page is a dark stage and the media is the show. The one bold element is the hero: a
-full-viewport generated clip with a two-line headline and the real composer on top of it, so
-the first thing a visitor does is read four words and type. Everything else is quiet chrome
-that gets out of the way of the media.
+Aivia turns one line of text into several things at once: a picture, a clip, a score, the
+words. Nobody else in the category shows that, so the one bold element is a sequence that
+does (D-004): the brief writes itself over an old forest at first light, each noun opens a
+round-headed window onto what it became, the windows gather into a triptych, and the arches
+flatten into lanes on one timeline. Growth becoming the tool is the nature-and-technology
+crossing the owner asked for. The world is nature with scale (forest, canyon water, valley,
+a lone tree), made with the app's own models. Everything around the sequence is quiet.
 
 ### 2.2 Tokens
+
+**The forest theme (D-004),** in `app/globals.css` under `[data-theme="forest"]`: the landing
+now, the app in TICKET-022. The legacy aliases are declared again inside it so they resolve
+to the forest values.
+
+| Token | Value | Use |
+|---|---|---|
+| `--bg` | `#0B1410` | moss-dark ground |
+| `--surface` / `-2` / `-3` | `#121D17` / `#18261E` / `#203027` | panels, windows, pressed |
+| `--border` / `-strong` | parchment at 9% / 18% | hairlines, edges |
+| `--fg` | `#F1ECDC` | parchment: text, the primary button |
+| `--fg-2` / `--mute` / `--faint` | `#B6BFAE` / `#8E9984` / `#4C5A4F` | secondary, captions, decorative |
+| `--sun` | `#E2B962` | the one accent: the caret, the playhead, the waveform, live states |
+| `--sun-soft` | `#FFE3A6` | light in the forest: shafts and motes only |
+| `--tint-bark` / `-water` / `-light` / `-fern` | `#E9A77C` / `#8FD0C0` / `#E2B962` / `#C5D6A0` | tell picture, clip, score and words apart; marks and underlines only, never fills |
+
+The table below is D-003's dark set, still the app's default until TICKET-022.
 
 Dark only (D-003). Surfaces step up in lightness; borders are white at low alpha so they read
 on any media behind them.
@@ -64,7 +83,12 @@ white. The primary button is white with black text (hover `#E6E6E6`); the second
 `--surface-2` with a border. Links are `--fg` underlined. Semantic colours appear only as a
 status dot or word.
 
-**Type.** One family, Host Grotesk (variable 300 to 800, `next/font/google`), with JetBrains
+**Type (D-004).** Cormorant, one weight (500) in roman and italic, is the display face:
+the hero brief `clamp(44px, 7.4vw, 124px)` at line height 0.96, section headings
+`clamp(40px, 5.2vw, 76px)` at 0.98, the close at up to 104 px, and italics for made words
+(taglines, track titles, captions on the wall). Host Grotesk stays for everything else.
+
+**Type (D-003, the app until TICKET-022).** One family, Host Grotesk (variable 300 to 800, `next/font/google`), with JetBrains
 Mono for code only. Hero headline `clamp(44px, 6.5vw, 92px)` weight 500, tracking −0.03em,
 line height 0.98, at most two lines, no accented word. Section headings 36 to 56 px weight 500,
 −0.02em. Body 15 px / 24 px at 400; UI 13 px / 20 px, names and buttons at 500; captions 12 px
@@ -99,6 +123,17 @@ cubic-bezier(.32, .72, 0, 1)` for sheets. Never ease-in; never `transition: all`
 | the hero on load | the clip fades in over 900 ms, the headline settles 500 ms after (opacity and 8 px), the composer 150 ms later; once |
 | hero clips | crossfade every 9 s between three clips, 1.2 s, paused under reduced motion and when the tab is hidden |
 | media tiles on the wall | hover plays the clip (`preload="none"`, poster), 1.02 scale over 600 ms |
+
+**The landing hero (D-004)** is one scroll-pinned sequence over 380svh: the brief types once
+(about 3 s, a pause at each noun while its window opens), then scroll drives the windows
+from their slots in the sentence to the triptych and on to the timeline; the brief shrinks
+into a caption. Ambient life: light shafts breathe (9 s), motes rise (14 to 30 s), fog drifts
+(140 and 200 s), the tree rings turn with scroll. Frame budget rules: per-frame values are
+written straight onto the element that uses them, never through React state or an inherited
+custom property; what moves every frame is a transform or an opacity on its own layer; no
+blend modes, filters or backdrop blur in motion; ambient animation pauses off screen and in
+hidden tabs; the clock runs only while the soundtrack plays or the timeline is visible.
+Reduced motion: no typing, no pinning, the triptych shown still.
 
 Nothing animates on route changes, the palette, streamed tokens, sidebar state or numbers.
 Under reduced motion: no transforms, no autoplay, opacity still runs. Library: Motion 14
@@ -318,42 +353,36 @@ rather than dots.
 
 ## 11. The landing page
 
-Dark, the app's tokens, content at 1200 px with 32 px gutters, sections 120 px apart.
+D-004: the forest theme, content at 1200 px with 32 px gutters, sections 160 px apart. Below
+the fold each section skips layout and paint until it comes near (`content-visibility`).
 
 1. **Nav**, 64 px, transparent over the hero and `--glass` after 40 px of scroll: the wordmark;
-   Pricing and Changelog as text links; Sign in; "Start making" as the white button.
-2. **Hero**, `100svh`, minimum 640 px: one of three generated clips full-bleed behind, muted,
-   looping, crossfading every 9 s, under a gradient from `rgb(10 10 11 / .25)` at the top to
-   `.92` at the bottom so type reads. Centred, 760 px wide: the headline in two lines ("Describe
-   it. Watch it get made." is the working line; chosen in the ticket from the real render), a
-   one-sentence 18 px `--fg-2` line, the real composer (Auto mode, placeholder "Describe what
-   you want made") that hands the prompt to the Studio through `/get-started?prompt=`, and
-   three example chips. Bottom left, 12 px `--mute`: "Made in Aivia from 'lanterns in rain'".
-   A pause control bottom right. Reduced motion: the poster, no autoplay.
-3. **The wall**: "Every one of these started as a sentence." Twelve real outputs in a grid of
-   four columns (two below 760 px), 12 px gap, one aspect ratio per row (16:9, 3:4, 1:1),
-   clips with posters that play on hover, each tile's prompt revealed on hover at 12 px over a
-   bottom gradient. Audio as two rows under the grid with real waveforms.
-4. **The Studio, running**: a 1200 px frame, `--surface`, 20 px radius, 1 px `--border`, showing
-   the real run component replaying a four-step job once as it scrolls into view (prompt,
-   steps ticking, poster revealing, clip placeholder then poster, track row), with the composer
-   at its foot. A replay control.
-5. **Modes**: four large plates, two by two (one column below 760 px): an image (3:4), a clip
-   (16:9), a music row, a sound row, each with a 14 px caption of the prompt that made it and
-   the time it took.
-6. **Library and Edit**: two frames side by side at 20 px radius: the library grid; the edit
-   workspace with the before/after slider mid-drag.
-7. **Pricing**: two columns on one `--border`: Free (five generations to start, every mode,
-   your library kept) and Pro ($20 a month, unlimited). "Start free" and "Go Pro".
-8. **Changelog**: "What changed", the last five dated entries from `lib/changelog.ts`.
-9. **Close**: one line at 48 px, "Make something today.", the white button, over the third clip
-   at low opacity.
-10. **Footer**, 13 px, three columns: Product (Studio, Library, Edit, Pricing, Changelog),
-    Account (Sign in, Create account, Try as a guest), Aivia (by harsh, Source, Privacy), the
-    year.
+   Pricing; Sign in; "Start making" as the primary (parchment) button.
+2. **Hero**: the sequence in §2.3. The brief: "A poster, a teaser, a soundtrack and the words
+   for a forest older than memory." Picture is the lone tree, clip the canyon waterfall,
+   score "First light in the old wood", words "Older than every map." and two more. The
+   triptych has a play control for the score; the timeline has a playhead, timecode and the
+   same control. The plate is art-directed (a portrait crop on tall screens) through
+   `next/image`; the teaser clip loads when its window opens.
+3. **Now write yours.** The real composer (Auto) and three example chips; the prompt goes to
+   the Studio through `/get-started?prompt=`.
+4. **Every one of these was a sentence first.** The wall: rows at 16:9, 3:4 and 1:1, the line
+   that made each tile in Cormorant italic over a bottom gradient, on hover and always on
+   touch. Clips play only while on screen.
+5. **It plans the work, then does it.** The Studio frame running the forest brief as a replay
+   (steps ticking, the poster, the clip, the score, three taglines).
+6. **Need just one thing? Ask for just that.** The four direct modes: an image, a clip, the
+   score and a sound, each with the line that made it.
+7. **Start free.** Free (five generations in every mode) and Pro ($20 a month, unlimited).
+8. **Begin with one sentence.** Over the valley clip, faded by a mask so it melts into the
+   page, and the primary button.
+9. **Footer**, 13 px: Product (Studio, Library, Edit, Pricing), Account (Sign in, Create
+   account, Try as a guest), Aivia (by harsh, Source), the year.
 
-Copy sells features in plain sentences; no model or vendor names, no "coming soon", no
-disclaimers, no eyebrows, no accented word. Open Graph image rendered from the hero frame.
+Removed in TICKET-021 at the owner's call: the changelog ("what changed") and the library
+panel ("everything you make, kept": table stakes, not a reason to come). Copy sells features
+in plain sentences; no model or vendor names, no "coming soon", no disclaimers, no eyebrows,
+no accented word. The Open Graph image is the forest with the headline.
 
 ## 12. Data
 

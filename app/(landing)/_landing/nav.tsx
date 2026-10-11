@@ -23,6 +23,12 @@ export function LandingNav() {
         scrolled && "glass border-b border-border"
       )}
     >
+      <a
+        href="#main"
+        className="sr-only rounded-control bg-primary px-3 py-2 text-[13px] font-medium text-primary-foreground focus:not-sr-only focus:absolute focus:left-4 focus:top-3"
+      >
+        Skip to content
+      </a>
       <nav
         aria-label="Site"
         className="mx-auto flex h-16 max-w-[1200px] items-center gap-7 px-6 sm:px-8"
@@ -33,9 +39,6 @@ export function LandingNav() {
         <div className="hidden items-center gap-6 text-[13.5px] text-fg-2 sm:flex">
           <a href="#pricing" className="hover:text-fg">
             Pricing
-          </a>
-          <a href="#changelog" className="hover:text-fg">
-            Changelog
           </a>
         </div>
         <div className="ml-auto flex items-center gap-4">

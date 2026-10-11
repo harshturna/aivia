@@ -7,8 +7,8 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /**
- * The share image (TICKET-016): the hero's first frame, the headline over it, as the landing
- * page shows it. The poster is a WebP, which the renderer cannot draw, so it reads a JPEG
+ * The share image (TICKET-016, TICKET-021): the forest the landing opens on, the headline
+ * over it. The poster is a WebP, which the renderer cannot draw, so it reads a JPEG
  * made from the same frame.
  */
 export default async function OpengraphImage() {
@@ -23,7 +23,7 @@ export default async function OpengraphImage() {
         height: "100%",
         display: "flex",
         position: "relative",
-        background: "#0a0a0b",
+        background: "#0b1410",
       }}
     >
       {/* biome-ignore lint/performance/noImgElement: rendered by the image generator, not a page */}
@@ -39,7 +39,7 @@ export default async function OpengraphImage() {
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(to bottom, rgba(10,10,11,0.25), rgba(10,10,11,0.85))",
+            "linear-gradient(to right, rgba(11,20,16,0.82), rgba(11,20,16,0.35) 70%, rgba(11,20,16,0.1))",
         }}
       />
       <div
@@ -49,7 +49,7 @@ export default async function OpengraphImage() {
           bottom: 64,
           display: "flex",
           flexDirection: "column",
-          color: "#f4f4f5",
+          color: "#f1ecdc",
         }}
       >
         <div

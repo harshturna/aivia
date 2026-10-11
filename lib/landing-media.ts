@@ -1,14 +1,14 @@
 /**
- * The landing page's media (TICKET-012): every file was made with the app's own models from
- * the prompt shown beside it, then re-encoded into public/landing/. The wall and the plates
- * read from here so a caption is never out of step with its file.
+ * The landing page's media (TICKET-021, D-004): every file was made with the app's own
+ * models from the prompt beside it (stills on flux-pro ultra, clips as image-to-video loops,
+ * the score and the sound on the music and sound models), then encoded into public/landing/.
+ * The wall, the modes and the run demo read from here so a caption never drifts from its file.
  */
 export type LandingClip = {
   kind: "video";
   src: string;
   poster: string;
   prompt: string;
-  seconds: number;
 };
 export type LandingStill = {
   kind: "image";
@@ -16,7 +16,6 @@ export type LandingStill = {
   prompt: string;
   width: number;
   height: number;
-  seconds: number;
 };
 export type LandingTrack = {
   kind: "music" | "sound";
@@ -29,125 +28,116 @@ export type LandingTrack = {
 export const CLIPS: LandingClip[] = [
   {
     kind: "video",
-    src: "/landing/alley.mp4",
-    poster: "/landing/alley-poster.webp",
+    src: "/landing/canyon.mp4",
+    poster: "/landing/canyon-poster.webp",
     prompt:
-      "a slow dolly through a narrow night market alley after rain, paper lanterns, steam from a stall",
-    seconds: 5,
+      "a tall waterfall pouring into an emerald pool in a mossy canyon, mist and morning light",
   },
   {
     kind: "video",
-    src: "/landing/ink.mp4",
-    poster: "/landing/ink-poster.webp",
-    prompt: "black ink unfurling slowly in clear water, one soft side light",
-    seconds: 5,
+    src: "/landing/aurora.mp4",
+    poster: "/landing/aurora-poster.webp",
+    prompt:
+      "green and violet aurora over a still fjord, the mountains mirrored",
   },
   {
     kind: "video",
-    src: "/landing/sea.mp4",
-    poster: "/landing/sea-poster.webp",
-    prompt: "a calm dark sea at dusk from straight above, slow drift",
-    seconds: 5,
+    src: "/landing/valley.mp4",
+    poster: "/landing/valley-poster.webp",
+    prompt:
+      "mist drifting along a valley at first light, a waterfall on the cliff",
   },
 ];
 
 export const STILLS: LandingStill[] = [
   {
     kind: "image",
-    src: "/landing/lanterns.webp",
-    prompt: "paper lanterns over a wet night market alley, 35mm",
-    width: 768,
-    height: 1024,
-    seconds: 8,
+    src: "/landing/tree.jpg",
+    prompt: "one ancient tree alone on a hill above a sea of morning mist",
+    width: 1200,
+    height: 1800,
   },
   {
     kind: "image",
-    src: "/landing/citrus.webp",
+    src: "/landing/owl.jpg",
+    prompt: "a snowy owl gliding low over a frozen lake at dawn",
+    width: 1211,
+    height: 1600,
+  },
+  {
+    kind: "image",
+    src: "/landing/whale.jpg",
     prompt:
-      "halved blood oranges and a lemon on dark slate, one hard side light",
-    width: 1024,
-    height: 1024,
-    seconds: 7,
+      "a whale swimming through clouds above the mountains, storybook gouache",
+    width: 1211,
+    height: 1600,
   },
   {
     kind: "image",
-    src: "/landing/vase.webp",
-    prompt: "a matte black vase with pampas grass under a single spotlight",
-    width: 768,
-    height: 1024,
-    seconds: 6,
+    src: "/landing/dunes.jpg",
+    prompt:
+      "desert dunes at blue hour, one line of footprints, a crescent moon",
+    width: 1211,
+    height: 1600,
   },
   {
     kind: "image",
-    src: "/landing/stair.webp",
-    prompt: "a brutalist spiral staircase in late afternoon light",
-    width: 832,
-    height: 1024,
-    seconds: 7,
+    src: "/landing/ice.jpg",
+    prompt:
+      "inside a glacier ice cave, sunlight glowing through the blue walls",
+    width: 1211,
+    height: 1600,
   },
   {
     kind: "image",
-    src: "/landing/moto.webp",
-    prompt: "a cafe racer in a dark garage under one warm bulb",
-    width: 1024,
-    height: 576,
-    seconds: 6,
+    src: "/landing/dew.jpg",
+    prompt: "one dew drop on a fern, the sunrise forest inside it",
+    width: 1600,
+    height: 1600,
   },
   {
     kind: "image",
-    src: "/landing/indigo.webp",
-    prompt: "hand-woven indigo cloth with one stray thread",
-    width: 1024,
-    height: 1024,
-    seconds: 6,
+    src: "/landing/fox.jpg",
+    prompt: "a red fox asleep on moss under falling autumn leaves",
+    width: 1600,
+    height: 1600,
   },
   {
     kind: "image",
-    src: "/landing/espresso.webp",
-    prompt: "espresso pouring into a cup on a dark counter, warm light",
-    width: 768,
-    height: 1024,
-    seconds: 7,
+    src: "/landing/hummingbird.jpg",
+    prompt: "a hummingbird at a red flower, wings frozen mid-beat",
+    width: 1600,
+    height: 1600,
   },
   {
     kind: "image",
-    src: "/landing/cup.webp",
-    prompt: "a ceramic cup on raw linen in raking morning light",
-    width: 1024,
-    height: 1024,
-    seconds: 8,
+    src: "/landing/mushrooms.jpg",
+    prompt: "tiny glowing mushrooms in dark moss at night",
+    width: 1600,
+    height: 1600,
   },
   {
     kind: "image",
-    src: "/landing/rain-window.webp",
-    prompt: "rain running down a window at dusk, city lights beyond",
-    width: 1024,
-    height: 576,
-    seconds: 6,
-  },
-  {
-    kind: "image",
-    src: "/landing/paper.webp",
-    prompt: "three sheets of handmade paper folded over one another",
-    width: 1024,
-    height: 768,
-    seconds: 6,
+    src: "/landing/kelp.jpg",
+    prompt: "sunlight through a kelp forest, a seal gliding between the fronds",
+    width: 1600,
+    height: 893,
   },
 ];
 
 export const TRACKS: LandingTrack[] = [
   {
     kind: "music",
-    src: "/landing/lofi.mp3",
-    title: "Night market lo-fi",
-    prompt: "warm lo-fi hip hop, brushed drums, soft keys, distant rain",
+    src: "/landing/score.mp3",
+    title: "First light in the old wood",
+    prompt: "slow ambient strings, soft choir, distant bells and harp",
     seconds: 30,
   },
   {
     kind: "sound",
-    src: "/landing/rain.mp3",
-    title: "Rain on a tin roof",
-    prompt: "steady rain on a tin roof, close, no wind",
-    seconds: 10,
+    src: "/landing/birdsong.mp3",
+    title: "Dawn chorus by a stream",
+    prompt: "songbirds near and far, a small stream, wind in the leaves",
+    seconds: 12,
   },
 ];

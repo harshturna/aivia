@@ -12,9 +12,26 @@ const BARS = 56;
 
 let current: HTMLAudioElement | null = null;
 
-function useWaveform(src: string) {
+/** Decodes the file for its waveform once the row is near the screen, not on mount. */
+function useWaveform(src: string, root: React.RefObject<HTMLElement | null>) {
   const [peaks, setPeaks] = useState<number[] | null>(null);
+  const [near, setNear] = useState(false);
   useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        setNear(true);
+        io.disconnect();
+      },
+      { rootMargin: "200px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [root]);
+  useEffect(() => {
+    if (!near) return;
     let cancelled = false;
     (async () => {
       try {
@@ -40,7 +57,7 @@ function useWaveform(src: string) {
     return () => {
       cancelled = true;
     };
-  }, [src]);
+  }, [src, near]);
   return peaks;
 }
 
@@ -64,10 +81,11 @@ export function AudioRow({
   className?: string;
 }) {
   const audio = useRef<HTMLAudioElement>(null);
+  const row = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState<number | undefined>(seconds);
-  const peaks = useWaveform(src);
+  const peaks = useWaveform(src, row);
 
   const toggle = () => {
     const el = audio.current;
@@ -84,6 +102,7 @@ export function AudioRow({
 
   return (
     <div
+      ref={row}
       className={cn(
         "flex h-14 items-center gap-3 rounded-media border border-border bg-surface pl-2 pr-3",
         className
@@ -113,7 +132,7 @@ export function AudioRow({
         onClick={toggle}
         aria-pressed={playing}
         aria-label={playing ? `Pause ${title}` : `Play ${title}`}
-        className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-black transition-transform active:scale-[.96]"
+        className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-[.96]"
       >
         {playing ? (
           <Pause className="size-4 fill-current" />
