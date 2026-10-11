@@ -40,6 +40,8 @@ words, so the rest of the sequence still lands.
 - 2026-10-11 — Opened from the owner's note.
 - 2026-10-11 — First frame: the brief at `clamp(34px, 4.6vw, 72px)`, 640 px wide, vertically centred on the left; under it "Write one line. Aivia plans it and makes every piece while you watch." (fades in at 1.7 s) and a thin "Scroll" cue (2.3 s); motes 30 to 18 and fainter; the mid fog from 22% to 14%. Removed: inline slots, coloured underlines, the caret, the cue pill, the caption anchor, the window timers. Windows now start on their noun's measured box with opacity rising five times faster than their move; the brief lifts 6% of the viewport, shrinks 4% and fades between 6% and 20% of the sequence. The teaser loads on the first scroll. Section headings to `clamp(34px, 4.2vw, 58px)`, the composer and close headings to `clamp(40px, 5.4vw, 80px)`. Design doc §2.2, §2.3 and §11 updated.
 
+- 2026-10-11 — Reverted by TICKET-028: the owner found the calm frame "lost its charm and the pages that follow it are disconnected".
+
 ## Verification
 Screens at 1440x900, 1280x720 and 390x844 at 0, 10%, 18%, 47% and 95% of the sequence: the
 first frame shows only the forest, the brief, one line and the cue; at 18% the poster and

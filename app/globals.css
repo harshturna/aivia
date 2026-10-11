@@ -247,15 +247,19 @@ body:has([data-screen-header]) [data-mobile-bar] {
   display: inline-block;
   animation: w-emerge 1.1s var(--ease-out) both;
 }
-.w-sub {
-  animation: w-fade-in 0.9s var(--ease-out) 1.7s both;
-}
 .w-cue-wrap > span {
-  animation: w-fade-in 0.8s var(--ease-out) 2.3s both;
+  animation: w-fade-in 0.8s var(--ease-out) 2.5s both;
 }
 .w-cue {
   transform-origin: left;
   animation: w-cue 2.4s var(--ease-out) infinite;
+}
+.w-piece {
+  clip-path: inset(100% 0 0 0);
+  transition: clip-path 1s var(--ease-out);
+}
+.w-piece[data-on="true"] {
+  clip-path: inset(0);
 }
 .w-arrive {
   animation: w-arrive 3.2s var(--ease-out) both;
@@ -407,6 +411,9 @@ body:has([data-screen-header]) [data-mobile-bar] {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .w-piece {
+    transition: none;
+  }
   .w-arrive,
   .w-dawn,
   .w-shafts,
@@ -414,7 +421,6 @@ body:has([data-screen-header]) [data-mobile-bar] {
   .w-drift,
   .w-cue,
   .w-word,
-  .w-sub,
   .w-cue-wrap > span {
     animation: none;
   }
