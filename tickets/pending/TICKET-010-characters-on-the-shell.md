@@ -16,6 +16,7 @@ Characters on the shell
 Characters (design §8) renders on the shared shell with the Studio's components: the grid
 with search and categories, the chat as runs with a character header, and the form, with the
 guest's limits said inline; its old sidebar, navbar and chat components are gone.
+- Landing: add the Characters strip (design §11.7) once the screen exists.
 
 ## Plan
 - Design §8, D-002 (kept, demoted).

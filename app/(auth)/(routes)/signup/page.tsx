@@ -129,7 +129,7 @@ const Signup = () => {
         <p className="text-center font-semibold">OR</p>
         <Button
           type="button"
-          onClick={guestHandler}
+          onClick={() => guestHandler()}
           variant="ghost"
           className="underline !mt-1"
         >

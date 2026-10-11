@@ -13,7 +13,7 @@ export function useGuestLogin() {
   const router = useRouter();
   const [isGuestLoading, setIsGuestLoading] = useState(false);
 
-  const guestHandler = async () => {
+  const guestHandler = async (next: string = "/studio") => {
     setIsGuestLoading(true);
     try {
       const res = await fetch("/api/auth/guest", { method: "POST" });
@@ -22,7 +22,7 @@ export function useGuestLogin() {
         return;
       }
       router.refresh();
-      router.push("/dashboard");
+      router.push(next);
     } catch {
       router.push("/login");
     } finally {

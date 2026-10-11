@@ -43,9 +43,7 @@ const ProModal = () => {
           <DialogTitle className="flex justify-center items-center flex-col gap-y-4 pb-2">
             <div className="flex items-center gap-x-2 font-bold py-1">
               Upgrade to Aivia
-              <Badge className="uppercase text-sm py-1" variant="premium">
-                pro
-              </Badge>
+              <Badge className="uppercase text-sm py-1">pro</Badge>
             </div>
           </DialogTitle>
           <DialogDescription className="text-center pt-2 space-y-2 text-muted-foreground font-medium">
@@ -69,7 +67,6 @@ const ProModal = () => {
           <Button
             disabled={loading}
             size="lg"
-            variant="premium"
             className="w-full"
             onClick={onSubscribe}
           >

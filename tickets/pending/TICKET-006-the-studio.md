@@ -27,6 +27,7 @@ middle of a new session, the composer with modes and parameter pills and attachm
 keys, and every exchange rendered as a run with its brief, its numbered plan with live status,
 its deliverables at their final size with the shimmer and the blur reveal, its sources and
 its notes; limits and errors inline.
+- The landing's Studio frame (`app/(landing)/_landing/studio-demo.tsx`) replays a fixed run with `components/studio/run-demo.tsx`; once the real run component exists, the frame renders it from a recorded transcript and `run-demo.tsx` goes. `components/studio/composer.tsx` and `audio-row.tsx` already exist from TICKET-012 and are extended, not replaced.
 
 ## Plan
 - Design §5 (all of it), §2.3 (motion), §13 (states), D-001, D-002, TICKET-005's routes.

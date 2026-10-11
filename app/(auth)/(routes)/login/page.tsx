@@ -130,7 +130,7 @@ const Login = () => {
         </p>
         <Button
           type="button"
-          onClick={guestHandler}
+          onClick={() => guestHandler()}
           variant="ghost"
           className="underline !mt-1"
         >

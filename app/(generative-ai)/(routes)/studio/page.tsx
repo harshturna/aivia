@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart } from "ai";
 import { Paperclip, Sparkles, Square, X } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Artifact } from "@/components/ai/Artifact";
@@ -24,7 +25,8 @@ const EXAMPLES = [
 
 const StudioPage = () => {
   const proModal = userProModal();
-  const [input, setInput] = useState("");
+  const params = useSearchParams();
+  const [input, setInput] = useState(params.get("prompt") ?? "");
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);

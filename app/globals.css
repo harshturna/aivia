@@ -166,3 +166,18 @@
     scroll-behavior: auto;
   }
 }
+
+/* the hero on load (design §2.3): the headline, then the line, then the composer, once */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-settle {
+  animation: settle 600ms var(--ease-out) both;
+}

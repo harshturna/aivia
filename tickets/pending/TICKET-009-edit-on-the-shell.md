@@ -17,6 +17,7 @@ Edit: the transformations on the shell
 The Cloudinary transformations become `/edit` (design §7): a two-pane workspace with upload
 or a library pick on the left, the result on the right, tabs for the five tools, inline
 limits, a before/after slider, and the `?asset=` and `?tool=` entries.
+- Landing: add the Edit panel to `app/(landing)/_landing/sections.tsx` (design §11.6) once the screen exists, with a real before and after.
 
 ## Plan
 - Design §7, §3 (the `/transformations/:type` redirect from 004), D-002.
