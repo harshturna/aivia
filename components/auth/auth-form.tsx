@@ -75,6 +75,8 @@ export function AuthForm({ kind }: { kind: "login" | "signup" }) {
       return;
     }
     // a guest's work kept in this browser moves into the account (TICKET-041)
+    // signed in here: this form's choice replaces any left from an earlier sign-up
+    setClaimPending(false);
     const claimed = kept > 0 && bring ? await claimLocalSessions() : null;
     router.refresh();
     router.push(claimed ? `/studio/${claimed}` : "/studio");

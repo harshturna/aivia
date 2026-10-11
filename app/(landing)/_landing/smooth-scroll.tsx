@@ -62,8 +62,11 @@ export function SmoothScroll() {
             const off = target.getBoundingClientRect().top - margin;
             if (pass < 2 && Math.abs(off) > 4) go(pass + 1);
             else {
-              if (!target.hasAttribute("tabindex"))
+              // a section takes focus to move the keyboard, not to draw a ring around itself
+              if (!target.hasAttribute("tabindex")) {
                 target.setAttribute("tabindex", "-1");
+                target.style.outline = "none";
+              }
               target.focus({ preventScroll: true });
             }
           },

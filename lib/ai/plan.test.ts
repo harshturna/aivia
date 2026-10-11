@@ -132,4 +132,16 @@ describe("readPlan", () => {
     expect(r.steps.map((s) => s.status)).toEqual(["done", "failed", "done"]);
     expect(r.failed).toBe(true);
   });
+
+  it("still reads a plan written after a web search", () => {
+    const r = readPlan(
+      [
+        { type: "tool-web_search", state: "output-available" },
+        plan,
+        tool("output-available"),
+      ],
+      false
+    );
+    expect(r.steps.length).toBe(3);
+  });
 });

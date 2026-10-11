@@ -143,6 +143,14 @@ export function StudioClient({
     isGuest ? (localId ?? (isNew ? id : null)) : null
   );
   const touched = useRef(false);
+  // a send whose image work is still under way: `busy` only turns true once it is sent, and
+  // a second click in between would pay twice (TICKET-046)
+  const inFlight = useRef(false);
+  // the address and local copy before a send that gave this session its address; a refusal
+  // of that send puts them back (a later refusal leaves a real session where it is)
+  const revert = useRef<{ address: string; localKey: string | null } | null>(
+    null
+  );
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -187,8 +195,13 @@ export function StudioClient({
           : null;
       if (!refused) return;
       setLimit(refused);
-      // a refused first send made no session: its address would not reopen
-      if (isNew && !localId) window.history.replaceState(null, "", "/studio");
+      // a refused first send made nothing: its address would not reopen, its brief is not kept
+      const before = revert.current;
+      if (before) {
+        window.history.replaceState(null, "", before.address);
+        touched.current = false;
+        setLocalKey(before.localKey);
+      }
     },
   });
 
@@ -250,7 +263,8 @@ export function StudioClient({
         scene?: string;
       }
     ) => {
-      if (busy || limit) return;
+      if (busy || limit || inFlight.current) return;
+      inFlight.current = true;
       clearError();
       let list: FileList | undefined;
       if (attached.length) {
@@ -275,8 +289,16 @@ export function StudioClient({
           } catch {}
       }
       touched.current = true;
+      const gainsAddress =
+        (isNew && messages.length === 0) || (isGuest && !localKey);
+      revert.current = gainsAddress
+        ? {
+            address: window.location.pathname + window.location.search,
+            localKey,
+          }
+        : null;
       const sentAs: Sent = { mode: chosen, params: sent, scene: extra?.scene };
-      sendMessage(
+      void sendMessage(
         {
           text,
           metadata: sentAs,
@@ -291,7 +313,9 @@ export function StudioClient({
             : list,
         },
         { body: sentAs }
-      );
+      ).finally(() => {
+        inFlight.current = false;
+      });
       // an Animate carries its own still; what is attached waits for the next brief
       if (!extra?.still) setFiles([]);
       // a guest who adds to an example keeps their own copy under a new id

@@ -31,6 +31,9 @@ export function isToolPart(part: PartLike) {
   return part.type.startsWith("tool-") || part.type === "dynamic-tool";
 }
 
+/** A search or code run before the plan (briefing on a brand) does not end the plan window. */
+const BRIEFING = new Set(["tool-web_search", "tool-code_execution"]);
+
 /** Splits a block of text into its numbered lines and everything else. */
 export function splitPlan(text: string): { steps: string[]; rest: string } {
   const lines = text.split("\n");
@@ -80,7 +83,7 @@ export function readPlan(parts: PartLike[], finished: boolean): RunShape {
 
   const flush = () => {
     if (!text) return;
-    if (!planFound && tools.length === 0) {
+    if (!planFound && !tools.some((t) => !BRIEFING.has(t.type))) {
       const split = splitPlan(text);
       if (split.steps.length) {
         planFound = true;

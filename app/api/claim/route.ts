@@ -1,6 +1,11 @@
 import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { assetsFromMessages, claimedSessionId, parseClaim } from "@/lib/claim";
+import {
+  assetsFromMessages,
+  claimedSessionId,
+  MAX_CLAIMED_SESSIONS,
+  parseClaim,
+} from "@/lib/claim";
 import { getUser } from "@/lib/getUser";
 import { isGuestId } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
@@ -36,7 +41,12 @@ export async function POST(req: Request) {
         })
       ).map((r) => r.id)
     );
-    const fresh = plan.filter((p) => !existing.has(p.id));
+    // claimed sessions are marked, and an account holds a bounded number of them
+    const held = await prismadb.session.count({
+      where: { userId: user.id, mode: "claimed" },
+    });
+    const room = Math.max(0, MAX_CLAIMED_SESSIONS - held);
+    const fresh = plan.filter((p) => !existing.has(p.id)).slice(0, room);
     await prismadb.$transaction(
       fresh.flatMap(({ s, id }) => {
         const assets = assetsFromMessages(s.messages);
@@ -46,6 +56,7 @@ export async function POST(req: Request) {
               id,
               userId: user.id,
               title: s.title,
+              mode: "claimed",
               messages: s.messages as unknown as Prisma.InputJsonValue,
             },
           }),
@@ -66,8 +77,11 @@ export async function POST(req: Request) {
         ];
       })
     );
-    // newest first: the client opens ids[0]
-    return NextResponse.json({ ids: plan.map((p) => p.id) });
+    // newest first: the client opens ids[0]; only ids that exist now are returned
+    const kept = new Set([...existing, ...fresh.map((f) => f.id)]);
+    return NextResponse.json({
+      ids: plan.map((p) => p.id).filter((id) => kept.has(id)),
+    });
   } catch (error) {
     console.error("[CLAIM]", error);
     return new NextResponse("The work could not be kept", { status: 500 });

@@ -1118,7 +1118,13 @@ export function Hero() {
           setPlaying(true);
           syncClock();
         }}
-        onPause={() => {
+        onPause={(e) => {
+          // paused from anywhere (another player too): the clock rests where the music is
+          const st = state.current;
+          if (st.seekTo === null) {
+            st.base = e.currentTarget.currentTime % SCORE_SECONDS;
+            st.ref = performance.now();
+          }
           setPlaying(false);
           syncClock();
         }}

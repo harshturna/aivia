@@ -87,7 +87,11 @@ export function isClaimPending() {
 /** After sign-in or sign-up: move this browser's guest work into the account. */
 export async function claimLocalSessions(): Promise<string | null> {
   const sessions = listLocalSessions();
-  if (!sessions.length) return null;
+  if (!sessions.length) {
+    // nothing here to bring: a choice left from an earlier sign-up no longer applies
+    setClaimPending(false);
+    return null;
+  }
   try {
     const res = await fetch("/api/claim", {
       method: "POST",

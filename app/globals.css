@@ -154,11 +154,6 @@
   ::selection {
     background: color-mix(in srgb, var(--color-sun) 32%, transparent);
   }
-  /* highlighted code sits on the block's own surface, in the app's ink (TICKET-045) */
-  .hljs {
-    background: transparent;
-    color: var(--color-fg);
-  }
   /* one focus ring everywhere (design §2.2); an element that sets its own ring keeps it */
   :focus-visible {
     outline: 2px solid var(--color-ring);
@@ -423,4 +418,11 @@ body:has([data-screen-header]) [data-mobile-bar] {
   .w-mote {
     display: none;
   }
+}
+
+/* highlighted code sits on the block's own surface, in the app's ink (TICKET-045). Outside
+   any layer and more specific than the highlight theme's own unlayered `.hljs`, so it wins */
+pre code.hljs {
+  background: transparent;
+  color: var(--color-fg);
 }

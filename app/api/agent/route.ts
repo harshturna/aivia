@@ -9,7 +9,7 @@ import {
 } from "ai";
 
 import { guardGeneration } from "@/lib/ai/guard";
-import { recentHistory } from "@/lib/ai/history";
+import { modelHistory } from "@/lib/ai/history";
 import { createAgentTools } from "@/lib/ai/tools";
 import { isGuestId } from "@/lib/guest-user";
 import {
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     if (!messages?.length) {
       return new Response("Messages are required", { status: 400 });
     }
-    const history = recentHistory(messages);
+    const history = modelHistory(messages);
     if (!history) {
       return new Response("The brief is too long. Shorten it and send again.", {
         status: 413,
@@ -115,7 +115,10 @@ export async function POST(req: Request) {
     const result = streamText({
       model: anthropic("claude-sonnet-5"),
       system: SYSTEM_PROMPT,
-      messages: await convertToModelMessages(history),
+      // a call left unfinished (a stopped run) is dropped, not sent without its result
+      messages: await convertToModelMessages(history, {
+        ignoreIncompleteToolCalls: true,
+      }),
       tools: {
         ...createAgentTools({ userId, sessionId }),
         // Server-side: Anthropic runs the search, so there is nothing to

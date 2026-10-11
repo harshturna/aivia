@@ -27,6 +27,8 @@ export type LocalSession = {
 };
 
 export const MAX_LOCAL_SESSIONS = 5;
+/** Claimed sessions one account may hold: a few browsers' worth, not a loop (TICKET-046). */
+export const MAX_CLAIMED_SESSIONS = 20;
 /** Per session, as JSON: a few runs of URLs and text are far under this. */
 export const MAX_SESSION_BYTES = 400_000;
 /** Outputs kept per claimed session, and the longest address accepted. */
