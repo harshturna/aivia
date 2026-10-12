@@ -142,7 +142,7 @@ export function CropBox({
               gesture.current = { kind: corner, start: crop, last: crop };
             }}
           >
-            <span className="size-3.5 rounded-sm border-2 border-bg bg-fg" />
+            <span className="size-3.5 rounded-chip border-2 border-bg bg-fg" />
           </span>
         ))}
       </button>

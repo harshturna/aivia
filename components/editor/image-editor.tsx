@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Crop as CropIcon,
   Download,
+  Eye,
   FlipHorizontal2,
   Plus,
   Redo2,
@@ -23,7 +24,14 @@ import {
 import { MediaTray } from "@/components/media/tray";
 import { ScreenHeader } from "@/components/shell/screen";
 import { queueForCut } from "@/components/timeline/cut-view";
+import {
+  commitTo,
+  type History,
+  startHistory,
+  stepIn,
+} from "@/components/timeline/history";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { userProModal } from "@/hooks/useProModal";
@@ -128,10 +136,13 @@ export function ImageEditor({
   // the picture as it is now, for an AI step that lands later (TICKET-072)
   const docNow = useRef(doc);
   docNow.current = doc;
-  const [history, setHistory] = useState<{ stack: ImageEdit[]; at: number }>({
-    stack: initialDoc ? [initialDoc] : [],
-    at: initialDoc ? 0 : -1,
-  });
+  // one history rule for Cut and the editor: no-op commits are not steps (TICKET-075)
+  const [history, setHistoryState] = useState(() => startHistory(initialDoc));
+  const historyNow = useRef(history);
+  const setHistory = useCallback((h: History<ImageEdit>) => {
+    historyNow.current = h;
+    setHistoryState(h);
+  }, []);
   const [failed, setFailed] = useState<string | null>(null);
   const [base, setBase] = useState<HTMLImageElement | null>(null);
   const [tab, setTab] = useState<Tab>("crop");
@@ -184,8 +195,9 @@ export function ImageEditor({
           width: img.naturalWidth,
           height: img.naturalHeight,
         });
+        docNow.current = first;
         setDoc(first);
-        setHistory({ stack: [first], at: 0 });
+        setHistory(startHistory(first));
         savedDoc.current = first;
       })
       .catch(
@@ -196,7 +208,7 @@ export function ImageEditor({
     return () => {
       cancelled = true;
     };
-  }, [initialDoc, source.url, source.assetId]);
+  }, [initialDoc, source.url, source.assetId, setHistory]);
 
   // the picture the steps apply to: the source, or the last AI result
   const baseUrl = doc ? baseOf(doc).url : null;
@@ -259,25 +271,27 @@ export function ImageEditor({
   }, [stage, dims]);
 
   // ── editing: every landed change is one undo step ───────────────────────────────────
-  const change = useCallback((next: ImageEdit, commit: boolean) => {
-    docNow.current = next;
-    setDoc(next);
-    if (!commit) return;
-    setSaving((s) => (s === "saving" ? s : "idle"));
-    setHistory((h) => {
-      const stack = [...h.stack.slice(0, h.at + 1), next].slice(-100);
-      return { stack, at: stack.length - 1 };
-    });
-  }, []);
-  const step = useCallback((by: -1 | 1) => {
-    setHistory((h) => {
-      const at = h.at + by;
-      if (at < 0 || at >= h.stack.length) return h;
-      docNow.current = h.stack[at];
-      setDoc(h.stack[at]);
-      return { ...h, at };
-    });
-  }, []);
+  const change = useCallback(
+    (next: ImageEdit, commit: boolean) => {
+      docNow.current = next;
+      setDoc(next);
+      if (!commit) return;
+      const h = historyNow.current;
+      const after = commitTo(h, next);
+      if (after !== h) setHistory(after);
+    },
+    [setHistory]
+  );
+  const step = useCallback(
+    (by: -1 | 1) => {
+      const r = stepIn(historyNow.current, by);
+      if (!r) return;
+      setHistory(r.history);
+      docNow.current = r.doc;
+      setDoc(r.doc);
+    },
+    [setHistory]
+  );
   // ── AI: one run at a time, charged once; its result joins the picture as it is now ──────
   const [ai, setAi] = useState<AiRun>({ at: "idle" });
   const aiBusy = useRef(false);
@@ -303,9 +317,8 @@ export function ImageEditor({
     },
     [change]
   );
-  const dirty = Boolean(
-    doc && savedDoc.current && doc !== savedDoc.current && isChanged(doc)
-  );
+  // unsaved: different from what was last saved (or opened), and not just the opened picture
+  const dirty = Boolean(doc && doc !== savedDoc.current && isChanged(doc));
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -323,11 +336,18 @@ export function ImageEditor({
 
   // leaving with changes not kept asks first
   useEffect(() => {
-    if (!dirty || saving === "saved") return;
+    if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, saving]);
+  }, [dirty]);
+
+  // leaving inside the app with unsaved changes asks too (TICKET-075)
+  const [leaving, setLeaving] = useState<string | null>(null);
+  const leave = useCallback(
+    (href: string) => (dirty ? setLeaving(href) : router.push(href)),
+    [dirty, router]
+  );
 
   const backHref = `/p/${projectId}`;
   const name = source.prompt.split(/\s+/).slice(0, 5).join(" ") || "image";
@@ -352,27 +372,36 @@ export function ImageEditor({
         setSaving("saved");
         return;
       }
+      // the steps first: a version is never kept without them
       const made = await fetch("/api/edits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId, kind: "image", title: name, doc }),
       });
-      const edit = made.ok ? ((await made.json()) as { id: string }) : null;
-      const path = await uploadMedia(blob, alpha ? "png" : "jpg");
-      const res = await fetch("/api/uploads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          path,
-          title: `Edit of ${name}`,
-          width: out.width,
-          height: out.height,
-          sessionId: projectId,
-          parentAssetId: doc.source.assetId,
-          editId: edit?.id,
-        }),
-      });
-      if (!res.ok) throw new Error();
+      if (!made.ok) throw new Error();
+      const edit = (await made.json()) as { id: string };
+      const kept = async () => {
+        const path = await uploadMedia(blob, alpha ? "png" : "jpg");
+        return fetch("/api/uploads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path,
+            title: `Edit of ${name}`,
+            width: out.width,
+            height: out.height,
+            sessionId: projectId,
+            parentAssetId: doc.source.assetId,
+            editId: edit.id,
+          }),
+        });
+      };
+      const res = await kept().catch(() => null);
+      if (!res?.ok) {
+        // the picture did not land: its steps go too, so a retry leaves no orphan
+        void fetch(`/api/edits/${edit.id}`, { method: "DELETE" });
+        throw new Error();
+      }
       savedDoc.current = doc;
       setSaving("saved");
       router.refresh();
@@ -389,11 +418,11 @@ export function ImageEditor({
   const openHere = useCallback(
     (item: MediaItem) => {
       if (item.kind !== "image") return;
-      router.push(
+      leave(
         `/p/${projectId}/edit?src=${encodeURIComponent(item.assetId ?? item.url)}`
       );
     },
-    [router, projectId]
+    [leave, projectId]
   );
   const handlers = useMemo<MediaHandlers>(
     () => ({
@@ -424,6 +453,11 @@ export function ImageEditor({
               <span className="flex min-w-0 items-center gap-2">
                 <Link
                   href={backHref}
+                  onClick={(event) => {
+                    if (!dirty) return;
+                    event.preventDefault();
+                    setLeaving(backHref);
+                  }}
                   aria-label={`Back to ${title}`}
                   className="grid size-8 shrink-0 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
                 >
@@ -442,7 +476,7 @@ export function ImageEditor({
                 ? isGuest
                   ? "Preparing…"
                   : "Saving…"
-                : saving === "saved"
+                : saving === "saved" && !dirty
                   ? isGuest
                     ? "Downloaded"
                     : "Saved to the project"
@@ -471,7 +505,16 @@ export function ImageEditor({
               <Redo2 />
             </IconButton>
             <Button asChild variant="ghost" size="sm" className="max-sm:hidden">
-              <Link href={backHref}>Cancel</Link>
+              <Link
+                href={backHref}
+                onClick={(event) => {
+                  if (!dirty) return;
+                  event.preventDefault();
+                  setLeaving(backHref);
+                }}
+              >
+                Cancel
+              </Link>
             </Button>
             <Button
               size="sm"
@@ -482,7 +525,8 @@ export function ImageEditor({
             >
               {isGuest ? (
                 <>
-                  <Download /> Download
+                  <Download />
+                  <span className="max-[400px]:sr-only">Download</span>
                 </>
               ) : (
                 "Save"
@@ -491,7 +535,7 @@ export function ImageEditor({
           </ScreenHeader>
 
           {/* the stage */}
-          <div className="relative grid min-h-[min(56dvh,520px)] shrink-0 place-items-center bg-surface/40 p-4 lg:min-h-0 lg:flex-1">
+          <div className="relative grid min-h-[min(46dvh,520px)] shrink-0 place-items-center bg-surface/40 p-4 lg:min-h-0 lg:flex-1">
             <div ref={stageRef} className="absolute inset-4" />
             {failed ? (
               <p role="alert" className="relative text-[13px] text-fg-2">
@@ -503,7 +547,7 @@ export function ImageEditor({
               </p>
             ) : (
               <div
-                className="relative"
+                className={cn("relative", comparing && "invisible")}
                 style={{ width: fit.width, height: fit.height }}
               >
                 <canvas
@@ -560,7 +604,7 @@ export function ImageEditor({
               <div
                 role="tablist"
                 aria-label="Tools"
-                className="flex gap-1"
+                className="flex min-w-0 gap-1 overflow-x-auto"
                 onKeyDown={(event) => {
                   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
                     return;
@@ -609,9 +653,9 @@ export function ImageEditor({
                   onKeyUp={() => setComparing(false)}
                   onBlur={() => setComparing(false)}
                   aria-label="Hold to compare"
-                  className="ml-auto flex h-9 whitespace-nowrap items-center rounded-control px-3 text-[13px] text-fg-2 transition-colors select-none hover:bg-surface-2 hover:text-fg"
+                  className="ml-auto flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-control px-2.5 text-[13px] text-fg-2 transition-colors select-none hover:bg-surface-2 hover:text-fg"
                 >
-                  <span className="sm:hidden">Compare</span>
+                  <Eye className="size-4" />
                   <span className="max-sm:hidden">Hold to compare</span>
                 </button>
               )}
@@ -660,6 +704,36 @@ export function ImageEditor({
           />
         </aside>
       </div>
+      <Dialog
+        open={leaving !== null}
+        onOpenChange={(open) => {
+          if (!open) setLeaving(null);
+        }}
+      >
+        <DialogContent aria-describedby={undefined}>
+          <DialogTitle>Leave without saving?</DialogTitle>
+          <p className="text-[13.5px] text-fg-2">
+            The changes to this picture since it was last saved will be lost.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setLeaving(null)}>
+              Keep editing
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                const href = leaving;
+                setLeaving(null);
+                // the leave is chosen: nothing more to warn about
+                savedDoc.current = docNow.current;
+                if (href) router.push(href);
+              }}
+            >
+              Leave without saving
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MediaHandlersProvider>
   );
 }
@@ -897,7 +971,7 @@ function TextPanel({
       </div>
     );
   return (
-    <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto] lg:items-start">
+    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto] xl:items-start">
       <textarea
         name="words"
         autoComplete="off"
@@ -968,7 +1042,7 @@ function TextPanel({
           />
         </label>
       </div>
-      <div className="flex gap-1 lg:flex-col">
+      <div className="flex flex-wrap gap-1 xl:flex-col">
         <button
           type="button"
           className={rowButton}
@@ -1024,18 +1098,24 @@ function TextHandles({
     by: number;
     last: ImageEdit;
   } | null>(null);
-  const moveTo = (id: string, x: number, y: number) => ({
-    ...doc,
-    texts: doc.texts.map((t) =>
-      t.id === id
-        ? {
-            ...t,
-            x: Math.min(1, Math.max(0, x)),
-            y: Math.min(1, Math.max(0, y)),
-          }
-        : t
-    ),
-  });
+  // the whole box stays inside the picture, not only its middle (TICKET-075)
+  const moveTo = (id: string, x: number, y: number) => {
+    const b = boxes.find((one) => one.id === id);
+    const hw = Math.min(0.5, (b?.width ?? 0) / 2);
+    const hh = Math.min(0.5, (b?.height ?? 0) / 2);
+    return {
+      ...doc,
+      texts: doc.texts.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              x: Math.min(1 - hw, Math.max(hw, x)),
+              y: Math.min(1 - hh, Math.max(hh, y)),
+            }
+          : t
+      ),
+    };
+  };
   return (
     <div className="absolute inset-0">
       {boxes.map((b) => {
@@ -1045,10 +1125,10 @@ function TextHandles({
           <button
             key={b.id}
             type="button"
-            aria-label={`Words: ${box.text || "empty"}. Arrow keys move them.`}
+            aria-label={`Words: ${box.text.replace(/[.!?…]+$/, "") || "empty"}. Arrow keys move them.`}
             aria-pressed={selected === b.id}
             className={cn(
-              "absolute cursor-move touch-none rounded-sm border border-dashed",
+              "absolute cursor-move touch-none rounded-chip border border-dashed",
               selected === b.id
                 ? "border-fg"
                 : "border-fg/40 hover:border-fg/80"
