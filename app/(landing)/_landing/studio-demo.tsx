@@ -66,7 +66,8 @@ export function StudioDemo() {
       <h2 className={H2}>It plans the work, then does it.</h2>
       <p className={LEDE}>
         Aivia writes the steps before it spends a thing, then makes each piece
-        in front of you, and cuts them together into one film when you ask.
+        in front of you. Then cut them into one film on a timeline: trim,
+        reorder, retitle, and export.
       </p>
 
       {/* a fixed frame: the run scrolls inside it, so nothing around it grows */}

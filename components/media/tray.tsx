@@ -114,6 +114,8 @@ export function MediaTray({
   onOpen,
   onClose,
   libraryHref,
+  footer,
+  hint = "Drag a piece into the brief to use it. ⌘-click to select.",
 }: {
   groups: Group[];
   /** Show the piece where it was made. */
@@ -121,6 +123,10 @@ export function MediaTray({
   onClose?: () => void;
   /** The project's media in the library, when it is saved there. */
   libraryHref?: string | null;
+  /** What sits above the tray's foot (the Cut view's selected item, TICKET-065). */
+  footer?: React.ReactNode;
+  /** What the tray's foot says a piece can be dragged into. */
+  hint?: string;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -206,6 +212,11 @@ export function MediaTray({
           ))
         )}
       </div>
+      {footer && (
+        <div className="max-h-[45%] shrink-0 overflow-y-auto border-t border-border px-4 py-3">
+          {footer}
+        </div>
+      )}
       <div className="shrink-0 border-t border-border px-4 py-3">
         {selected.size > 0 ? (
           <div className="flex items-center gap-2 text-[13px]">
@@ -233,7 +244,7 @@ export function MediaTray({
           </div>
         ) : (
           <p className="text-[12px] leading-4 text-mute">
-            Drag a piece into the brief to use it. ⌘-click to select.
+            {hint}
             {libraryHref && (
               <>
                 {" "}

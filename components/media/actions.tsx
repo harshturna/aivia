@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Clapperboard,
   Download,
   Film,
   Frame,
@@ -37,6 +38,8 @@ export type MediaHandlers = {
   frameToBrief?: (item: MediaItem, video?: HTMLVideoElement | null) => void;
   reusePrompt?: (item: MediaItem) => void;
   favourite?: (item: MediaItem) => void;
+  /** Puts the piece at the end of the project's cut, starting one if there is none. */
+  addToCut?: (item: MediaItem) => void;
 };
 
 const Handlers = createContext<MediaHandlers>({});
@@ -92,6 +95,13 @@ export function actionsFor(item: MediaItem, h: MediaHandlers): MediaAction[] {
       primary: false,
       run: () => h.favourite?.(item),
     };
+  const toCut = !!h.addToCut && {
+    id: "cut",
+    label: "Add to cut",
+    icon: Clapperboard,
+    primary: false,
+    run: () => h.addToCut?.(item),
+  };
   if (item.kind === "image") {
     list.push(
       h.open && {
@@ -123,6 +133,7 @@ export function actionsFor(item: MediaItem, h: MediaHandlers): MediaAction[] {
         primary: false,
         run: () => h.attachToBrief?.(item),
       },
+      toCut,
       reuse,
       download,
       fav
@@ -136,19 +147,26 @@ export function actionsFor(item: MediaItem, h: MediaHandlers): MediaAction[] {
         primary: true,
         run: () => h.open?.(item),
       },
+      // in a project a clip's second primary is Add to cut (§17.3); elsewhere, its frame
+      toCut ? { ...toCut, primary: true } : false,
       h.frameToBrief && {
         id: "frame",
         label: "Use a frame in a brief",
         icon: Frame,
-        primary: true,
+        primary: !toCut,
         run: (video) => h.frameToBrief?.(item, video),
       },
-      { ...download, primary: true },
+      { ...download, primary: !toCut },
       reuse,
       fav
     );
   } else {
-    list.push({ ...download, primary: true }, reuse, fav);
+    list.push(
+      toCut ? { ...toCut, primary: true } : false,
+      { ...download, primary: !toCut },
+      reuse,
+      fav
+    );
   }
   return list.filter(Boolean) as MediaAction[];
 }

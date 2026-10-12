@@ -100,6 +100,26 @@ test.describe("as the guest", () => {
     expect(await axe(page)).toEqual([]);
   });
 
+  test("the Cut view starts a cut, fits, passes axe", async ({ page }) => {
+    const sessions = (await (
+      await page.request.get("/api/sessions")
+    ).json()) as Array<{ id: string }>;
+    test.skip(sessions.length === 0, "no saved session for the guest");
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto(`/p/${sessions[0].id}/cut`, { waitUntil: "networkidle" });
+    await expect(page.getByText("No cut yet")).toBeVisible();
+    await fits(page);
+    expect(await axe(page)).toEqual([]);
+    await page.getByRole("button", { name: "Start a cut" }).click();
+    await expect(page.getByRole("img", { name: "The cut" })).toBeVisible({
+      timeout: 30_000,
+    });
+    await fits(page);
+    expect(await axe(page)).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
   test("the lightbox traps focus and closes on Escape", async ({ page }) => {
     await page.goto("/library", { waitUntil: "networkidle" });
     const tile = page.locator("figure a").first();

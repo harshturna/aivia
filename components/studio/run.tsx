@@ -1,11 +1,19 @@
 "use client";
 
 import { isToolUIPart, type UIMessage } from "ai";
-import { Check, ChevronDown, FileText, Square, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  FileText,
+  Scissors,
+  Square,
+  X,
+} from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Markdown } from "@/components/ai/Markdown";
 import { useStudioActions } from "@/components/studio/actions";
-import { CutAction } from "@/components/studio/cut";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { readPlan } from "@/lib/ai/plan";
 import { canCut, collectCut } from "@/lib/cut";
@@ -189,12 +197,14 @@ export function Run({
       )}
 
       {!active && cut && canCut(pieces) && (
-        <CutAction
-          pieces={pieces}
-          title={titleFromBrief(messageText(user))}
-          canSave={cut.canSave}
-          sessionId={cut.sessionId}
-        />
+        <Button asChild variant="secondary" size="sm" className="mt-5">
+          {/* the run's pieces laid out on the project's timeline, to edit (TICKET-065) */}
+          <Link
+            href={`/p/${cut.projectId}/cut?run=${encodeURIComponent(user.id)}`}
+          >
+            <Scissors /> Cut it together
+          </Link>
+        </Button>
       )}
     </article>
   );

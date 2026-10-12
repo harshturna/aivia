@@ -79,7 +79,7 @@ async function chooseFormat(
 }
 
 /** Every audio item mixed to one buffer, each at its place, trim and fades. */
-async function mixAudio(doc: TimelineDoc, seconds: number) {
+export async function mixAudio(doc: TimelineDoc, seconds: number) {
   const items = doc.tracks.flatMap((t) => (t.kind === "audio" ? t.items : []));
   if (!items.length) return null;
   const rate = 48000;

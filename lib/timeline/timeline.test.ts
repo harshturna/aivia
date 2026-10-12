@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { alphaAt, type CutPieces, planCut } from "@/lib/cut";
+import type { CutPieces } from "@/lib/cut";
 import { fromCut, TEMPLATE } from "./from-cut";
-import { gainEnvelope, layersAt } from "./layout";
+import { alphaOf, gainEnvelope, layersAt } from "./layout";
 import { migrate } from "./migrate";
 import {
   docDuration,
@@ -53,57 +53,17 @@ describe("migrate", () => {
   });
 });
 
-/** The new layout must time a cut exactly as the old planner did. */
-function sameTimingAsPlanCut(pieces: CutPieces, clipSeconds: number[]) {
-  const doc = fromCut(
-    pieces,
-    clipSeconds.map((s) => s * 1000),
-    size
-  );
-  const { segments, duration } = planCut(pieces, clipSeconds);
-  expect(docDuration(doc)).toBe(Math.round(duration * 1000));
-  // sample every 1/24 s: the same pictures at the same opacities
-  for (let f = 0; f <= Math.ceil(duration * 24); f++) {
-    const t = f / 24;
-    const ms = Math.round(t * 1000);
-    const layers = layersAt(doc, ms);
-    for (const s of segments) {
-      const old = alphaAt(s, t);
-      const match = layers.find((l) =>
-        s.kind === "title"
-          ? l.kind === "text"
-          : s.kind === "clip"
-            ? l.kind === "video" && l.item.id === `clip-${s.clip}`
-            : l.kind === "image" && doc.media[l.item.media].url === s.src
-      );
-      expect(match?.alpha ?? 0, `${s.kind} at ${t.toFixed(3)} s`).toBeCloseTo(
-        old,
-        1
-      );
-    }
-  }
-}
-
 describe("fromCut", () => {
-  it("times a run with a clip, a poster, a score and lines as planCut did", () => {
-    sameTimingAsPlanCut(forest, [5.042]);
-  });
-  it("times several clips without a poster as planCut did", () => {
-    sameTimingAsPlanCut(
-      {
-        ...forest,
-        clips: [...forest.clips, "https://v3.fal.media/b.mp4"],
-        stills: [],
-      },
-      [5, 4]
-    );
-  });
-  it("times a stills slideshow as planCut did", () => {
-    const stills = [1, 2, 3].map((i) => ({
-      url: `https://v3.fal.media/s${i}.jpg`,
-      prompt: "",
-    }));
-    sameTimingAsPlanCut({ ...forest, clips: [], stills }, []);
+  it("lays a run out as the template: title, clip, end card", () => {
+    const doc = fromCut(forest, [5042], size);
+    const text = doc.tracks.find((t) => t.kind === "text");
+    const main = doc.tracks.find((t) => t.kind === "main");
+    expect(text?.items.map((i) => [i.start, i.duration])).toEqual([[0, 1800]]);
+    expect(main?.items.map((i) => [i.start, i.duration])).toEqual([
+      [1300, 5042],
+      [5842, 3200],
+    ]);
+    expect(docDuration(doc)).toBe(9042);
   });
 
   it("lays the score under the whole cut, faded as the old mix was", () => {
@@ -148,5 +108,16 @@ describe("layersAt", () => {
       (l) => l.kind === "video"
     );
     expect(clip?.kind === "video" && clip.sourceMs).toBe(1500);
+  });
+});
+
+describe("alphaOf", () => {
+  it("ramps in, holds and ramps out, and is nothing outside the item", () => {
+    const item = { start: 1000, duration: 1000 };
+    expect(alphaOf(item, 500, 500, 900)).toBe(0);
+    expect(alphaOf(item, 500, 500, 1250)).toBeCloseTo(0.5);
+    expect(alphaOf(item, 500, 500, 1500)).toBe(1);
+    expect(alphaOf(item, 500, 500, 1750)).toBeCloseTo(0.5);
+    expect(alphaOf(item, 500, 500, 2000)).toBe(0);
   });
 });

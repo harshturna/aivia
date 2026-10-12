@@ -33,6 +33,7 @@ import {
   ProjectGrid,
 } from "@/components/studio/project-grid";
 import { Run } from "@/components/studio/run";
+import { ProjectViews, queueForCut } from "@/components/timeline/cut-view";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { userProModal } from "@/hooks/useProModal";
@@ -602,7 +603,7 @@ export function StudioClient({
   const actions = useMemo(
     () => ({
       animate: busy || limit ? undefined : animate,
-      cut: { canSave: !isGuest, sessionId: isGuest ? null : id },
+      cut: { projectId: id },
     }),
     [animate, busy, limit, isGuest, id]
   );
@@ -757,6 +758,11 @@ export function StudioClient({
         setInput(item.prompt);
         composerRef.current?.focus();
       },
+      // the piece waits for the Cut view, which adds it as it opens (TICKET-065)
+      addToCut: (item) => {
+        queueForCut(id, item);
+        router.push(`/p/${id}/cut`);
+      },
       favourite: isGuest
         ? undefined
         : (item) => {
@@ -775,7 +781,7 @@ export function StudioClient({
             });
           },
     }),
-    [router, busy, limit, animate, attach, isGuest]
+    [router, busy, limit, animate, attach, isGuest, id]
   );
 
   /** Shows a piece where it was made: the thread scrolls to it and marks it briefly. */
@@ -919,6 +925,7 @@ export function StudioClient({
                         Running
                       </span>
                     )}
+                    {!empty && <ProjectViews projectId={id} view="make" />}
                     {/* the project's media: the tray at 1024 and up, a sheet below (TICKET-063) */}
                     {!empty && (
                       <button
