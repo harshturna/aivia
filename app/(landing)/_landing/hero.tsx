@@ -368,6 +368,25 @@ export function Hero() {
   const k1Ref = useRef<HTMLDivElement>(null);
   const k2Ref = useRef<HTMLDivElement>(null);
   const skyRef = useRef<HTMLDivElement>(null);
+  // the dawn plays once the forest is here (TICKET-081); a cached photo is here at once, a slow
+  // one is waited for at most 2.5 s
+  const [plate, setPlate] = useState<"waiting" | "ready">("waiting");
+  useEffect(() => {
+    const img = skyRef.current?.querySelector("img");
+    if (!img || (img.complete && img.naturalWidth > 0)) {
+      setPlate("ready");
+      return;
+    }
+    const ready = () => setPlate("ready");
+    img.addEventListener("load", ready, { once: true });
+    img.addEventListener("error", ready, { once: true });
+    const cap = window.setTimeout(ready, 2500);
+    return () => {
+      img.removeEventListener("load", ready);
+      img.removeEventListener("error", ready);
+      window.clearTimeout(cap);
+    };
+  }, []);
   const veilRef = useRef<HTMLDivElement>(null);
   const fogRef = useRef<HTMLDivElement>(null);
   const mistRef = useRef<HTMLDivElement>(null);
@@ -826,6 +845,7 @@ export function Hero() {
     >
       <div
         ref={stageRef}
+        data-plate={plate}
         className="w-stage sticky top-0 h-svh overflow-hidden bg-bg"
       >
         {/* the forest */}

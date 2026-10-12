@@ -271,6 +271,18 @@ body:has([data-screen-header]) [data-mobile-bar] {
   visibility: hidden;
   animation: w-dawn 3.2s var(--ease-out) both;
 }
+/* the dawn waits for the forest, which then fades in with it (TICKET-081): uncached, the photo
+   used to pop in halfway through the veil */
+.w-arrive img {
+  transition: opacity 0.6s var(--ease-out);
+}
+[data-plate="waiting"] .w-arrive,
+[data-plate="waiting"] .w-dawn {
+  animation-play-state: paused;
+}
+[data-plate="waiting"] .w-arrive img {
+  opacity: 0;
+}
 .w-shafts {
   background: conic-gradient(
     from 196deg at 60% -12%,
@@ -403,7 +415,8 @@ body:has([data-screen-header]) [data-mobile-bar] {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .w-piece {
+  .w-piece,
+  .w-arrive img {
     transition: none;
   }
   .w-arrive,
