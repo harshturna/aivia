@@ -22,6 +22,7 @@ import {
   MediaHandlersProvider,
 } from "@/components/media/actions";
 import { MediaTray } from "@/components/media/tray";
+import { AccountNote } from "@/components/shell/account-note";
 import { ScreenHeader } from "@/components/shell/screen";
 import { queueForCut } from "@/components/timeline/cut-view";
 import {
@@ -717,6 +718,12 @@ export function ImageEditor({
                 />
               )}
             </div>
+            {isGuest && (
+              <AccountNote className="px-3 pb-3 lg:px-6">
+                As a guest, edits download. With an account, Save keeps each
+                edit in the project as a version you can reopen.
+              </AccountNote>
+            )}
           </div>
         </div>
 

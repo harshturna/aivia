@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CharacterFilters } from "@/components/characters/filters";
+import { AccountNote } from "@/components/shell/account-note";
 import { ScreenHeader } from "@/components/shell/screen";
 import { buttonVariants } from "@/components/ui/button";
 import { getUser } from "@/lib/getUser";
@@ -42,7 +43,6 @@ export default async function CharactersPage({
   return (
     <div className="min-h-dvh">
       <ScreenHeader title="Characters">
-        {/* a guest is already told about accounts in the sidebar (TICKET-054) */}
         {!isGuest && (
           <Link
             href="/characters/new"
@@ -54,6 +54,12 @@ export default async function CharactersPage({
       </ScreenHeader>
 
       <div className="px-3 pt-4 lg:px-6">
+        {isGuest && (
+          <AccountNote className="mb-4">
+            Guests talk to the shared characters. With an account you can make
+            your own.
+          </AccountNote>
+        )}
         <CharacterFilters
           categories={categories}
           categoryId={categoryId ?? null}

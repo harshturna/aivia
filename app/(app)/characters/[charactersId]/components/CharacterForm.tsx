@@ -55,11 +55,9 @@ const formSchema = z.object({
 const CharacterForm = ({
   categories,
   initialData,
-  isGuest = true,
 }: {
   initialData: Character | null;
   categories: Category[];
-  isGuest: boolean;
 }) => {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -75,7 +73,6 @@ const CharacterForm = ({
     },
   });
   const isLoading = form.formState.isSubmitting;
-  const locked = isGuest || isLoading;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitError(null);
@@ -104,12 +101,6 @@ const CharacterForm = ({
         title={initialData ? `Edit ${initialData.name}` : "New character"}
       />
       <div className="mx-auto max-w-[560px] px-6 pb-20 pt-8">
-        {isGuest && (
-          <p className="mb-8 rounded-media border border-border bg-surface p-4 text-[13px] text-fg-2">
-            Guests can talk to the shared characters. Create an account to make
-            your own.
-          </p>
-        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -122,7 +113,7 @@ const CharacterForm = ({
                   </FormLabel>
                   <FormControl>
                     <ImageUpload
-                      disabled={locked}
+                      disabled={isLoading}
                       onChange={field.onChange}
                       value={field.value}
                     />
@@ -142,7 +133,7 @@ const CharacterForm = ({
                     </FormLabel>
                     <FormControl>
                       <Input
-                        disabled={locked}
+                        disabled={isLoading}
                         placeholder="Albert Einstein…"
                         autoComplete="off"
                         {...field}
@@ -161,7 +152,7 @@ const CharacterForm = ({
                       Category
                     </FormLabel>
                     <Select
-                      disabled={locked}
+                      disabled={isLoading}
                       onValueChange={field.onChange}
                       value={field.value}
                     >
@@ -197,7 +188,7 @@ const CharacterForm = ({
                   </FormLabel>
                   <FormControl>
                     <Input
-                      disabled={locked}
+                      disabled={isLoading}
                       placeholder="Theoretical physicist…"
                       autoComplete="off"
                       {...field}
@@ -221,7 +212,7 @@ const CharacterForm = ({
                   <FormControl>
                     <Textarea
                       rows={5}
-                      disabled={locked}
+                      disabled={isLoading}
                       placeholder="A theoretical physicist known for curiosity. Explains hard ideas with thought experiments and a dry sense of humour…"
                       {...field}
                     />
@@ -244,7 +235,7 @@ const CharacterForm = ({
                   <FormControl>
                     <Textarea
                       rows={9}
-                      disabled={locked}
+                      disabled={isLoading}
                       placeholder={SEED}
                       {...field}
                     />
@@ -260,7 +251,7 @@ const CharacterForm = ({
               <p className="text-[13px] text-poor">{submitError}</p>
             )}
             <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={locked}>
+              <Button type="submit" disabled={isLoading}>
                 {isLoading
                   ? "Saving…"
                   : initialData

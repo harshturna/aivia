@@ -174,7 +174,11 @@ export function Sidebar({
 
       <div className="mt-auto shrink-0 space-y-3">
         {!user.isPro && !rail && (
-          <CreditsMeter count={usage.count} max={usage.max} />
+          <CreditsMeter
+            count={usage.count}
+            max={usage.max}
+            isGuest={user.isGuest}
+          />
         )}
         {user.isGuest && !rail && (
           <Link

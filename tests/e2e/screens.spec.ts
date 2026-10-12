@@ -399,6 +399,8 @@ test.describe("as the guest", () => {
     });
     await expect(page.getByRole("img", { name: /^The picture/ })).toBeVisible();
     await fits(page);
+    // the guest downloads, and is told an account keeps edits (TICKET-089)
+    await expect(page.getByText("As a guest, edits download.")).toBeVisible();
     expect(await axe(page)).toEqual([]);
     // words on the picture, and the text tools, pass too
     await page.getByRole("tab", { name: "Text" }).click();
@@ -408,6 +410,18 @@ test.describe("as the guest", () => {
     ).toBeVisible();
     expect(await axe(page)).toEqual([]);
     expect(errors).toEqual([]);
+  });
+
+  test("Characters tells the guest an account can make its own", async ({
+    page,
+  }) => {
+    await page.goto("/characters", { waitUntil: "networkidle" });
+    await expect(
+      page.getByText("With an account you can make your own.")
+    ).toBeVisible();
+    await expect(
+      page.getByRole("main").getByRole("link", { name: "Create an account" })
+    ).toHaveAttribute("href", "/signup");
   });
 
   test("an old Edit address opens the picture in its project", async ({

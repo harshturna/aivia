@@ -21,6 +21,7 @@ import {
 } from "@/components/media/actions";
 import { MediaSheet } from "@/components/media/media-sheet";
 import { MediaTray } from "@/components/media/tray";
+import { AccountNote } from "@/components/shell/account-note";
 import { ProjectTabs, TABS_ROOM } from "@/components/shell/project-tabs";
 import { ScreenHeader } from "@/components/shell/screen";
 import { measure } from "@/components/studio/measure";
@@ -1192,6 +1193,12 @@ export function CutView({
                         Close
                       </Button>
                     </div>
+                    {isGuest && (
+                      <AccountNote className="mt-3">
+                        With an account, the finished cut is also saved to the
+                        project.
+                      </AccountNote>
+                    )}
                   </>
                 )}
               </div>

@@ -26,6 +26,12 @@ const ProModal = () => {
     setError(null);
     try {
       const response = await fetch("/api/stripe");
+      // the shared guest cannot subscribe (TICKET-042): say so, not "try again"
+      if (response.status === 403) {
+        setError("Pro needs an account. Create one, then upgrade.");
+        setLoading(false);
+        return;
+      }
       if (!response.ok) throw new Error("Stripe did not answer");
       const { url } = (await response.json()) as { url: string };
       window.location.href = url;
