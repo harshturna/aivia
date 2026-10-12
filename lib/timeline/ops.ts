@@ -157,6 +157,8 @@ export function addAudio(
   const key = newMediaKey(next, media.kind);
   next.media[key] = media;
   const id = newId(next, media.kind);
+  // whole milliseconds: a drop or the playhead gives fractions, the doc takes none (TICKET-085)
+  start = Math.max(0, Math.round(start));
   const wanted = Math.max(docDuration(next) - start, DEFAULTS.text);
   const duration = Math.max(
     MIN_ITEM_MS,
@@ -170,8 +172,8 @@ export function addAudio(
     start,
     duration,
     volume: 1,
-    fadeIn: Math.min(400, duration / 2),
-    fadeOut: Math.min(1200, duration / 2),
+    fadeIn: Math.min(400, Math.floor(duration / 2)),
+    fadeOut: Math.min(1200, Math.floor(duration / 2)),
   };
   track.items.push(item);
   track.items.sort((a, b) => a.start - b.start);
@@ -189,11 +191,15 @@ export function addText(
   const track = next.tracks.find((t) => t.kind === "text");
   if (!track || track.kind !== "text") return { doc, id: "" };
   const id = newId(next, "text");
+  // a card never lands on one already showing there, or it hides it whole (TICKET-085)
+  let at = Math.max(0, Math.round(start));
+  for (const card of track.items)
+    if (card.start <= at && at < endOf(card)) at = endOf(card);
   track.items.push({
     id,
     type: "text",
     text,
-    start: Math.max(0, start),
+    start: at,
     duration: DEFAULTS.text,
     fadeIn: 300,
     fadeOut: 300,

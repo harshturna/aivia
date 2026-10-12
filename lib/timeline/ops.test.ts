@@ -90,6 +90,15 @@ describe("adding", () => {
       text: "Hello",
     });
   });
+
+  it("puts a second card after the one already showing there (TICKET-085)", () => {
+    const a = addText(three(), 1000);
+    const b = addText(a.doc, 1500);
+    const first = findItem(b.doc, a.id)?.item;
+    expect(findItem(b.doc, b.id)?.item.start).toBe(
+      (first?.start ?? 0) + (first?.duration ?? 0)
+    );
+  });
 });
 
 describe("moving", () => {
