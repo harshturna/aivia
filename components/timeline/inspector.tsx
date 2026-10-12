@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { formatDuration } from "@/lib/duration";
 import { findItem, remove, setCrossfade, update } from "@/lib/timeline/ops";
 import { endOf, type TimelineDoc } from "@/lib/timeline/schema";
@@ -33,7 +34,8 @@ export function Inspector({
 }: {
   doc: TimelineDoc;
   selected: string | null;
-  onChange: (doc: TimelineDoc, commit: boolean) => void;
+  /** `key` merges consecutive commits into one undo step (typing into one card). */
+  onChange: (doc: TimelineDoc, commit: boolean, key?: string) => void;
   onDeselect: () => void;
   /** Off where the item is already named (the storyboard's sheet). */
   heading?: boolean;
@@ -110,17 +112,12 @@ export function Inspector({
 
       {item.type === "text" && (
         <>
-          <textarea
-            value={item.text}
-            onChange={(e) =>
-              onChange(update(doc, item.id, { text: e.target.value }), false)
+          <CardWords
+            key={item.id}
+            text={item.text}
+            onType={(text) =>
+              onChange(update(doc, item.id, { text }), true, `text:${item.id}`)
             }
-            onBlur={() => onChange(doc, true)}
-            rows={2}
-            name="card-words"
-            autoComplete="off"
-            aria-label="The card's words"
-            className="w-full resize-none rounded-control border border-border bg-surface px-2.5 py-1.5 text-[13px] text-fg"
           />
           <div className="flex gap-1">
             {(["title", "caption"] as const).map((p) => (
@@ -156,10 +153,14 @@ export function Inspector({
           )}
           <input
             value={item.text ?? ""}
+            // saved as it is typed, one undo step for the whole of it (TICKET-071)
             onChange={(e) =>
-              onChange(update(doc, item.id, { text: e.target.value }), false)
+              onChange(
+                update(doc, item.id, { text: e.target.value }),
+                true,
+                `words:${item.id}`
+              )
             }
-            onBlur={() => onChange(doc, true)}
             name="still-words"
             autoComplete="off"
             placeholder="Words over the picture…"
@@ -259,5 +260,38 @@ function TakeRow({ url, take }: { url: string; take: TakeUI }) {
           ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * A card's words, saved as they are typed (one undo step for the whole of it). A card is never
+ * empty, so while the box is cleared to retype, the card keeps its last words until new ones come.
+ */
+function CardWords({
+  text,
+  onType,
+}: {
+  text: string;
+  onType: (text: string) => void;
+}) {
+  const [draft, setDraft] = useState(text);
+  // an undo or another change of the card shows here
+  useEffect(() => {
+    setDraft((d) => (d.trim() && d !== text ? text : d));
+  }, [text]);
+  return (
+    <textarea
+      value={draft}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        if (e.target.value.trim()) onType(e.target.value);
+      }}
+      onBlur={() => !draft.trim() && setDraft(text)}
+      rows={2}
+      name="card-words"
+      autoComplete="off"
+      aria-label="The card's words"
+      className="w-full resize-none rounded-control border border-border bg-surface px-2.5 py-1.5 text-[13px] text-fg"
+    />
   );
 }

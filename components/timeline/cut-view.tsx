@@ -50,6 +50,7 @@ import {
 } from "@/lib/timeline/schema";
 import { cn } from "@/lib/utils";
 import { probeVideo, type Rendered, renderTimeline } from "./export";
+import { commitTo, type History, startHistory, stepIn } from "./history";
 import { Inspector, type TakeState, type TakeUI } from "./inspector";
 import { startingCut } from "./start";
 import { Storyboard } from "./storyboard";
@@ -114,6 +115,7 @@ export function CutView({
   saved: initialSaved,
   run,
   versions = NO_VERSIONS,
+  newer = false,
 }: {
   projectId: string;
   title: string;
@@ -125,14 +127,30 @@ export function CutView({
   run: string | null;
   /** The project's edited images and kept cuts, on top of the tray (TICKET-067). */
   versions?: MediaItem[];
+  /** The project's cut was saved by a newer version of the app. */
+  newer?: boolean;
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages ?? []);
   const [title, setTitle] = useState(initialTitle);
   const [doc, setDoc] = useState<TimelineDoc | null>(initialSaved?.doc ?? null);
-  const [history, setHistory] = useState<{ stack: TimelineDoc[]; at: number }>({
-    stack: initialSaved ? [initialSaved.doc] : [],
-    at: initialSaved ? 0 : -1,
-  });
+  // the cut as it is now, for work that finishes later (a probe, a take, a queued piece):
+  // it builds on this, never on the cut it started from (TICKET-071)
+  const docNow = useRef(doc);
+  const [history, setHistoryState] = useState(() =>
+    startHistory(initialSaved?.doc ?? null)
+  );
+  const historyNow = useRef(history);
+  const setHistory = useCallback((h: History<TimelineDoc>) => {
+    historyNow.current = h;
+    setHistoryState(h);
+  }, []);
+  const setCut = useCallback((next: TimelineDoc | null) => {
+    docNow.current = next;
+    setDoc(next);
+  }, []);
+  // a guest's cut is read from this browser after the first render; nothing builds on the
+  // cut until it has been
+  const [ready, setReady] = useState(!isGuest);
   const saved = useRef<{ id: string; rev: number } | null>(
     initialSaved ? { id: initialSaved.id, rev: initialSaved.rev } : null
   );
@@ -167,11 +185,12 @@ export function CutView({
       const local = listLocalEdits().find((e) => e.projectId === projectId);
       if (local) {
         saved.current = { id: local.id, rev: 0 };
-        setDoc(local.doc);
-        setHistory({ stack: [local.doc], at: 0 });
+        setCut(local.doc);
+        setHistory(startHistory(local.doc));
       }
     }
-  }, [isGuest, initialMessages, initialSaved, projectId]);
+    setReady(true);
+  }, [isGuest, initialMessages, initialSaved, projectId, setCut, setHistory]);
 
   const working = doc ?? null;
   const player = usePlayer(
@@ -196,16 +215,15 @@ export function CutView({
     player.seek(Math.min(1000, docDuration(doc) / 2));
   }, [Boolean(doc)]);
 
-  // ── saving ────────────────────────────────────────────────────────────────────────
-  const persist = useCallback(
-    async (next: TimelineDoc) => {
+  // ── saving: one request at a time; what changed meanwhile goes next (TICKET-071) ──────
+  const save = useCallback(
+    async (next: TimelineDoc, keepalive = false): Promise<boolean> => {
       if (isGuest) {
         const id = saved.current?.id ?? crypto.randomUUID();
         saved.current = { id, rev: 0 };
-        setStatus(
-          saveLocalEdit({ id, projectId, title, doc: next }) ? "saved" : "error"
-        );
-        return;
+        const ok = saveLocalEdit({ id, projectId, title, doc: next });
+        setStatus(ok ? "saved" : "error");
+        return ok;
       }
       setStatus("saving");
       try {
@@ -214,6 +232,7 @@ export function CutView({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ projectId, title, doc: next }),
+            keepalive,
           });
           if (!res.ok) throw new Error();
           const made = (await res.json()) as { id: string; rev: number };
@@ -223,20 +242,44 @@ export function CutView({
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ rev: saved.current.rev, doc: next }),
+            keepalive,
           });
           if (res.status === 409) {
             setStatus("conflict");
-            return;
+            return false;
           }
           if (!res.ok) throw new Error();
           saved.current.rev = ((await res.json()) as { rev: number }).rev;
         }
         setStatus("saved");
+        return true;
       } catch {
         setStatus("error");
+        return false;
       }
     },
     [isGuest, projectId, title]
+  );
+  const inFlight = useRef(false);
+  const queued = useRef<TimelineDoc | null>(null);
+  const persist = useCallback(
+    async (first: TimelineDoc) => {
+      if (inFlight.current) {
+        queued.current = first;
+        return;
+      }
+      inFlight.current = true;
+      let next: TimelineDoc | null = first;
+      while (next) {
+        queued.current = null;
+        // a conflict stops here: the newer cut is in another tab
+        if (!(await save(next))) break;
+        next = queued.current;
+      }
+      queued.current = null;
+      inFlight.current = false;
+    },
+    [save]
   );
 
   // saved a moment after the last change, and when the page goes away
@@ -256,43 +299,42 @@ export function CutView({
   );
   useEffect(() => {
     const flush = () => {
-      if (pending.current) void persist(pending.current);
+      window.clearTimeout(timer.current);
+      const d = pending.current ?? queued.current;
+      pending.current = null;
+      queued.current = null;
+      // keepalive lets the request finish after the page has gone
+      if (d) void save(d, true);
     };
     window.addEventListener("pagehide", flush);
     return () => window.removeEventListener("pagehide", flush);
-  }, [persist]);
+  }, [save]);
 
-  // ── editing: every landed change is one undo step ───────────────────────────────────
+  // ── editing: every landed change is one undo step; a no-op is none; typing merges ────
   const change = useCallback(
-    (next: TimelineDoc, commit: boolean) => {
-      setDoc(next);
+    (next: TimelineDoc, commit: boolean, key?: string) => {
+      setCut(next);
       if (!commit) return;
-      setHistory((h) => {
-        const stack = [...h.stack.slice(0, h.at + 1), next].slice(-100);
-        return { stack, at: stack.length - 1 };
-      });
+      const h = historyNow.current;
+      const after = commitTo(h, next, key);
+      if (after === h) return;
+      setHistory(after);
       scheduleSave(next);
     },
-    [scheduleSave]
+    [scheduleSave, setCut, setHistory]
   );
-  const undo = useCallback(() => {
-    setHistory((h) => {
-      if (h.at <= 0) return h;
-      const d = h.stack[h.at - 1];
-      setDoc(d);
-      scheduleSave(d);
-      return { ...h, at: h.at - 1 };
-    });
-  }, [scheduleSave]);
-  const redo = useCallback(() => {
-    setHistory((h) => {
-      if (h.at >= h.stack.length - 1) return h;
-      const d = h.stack[h.at + 1];
-      setDoc(d);
-      scheduleSave(d);
-      return { ...h, at: h.at + 1 };
-    });
-  }, [scheduleSave]);
+  const stepBy = useCallback(
+    (by: -1 | 1) => {
+      const r = stepIn(historyNow.current, by);
+      if (!r) return;
+      setHistory(r.history);
+      setCut(r.doc);
+      scheduleSave(r.doc);
+    },
+    [scheduleSave, setCut, setHistory]
+  );
+  const undo = useCallback(() => stepBy(-1), [stepBy]);
+  const redo = useCallback(() => stepBy(1), [stepBy]);
 
   const start = useCallback(
     async (fromRun: string | null) => {
@@ -300,8 +342,8 @@ export function CutView({
       const first = await startingCut(messages, fromRun).catch(() => null);
       setStarting(false);
       if (!first) return;
-      setDoc(first);
-      setHistory({ stack: [first], at: 0 });
+      setCut(first);
+      setHistory(startHistory(first));
       setSelected(null);
       void persist(first);
       // fit the new cut to the timeline's width
@@ -312,25 +354,34 @@ export function CutView({
         )
       );
     },
-    [messages, persist]
+    [messages, persist, setCut, setHistory]
   );
 
   // "Cut it together" on a run starts the cut when there is none yet
   const started = useRef(false);
   useEffect(() => {
-    if (started.current || doc || !messages.length) return;
+    if (started.current || doc || !messages.length || newer) return;
     if (!run && !initialSaved && !isGuest) return;
     if (isGuest && listLocalEdits().some((e) => e.projectId === projectId))
       return;
     if (!run) return;
     started.current = true;
     void start(run);
-  }, [run, doc, messages.length, start, initialSaved, isGuest, projectId]);
+  }, [
+    run,
+    doc,
+    messages.length,
+    start,
+    initialSaved,
+    isGuest,
+    projectId,
+    newer,
+  ]);
 
   const addPiece = useCallback(
     async (item: MediaItem, at?: { ms: number; row: string }) => {
-      const base = doc ?? (await startingCut([], null));
       const media = await mediaOf(item);
+      const base = docNow.current ?? (await startingCut([], null));
       let next: TimelineDoc;
       if (item.kind === "music" || item.kind === "sound") {
         next = addAudio(base, media, at?.ms ?? 0).doc;
@@ -344,13 +395,13 @@ export function CutView({
       }
       change(next, true);
     },
-    [doc, change]
+    [change]
   );
 
   // pieces sent here from the Make view
   // biome-ignore lint/correctness/useExhaustiveDependencies: once the cut is open
   useEffect(() => {
-    if (starting) return;
+    if (starting || !ready) return;
     try {
       const key = ADD_KEY(projectId);
       const list = JSON.parse(
@@ -362,7 +413,7 @@ export function CutView({
         for (const item of list) await addPiece(item);
       })();
     } catch {}
-  }, [starting, Boolean(doc)]);
+  }, [starting, ready, Boolean(doc)]);
 
   // ── the keyboard: only when focus is in the editor and not in a field ──────────────────
   const splitAtPlayhead = useCallback(() => {
@@ -422,6 +473,16 @@ export function CutView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [player, undo, redo, splitAtPlayhead, selected, doc, change]);
+
+  // a finished export's file is freed when the view goes, as on Close
+  const exportUrl = useRef<string | null>(null);
+  exportUrl.current = exporting?.at === "done" ? exporting.url : null;
+  useEffect(
+    () => () => {
+      if (exportUrl.current) URL.revokeObjectURL(exportUrl.current);
+    },
+    []
+  );
 
   // ── export ────────────────────────────────────────────────────────────────────────
   const length = doc ? docDuration(doc) : 0;
@@ -510,8 +571,6 @@ export function CutView({
   // ── New take: the piece made again from its brief, swapped in where it stands ─────────
   const proModal = userProModal();
   const [take, setTake] = useState<TakeState>({ at: "idle" });
-  const docNow = useRef(doc);
-  docNow.current = doc;
   const runTake = useCallback(
     async (url: string) => {
       if (take.at === "working") return;
@@ -642,23 +701,36 @@ export function CutView({
           {!doc ? (
             <div className="grid flex-1 place-items-center px-6 text-center">
               <div className="max-w-[420px]">
-                <p className="text-[15px]">No cut yet</p>
-                <p className="mt-1 text-[13px] text-mute">
-                  Start from what this project made: a title card, the clips
-                  with crossfades, the poster as the end card and the score
-                  underneath, all yours to change.
-                </p>
-                <Button
-                  className="mt-5"
-                  onClick={() => start(run)}
-                  disabled={starting || !groups.length}
-                >
-                  {starting ? "Laying it out…" : "Start a cut"}
-                </Button>
-                {!groups.length && (
-                  <p className="mt-3 text-[12.5px] text-mute">
-                    Make something in this project first.
-                  </p>
+                {newer ? (
+                  <>
+                    <p className="text-[15px]">
+                      This cut was made by a newer version of Aivia
+                    </p>
+                    <p className="mt-1 text-[13px] text-mute">
+                      Reload the page to open it.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[15px]">No cut yet</p>
+                    <p className="mt-1 text-[13px] text-mute">
+                      Start from what this project made: a title card, the clips
+                      with crossfades, the poster as the end card and the score
+                      underneath, all yours to change.
+                    </p>
+                    <Button
+                      className="mt-5"
+                      onClick={() => start(run)}
+                      disabled={starting || !groups.length}
+                    >
+                      {starting ? "Laying it out…" : "Start a cut"}
+                    </Button>
+                    {!groups.length && (
+                      <p className="mt-3 text-[12.5px] text-mute">
+                        Make something in this project first.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>

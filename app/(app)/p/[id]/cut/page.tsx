@@ -32,6 +32,7 @@ export default async function CutPage({ params, searchParams }: Params) {
   if (!session && !isGuest) notFound();
 
   let saved: { id: string; rev: number; doc: TimelineDoc } | null = null;
+  let newer = false;
   if (session && !isGuest) {
     const [latest] = (await listEdits(user.id, id)).filter(
       (e) => e.kind === "timeline"
@@ -40,6 +41,8 @@ export default async function CutPage({ params, searchParams }: Params) {
     const loaded = edit ? migrate(edit.doc) : null;
     if (edit && loaded?.ok && loaded.doc)
       saved = { id: edit.id, rev: edit.rev, doc: loaded.doc };
+    // made by newer code than this page: say so, rather than offer a fresh cut over it
+    else if (edit && loaded?.ok && loaded.readOnly) newer = true;
   }
 
   return (
@@ -50,6 +53,7 @@ export default async function CutPage({ params, searchParams }: Params) {
       isGuest={isGuest}
       initialMessages={session ? (session.messages as never) : null}
       saved={saved}
+      newer={newer}
       run={run && /^[\w-]{1,64}$/.test(run) ? run : null}
       versions={session ? versionItems(await listVersions(user.id, id)) : []}
     />

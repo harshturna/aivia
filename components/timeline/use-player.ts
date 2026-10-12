@@ -67,8 +67,14 @@ export function usePlayer(
 
   const mb = useRef<Mb | null>(null);
   const sinks = useRef(new Map<string, Promise<Sink | null>>());
+  const inputs = useRef<Array<{ dispose(): void }>>([]);
   const images = useRef(new Map<string, Promise<HTMLImageElement | null>>());
   const pullers = useRef(new Map<string, Puller>());
+  /** Pullers being opened: one per item, however many frames ask while its sink opens. */
+  const opening = useRef(new Map<string, Promise<Puller | null>>());
+  /** Each play has a number; a pause or a newer play makes an older one give up (TICKET-071). */
+  const session = useRef(0);
+  const starting = useRef(false);
   const audio = useRef<{
     ctx: AudioContext;
     source?: AudioBufferSourceNode;
@@ -92,6 +98,7 @@ export function usePlayer(
             source: new m.UrlSource(media.url),
             formats: m.ALL_FORMATS,
           });
+          inputs.current.push(input);
           const track = await input.getPrimaryVideoTrack();
           if (!track) return null;
           return new m.CanvasSink(track, {
@@ -145,13 +152,27 @@ export function usePlayer(
           let picture: CanvasImageSource | null = null;
           if (live) {
             active.add(layer.item.id);
-            let puller = pullers.current.get(layer.item.id);
+            const id = layer.item.id;
+            let puller = pullers.current.get(id) ?? null;
             if (!puller) {
-              const sink = await sinkFor(layer.item.media);
-              if (sink) {
-                puller = new Puller(sink, sec);
-                pullers.current.set(layer.item.id, puller);
+              let p = opening.current.get(id);
+              if (!p) {
+                const mine = session.current;
+                p = sinkFor(layer.item.media).then((sink) => {
+                  opening.current.delete(id);
+                  if (!sink) return null;
+                  const made = new Puller(sink, sec);
+                  // paused or restarted while the sink opened: nothing will read this one
+                  if (mine !== session.current) {
+                    made.stop();
+                    return null;
+                  }
+                  pullers.current.set(id, made);
+                  return made;
+                });
+                opening.current.set(id, p);
               }
+              puller = await p;
             }
             picture = puller?.at(sec) ?? null;
           } else {
@@ -188,6 +209,8 @@ export function usePlayer(
   };
 
   const pause = useCallback(() => {
+    session.current++;
+    starting.current = false;
     cancelAnimationFrame(raf.current);
     audio.current?.source?.stop();
     if (audio.current) audio.current.source = undefined;
@@ -212,25 +235,32 @@ export function usePlayer(
   const play = useCallback(async () => {
     const d = docRef.current;
     const length = docDuration(d);
-    if (length <= 0) return;
-    let from = timeRef.current >= length - 50 ? 0 : timeRef.current;
+    if (length <= 0 || starting.current) return;
+    const mine = ++session.current;
+    starting.current = true;
     audio.current ??= { ctx: new AudioContext(), startedAt: 0 };
     const a = audio.current;
     await a.ctx.resume();
-    // the cut's sound, mixed once per version of the cut
+    // the cut's sound, mixed once per version of the cut and its length; only the latest kept
     const key = JSON.stringify([
+      length,
       d.media,
       d.tracks.filter((t) => t.kind === "audio"),
     ]);
     let mix = mixes.current.get(key);
     if (!mix) {
+      mixes.current.clear();
       mix = mixAudio(d, length / 1000).catch(() => null);
       mixes.current.set(key, mix);
     }
     setLoading(true);
     const buffer = await mix;
     setLoading(false);
-    from = timeRef.current >= length - 50 ? 0 : timeRef.current;
+    // paused, or played again, while the sound was mixed
+    if (mine !== session.current) return;
+    starting.current = false;
+    a.source?.stop();
+    const from = timeRef.current >= length - 50 ? 0 : timeRef.current;
     a.startedAt = a.ctx.currentTime - from / 1000;
     if (buffer) {
       const source = a.ctx.createBufferSource();
@@ -242,6 +272,7 @@ export function usePlayer(
     setPlaying(true);
     let lastState = 0;
     const tick = () => {
+      if (mine !== session.current) return;
       const now = (a.ctx.currentTime - a.startedAt) * 1000;
       if (now >= length) {
         tell(length);
@@ -272,6 +303,7 @@ export function usePlayer(
       stopPullers();
       audio.current?.source?.stop();
       void audio.current?.ctx.close();
+      for (const input of inputs.current) input.dispose();
     },
     []
   );
@@ -293,7 +325,7 @@ export function usePlayer(
     play,
     pause,
     seek,
-    toggle: () => (playing ? pause() : void play()),
+    toggle: () => (playing || starting.current ? pause() : void play()),
     onTick,
     fontReady: () =>
       document.fonts

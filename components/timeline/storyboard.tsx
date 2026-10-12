@@ -31,7 +31,7 @@ import { clipRange, STILL_MS, setIn, setLength, setOut } from "./trim";
 const SWIPE_REMOVE_PX = 96;
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 
-type Change = (doc: TimelineDoc, commit: boolean) => void;
+type Change = (doc: TimelineDoc, commit: boolean, key?: string) => void;
 
 export function Storyboard({
   doc,
