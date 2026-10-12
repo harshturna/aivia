@@ -9,6 +9,7 @@ import {
   Maximize2,
   MessageSquarePlus,
   MoreHorizontal,
+  RefreshCw,
   RotateCcw,
   Wand2,
 } from "lucide-react";
@@ -40,6 +41,8 @@ export type MediaHandlers = {
   favourite?: (item: MediaItem) => void;
   /** Puts the piece at the end of the project's cut, starting one if there is none. */
   addToCut?: (item: MediaItem) => void;
+  /** Paid: makes the piece again from its brief (in Cut, swapped in place). */
+  newTake?: (item: MediaItem) => void;
 };
 
 const Handlers = createContext<MediaHandlers>({});
@@ -95,6 +98,15 @@ export function actionsFor(item: MediaItem, h: MediaHandlers): MediaAction[] {
       primary: false,
       run: () => h.favourite?.(item),
     };
+  const take = (primary: boolean) =>
+    !!h.newTake && {
+      id: "take",
+      label: "New take",
+      icon: RefreshCw,
+      primary,
+      cost: "1 generation",
+      run: () => h.newTake?.(item),
+    };
   const toCut = !!h.addToCut && {
     id: "cut",
     label: "Add to cut",
@@ -134,6 +146,7 @@ export function actionsFor(item: MediaItem, h: MediaHandlers): MediaAction[] {
         run: () => h.attachToBrief?.(item),
       },
       toCut,
+      take(false),
       reuse,
       download,
       fav
@@ -156,6 +169,7 @@ export function actionsFor(item: MediaItem, h: MediaHandlers): MediaAction[] {
         primary: !toCut,
         run: (video) => h.frameToBrief?.(item, video),
       },
+      take(true),
       { ...download, primary: !toCut },
       reuse,
       fav

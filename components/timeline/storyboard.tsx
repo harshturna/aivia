@@ -20,7 +20,7 @@ import {
   type Track,
 } from "@/lib/timeline/schema";
 import { cn } from "@/lib/utils";
-import { Inspector } from "./inspector";
+import { Inspector, type TakeUI } from "./inspector";
 import { clipRange, STILL_MS, setIn, setLength, setOut } from "./trim";
 
 /**
@@ -39,12 +39,14 @@ export function Storyboard({
   labelOf,
   time,
   onSeek,
+  take,
 }: {
   doc: TimelineDoc;
   onChange: Change;
   labelOf: (item: Item) => string;
   time: number;
   onSeek: (ms: number) => void;
+  take?: TakeUI;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const main = doc.tracks.find(
@@ -156,6 +158,7 @@ export function Storyboard({
               onChange={onChange}
               onSeek={onSeek}
               onClose={() => setOpen(null)}
+              take={take}
             />
           )}
         </SheetContent>
@@ -443,6 +446,7 @@ function ItemSheet({
   onChange,
   onSeek,
   onClose,
+  take,
 }: {
   doc: TimelineDoc;
   item: Item;
@@ -453,6 +457,7 @@ function ItemSheet({
   onChange: Change;
   onSeek: (ms: number) => void;
   onClose: () => void;
+  take?: TakeUI;
 }) {
   const range = item.type === "video" ? clipRange(doc, item.id) : null;
   return (
@@ -547,6 +552,7 @@ function ItemSheet({
         onChange={onChange}
         onDeselect={onClose}
         heading={false}
+        take={take}
       />
     </div>
   );

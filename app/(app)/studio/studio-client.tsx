@@ -28,6 +28,7 @@ import {
   ModeParamPills,
   type ModeParams,
 } from "@/components/studio/params";
+import { pieceRequest, takeFor } from "@/components/studio/piece-request";
 import {
   type ProjectCardData,
   ProjectGrid,
@@ -159,47 +160,6 @@ function describeFailure(error: Error, started: boolean) {
       : "The run did not start. Try again.",
     action: "retry" as const,
   };
-}
-
-/** The direct mode and parameters that make one piece of a run again. */
-function pieceRequest(part: ToolPart) {
-  const input = (part.input ?? {}) as {
-    prompt?: string;
-    amount?: number;
-    aspect?: string;
-    seconds?: number;
-  };
-  const nearest = <T extends number>(options: readonly T[], value?: number) =>
-    value === undefined
-      ? undefined
-      : options.reduce((a, b) =>
-          Math.abs(b - value) < Math.abs(a - value) ? b : a
-        );
-  const output = part.output as { prompt?: string } | undefined;
-  const prompt = output?.prompt ?? input.prompt ?? "";
-  const params: Partial<ModeParams> = {};
-  let mode: ComposerMode;
-  switch (part.type) {
-    case "tool-generate_image":
-      mode = "image";
-      params.count = (nearest([1, 2, 3, 4] as const, input.amount) ??
-        1) as ModeParams["count"];
-      if (input.aspect) params.aspect = input.aspect as ModeParams["aspect"];
-      break;
-    case "tool-generate_video":
-      mode = "video";
-      if (input.aspect)
-        params.videoAspect = input.aspect as ModeParams["videoAspect"];
-      break;
-    case "tool-generate_music":
-      mode = "music";
-      params.musicSeconds = nearest([15, 30, 60] as const, input.seconds) ?? 30;
-      break;
-    default:
-      mode = "sound";
-      params.soundSeconds = nearest([0, 2, 5, 10] as const, input.seconds) ?? 0;
-  }
-  return { prompt, mode, params };
 }
 
 /**
@@ -766,6 +726,38 @@ export function StudioClient({
         setInput(item.prompt);
         composerRef.current?.focus();
       },
+      // the piece made again, one of it, as a run of its own (TICKET-068)
+      newTake:
+        busy || limit
+          ? undefined
+          : (item) => {
+              // the piece's own shape, for a run that did not name one
+              const el = document.querySelector<
+                HTMLImageElement | HTMLVideoElement
+              >(
+                `img[src="${CSS.escape(item.url)}"], video[data-media-url="${CSS.escape(item.url)}"]`
+              );
+              const size =
+                el instanceof HTMLImageElement
+                  ? { width: el.naturalWidth, height: el.naturalHeight }
+                  : el instanceof HTMLVideoElement
+                    ? { width: el.videoWidth, height: el.videoHeight }
+                    : undefined;
+              const request = takeFor(
+                messages as unknown as Parameters<typeof takeFor>[0],
+                item.url,
+                size
+              );
+              if (!request) return;
+              const still = request.files[0];
+              void send(request.prompt, request.mode, [], {
+                params: request.params,
+                scene: request.scene,
+                ...(still
+                  ? { still: { url: still.url, mediaType: still.mediaType } }
+                  : {}),
+              });
+            },
       // the piece waits for the Cut view, which adds it as it opens (TICKET-065)
       addToCut: (item) => {
         queueForCut(id, item);
@@ -789,7 +781,7 @@ export function StudioClient({
             });
           },
     }),
-    [router, busy, limit, animate, attach, isGuest, id]
+    [router, busy, limit, animate, attach, isGuest, id, messages, send]
   );
 
   /** Shows a piece where it was made: the thread scrolls to it and marks it briefly. */

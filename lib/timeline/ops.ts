@@ -279,6 +279,49 @@ export function trimEnd(
   return hit.track.kind === "main" ? packMain(next) : next;
 }
 
+/**
+ * A new take (TICKET-068): every picture item on the piece at `oldUrl` takes the new one, its
+ * length kept where the new source allows, playing from its start. The old piece stays in the
+ * media map only while something still uses it.
+ */
+export function replaceMedia(
+  doc: TimelineDoc,
+  oldUrl: string,
+  media: Media
+): TimelineDoc {
+  const olds = Object.entries(doc.media)
+    .filter(([, m]) => m.url === oldUrl)
+    .map(([key]) => key);
+  if (!olds.length) return doc;
+  const next = clone(doc);
+  const key = newMediaKey(next, media.kind);
+  next.media[key] = media;
+  for (const track of next.tracks)
+    for (const item of track.items as Item[]) {
+      if (
+        (item.type !== "video" && item.type !== "image") ||
+        !olds.includes(item.media)
+      )
+        continue;
+      if (media.kind === "video" && item.type === "video") {
+        item.in = 0;
+        if (media.durationMs !== undefined)
+          item.duration = Math.max(
+            MIN_ITEM_MS,
+            Math.min(item.duration, media.durationMs)
+          );
+      }
+      item.media = key;
+    }
+  const used = new Set(
+    next.tracks.flatMap((t) =>
+      (t.items as Item[]).flatMap((i) => ("media" in i ? [i.media] : []))
+    )
+  );
+  for (const old of olds) if (!used.has(old)) delete next.media[old];
+  return packMain(next);
+}
+
 /** Splits an item in two at a time inside it; the second half picks up where the first ends. */
 export function split(
   doc: TimelineDoc,

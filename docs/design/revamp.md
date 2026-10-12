@@ -630,7 +630,10 @@ shot keeps its start when its in-point moves (a storyboard has no places, so no 
   project** (signed in: uploaded to storage as a cut asset; the guest downloads).
 - **New take** on a selected clip or still: the brief that made it, prefilled, in its mode;
   the result replaces the item in place on the timeline and the old one stays in the tray.
-  Through the guard, its cost on the button.
+  Through the guard, its cost on the button. Built in TICKET-068: from the inspector, the storyboard's sheet and
+  "⋯" in the tray (in Make it is the piece's own retry); a take is a run of the project through
+  the direct route, so the thread and tray keep it; it swaps into every item on the old piece as
+  one undo step; a run that named no shape keeps the piece's.
 - **Not in v1:** a second picture track, picture in picture, keyframes, speed, filters, a
   transition library, captions from speech, the agent editing the timeline, extend and fill a
   gap (second wave, once priced).

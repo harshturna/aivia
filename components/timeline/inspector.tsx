@@ -1,9 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { formatDuration } from "@/lib/duration";
 import { findItem, remove, setCrossfade, update } from "@/lib/timeline/ops";
 import { endOf, type TimelineDoc } from "@/lib/timeline/schema";
 import { cn } from "@/lib/utils";
+
+/** New take on a clip or still (TICKET-068): whether this piece can be made again, and how it went. */
+export type TakeState =
+  | { at: "idle" }
+  | { at: "working"; url: string }
+  | { at: "failed"; url: string; message: string }
+  | { at: "limit"; who: "free" | "guest" };
+export type TakeUI = {
+  canTake: (url: string) => boolean;
+  state: TakeState;
+  run: (url: string) => void;
+  onUpgrade: () => void;
+};
 
 /**
  * The selected item's few settings (D-005 §17.2, TICKET-065), at the foot of the tray: a card's
@@ -15,6 +29,7 @@ export function Inspector({
   onChange,
   onDeselect,
   heading = true,
+  take,
 }: {
   doc: TimelineDoc;
   selected: string | null;
@@ -22,6 +37,7 @@ export function Inspector({
   onDeselect: () => void;
   /** Off where the item is already named (the storyboard's sheet). */
   heading?: boolean;
+  take?: TakeUI;
 }) {
   const hit = selected ? findItem(doc, selected) : null;
   if (!hit)
@@ -179,6 +195,13 @@ export function Inspector({
         </>
       )}
 
+      {take &&
+        (item.type === "video" || item.type === "image") &&
+        doc.media[item.media] &&
+        take.canTake(doc.media[item.media].url) && (
+          <TakeRow url={doc.media[item.media].url} take={take} />
+        )}
+
       <button
         type="button"
         onClick={() => {
@@ -189,6 +212,52 @@ export function Inspector({
       >
         Remove from the cut
       </button>
+    </div>
+  );
+}
+
+/** Made again from its brief, swapped in where it stands; the old piece stays in the tray. */
+function TakeRow({ url, take }: { url: string; take: TakeUI }) {
+  const { state } = take;
+  const busy = state.at === "working";
+  return (
+    <div className="grid gap-1.5 border-t border-border pt-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <button
+          type="button"
+          disabled={busy || state.at === "limit"}
+          onClick={() => take.run(url)}
+          className="rounded-control border border-border px-2.5 py-1 text-[13px] text-fg transition-colors hover:bg-surface-2 disabled:opacity-50"
+        >
+          {busy && state.url === url ? "Making a new take…" : "New take"}
+        </button>
+        <span className="text-[12px] text-mute">Uses 1 generation</span>
+      </div>
+      <div aria-live="polite" className="text-[12.5px] text-fg-2">
+        {state.at === "failed" && state.url === url && (
+          <p role="alert">{state.message}</p>
+        )}
+        {state.at === "limit" &&
+          (state.who === "guest" ? (
+            <p>
+              The guest session has reached its limit.{" "}
+              <Link href="/signup" className="underline underline-offset-2">
+                Create an account
+              </Link>
+            </p>
+          ) : (
+            <p>
+              You have used your free generations.{" "}
+              <button
+                type="button"
+                onClick={take.onUpgrade}
+                className="underline underline-offset-2"
+              >
+                Upgrade to Pro
+              </button>
+            </p>
+          ))}
+      </div>
     </div>
   );
 }

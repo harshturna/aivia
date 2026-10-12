@@ -59,7 +59,8 @@ export function StudioDemo() {
       <p className={LEDE}>
         Aivia writes the steps before it spends a thing, then makes each piece
         in front of you. Then cut them into one film: trim, reorder, retitle,
-        and export, on a timeline at your desk or a storyboard on your phone.
+        and export, on a timeline at your desk or a storyboard on your phone. A
+        shot that is not right gets a new take, in its place.
       </p>
 
       {/* a fixed frame: the run scrolls inside it, so nothing around it grows */}

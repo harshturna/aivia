@@ -9,6 +9,7 @@ import {
   moveFree,
   moveMain,
   remove,
+  replaceMedia,
   setCrossfade,
   snap,
   snapTargets,
@@ -204,5 +205,29 @@ describe("snapping", () => {
     expect(snap(6100, targets, 40, 24)).toBe(
       Math.round(Math.round(6100 / (1000 / 24)) * (1000 / 24))
     );
+  });
+});
+
+describe("a new take", () => {
+  it("swaps the piece in place, keeping the length the new source allows", () => {
+    let d = three();
+    d = trimStart(d, main(d)[0].id, 1000);
+    const before = main(d).map((i) => i.duration);
+    const next = replaceMedia(d, "/a.mp4", clip("/a2.mp4", 3000));
+    packed(next);
+    const first = main(next)[0];
+    expect(next.media[first.media].url).toBe("/a2.mp4");
+    expect(first.type === "video" && first.in).toBe(0);
+    // 4 s was used; the new clip has 3 s
+    expect(first.duration).toBe(3000);
+    expect(
+      main(next)
+        .slice(1)
+        .map((i) => i.duration)
+    ).toEqual(before.slice(1));
+    expect(Object.values(next.media).some((m) => m.url === "/a.mp4")).toBe(
+      false
+    );
+    expect(replaceMedia(d, "/nowhere.mp4", clip("/x.mp4"))).toBe(d);
   });
 });

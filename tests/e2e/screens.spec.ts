@@ -128,6 +128,68 @@ test.describe("as the guest", () => {
     expect(errors).toEqual([]);
   });
 
+  test("New take swaps a clip in the cut (generation stubbed)", async ({
+    page,
+    viewport,
+  }) => {
+    test.skip((viewport?.width ?? 0) < 1024, "the timeline is the desktop's");
+    const sessions = (await (
+      await page.request.get("/api/sessions")
+    ).json()) as Array<{ id: string; title: string }>;
+    const forest = sessions.find((s) => s.title.startsWith("A forest"));
+    test.skip(!forest, "no forest example for the guest");
+    // no money: the direct route answers with the same clip under a new name
+    await page.route("**/api/generate", async (route) => {
+      const body = JSON.parse(route.request().postData() ?? "{}");
+      const old = body.messages?.at(-1)?.parts?.[0]?.text ?? "";
+      expect(old).not.toBe("");
+      const clip = (await (
+        await page.request.get(`/api/assets?project=${forest?.id}&kind=video`)
+      ).json()) as { items: Array<{ url: string }> };
+      const chunks = [
+        { type: "start" },
+        { type: "start-step" },
+        {
+          type: "tool-input-available",
+          toolCallId: "t",
+          toolName: "generate_video",
+          input: { prompt: "x" },
+        },
+        {
+          type: "tool-output-available",
+          toolCallId: "t",
+          output: { url: `${clip.items[0].url}#take`, prompt: "A second take" },
+        },
+        { type: "finish-step" },
+        { type: "finish" },
+      ];
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "content-type": "text/event-stream",
+          "x-vercel-ai-ui-message-stream": "v1",
+        },
+        body: `${chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join("")}data: [DONE]\n\n`,
+      });
+    });
+    await page.goto(`/p/${forest?.id}/cut`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Start a cut" }).click();
+    const clip = page
+      .locator("[data-row=main] button[aria-label*=' to ']")
+      .first();
+    await expect(clip).toBeVisible({ timeout: 30_000 });
+    await clip.click();
+    await page.getByRole("button", { name: "New take" }).click();
+    await expect(
+      page.locator("[data-row=main] button[aria-label^='A second take']")
+    ).toBeVisible({ timeout: 30_000 });
+    expect(await axe(page)).toEqual([]);
+    await page.getByRole("button", { name: /^Undo/ }).click();
+    await expect(
+      page.locator("[data-row=main] button[aria-label^='A second take']")
+    ).toHaveCount(0);
+  });
+
   test("the image editor opens on a picture, fits, passes axe", async ({
     page,
   }) => {

@@ -20,13 +20,16 @@ import {
 } from "@/components/media/actions";
 import { MediaTray } from "@/components/media/tray";
 import { ScreenHeader } from "@/components/shell/screen";
+import { takeFor } from "@/components/studio/piece-request";
 import { Button } from "@/components/ui/button";
+import { userProModal } from "@/hooks/useProModal";
 import { downloadFile, fileNameFrom } from "@/lib/download";
 import { formatDuration } from "@/lib/duration";
 import {
   getLocalSession,
   listLocalEdits,
   saveLocalEdit,
+  saveLocalSession,
 } from "@/lib/guest-local";
 import { type MediaItem, mediaByBrief, withVersions } from "@/lib/media";
 import { uploadMedia } from "@/lib/storage";
@@ -36,6 +39,7 @@ import {
   addToMain,
   findItem,
   remove,
+  replaceMedia,
   split,
 } from "@/lib/timeline/ops";
 import {
@@ -46,9 +50,10 @@ import {
 } from "@/lib/timeline/schema";
 import { cn } from "@/lib/utils";
 import { probeVideo, type Rendered, renderTimeline } from "./export";
-import { Inspector } from "./inspector";
+import { Inspector, type TakeState, type TakeUI } from "./inspector";
 import { startingCut } from "./start";
 import { Storyboard } from "./storyboard";
+import { makeTake } from "./take";
 import { Timeline } from "./timeline";
 import { usePlayer } from "./use-player";
 
@@ -502,9 +507,86 @@ export function CutView({
     };
   }, [groups, doc]);
 
+  // ── New take: the piece made again from its brief, swapped in where it stands ─────────
+  const proModal = userProModal();
+  const [take, setTake] = useState<TakeState>({ at: "idle" });
+  const docNow = useRef(doc);
+  docNow.current = doc;
+  const runTake = useCallback(
+    async (url: string) => {
+      if (take.at === "working") return;
+      // the piece's own shape, for a run that did not name one
+      const used = Object.values(docNow.current?.media ?? {}).find(
+        (m) => m.url === url
+      );
+      const size =
+        used?.kind === "video"
+          ? await probeVideo(url).catch(() => undefined)
+          : await new Promise<{ width: number; height: number } | undefined>(
+              (resolve) => {
+                const img = new Image();
+                img.onload = () =>
+                  resolve({
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                  });
+                img.onerror = () => resolve(undefined);
+                img.src = url;
+              }
+            );
+      const request = takeFor(messages as never, url, size);
+      if (!request) return;
+      setTake({ at: "working", url });
+      const r = await makeTake(projectId, messages as never, request);
+      if (!r.ok) {
+        setTake(
+          r.limit
+            ? { at: "limit", who: r.limit }
+            : { at: "failed", url, message: r.message }
+        );
+        return;
+      }
+      // the take is a run of the project: the tray shows it, the guest's copy keeps it
+      setMessages(r.messages as unknown as Message[]);
+      const local = isGuest ? getLocalSession(projectId) : null;
+      if (local)
+        saveLocalSession({
+          ...local,
+          messages: r.messages as unknown as typeof local.messages,
+        });
+      const media = await mediaOf({
+        url: r.url,
+        kind: request.mode === "video" ? "video" : "image",
+        prompt: request.prompt,
+      });
+      const current = docNow.current;
+      if (current) change(replaceMedia(current, url, media), true);
+      setTake({ at: "idle" });
+    },
+    [messages, take.at, projectId, isGuest, change]
+  );
+  const takeUI = useMemo<TakeUI>(
+    () => ({
+      canTake: (url) => Boolean(takeFor(messages as never, url)),
+      state: take,
+      run: (url) => void runTake(url),
+      onUpgrade: proModal.onOpen,
+    }),
+    [messages, take, runTake, proModal.onOpen]
+  );
+
   const handlers = useMemo<MediaHandlers>(
-    () => ({ addToCut: (item) => void addPiece(item) }),
-    [addPiece]
+    () => ({
+      addToCut: (item) => void addPiece(item),
+      newTake:
+        take.at === "working" || take.at === "limit"
+          ? undefined
+          : (item) => {
+              if (item.kind === "image" || item.kind === "video")
+                void runTake(item.url);
+            },
+    }),
+    [addPiece, runTake, take.at]
   );
 
   return (
@@ -515,23 +597,27 @@ export function CutView({
             <ProjectViews projectId={projectId} view="cut" />
             <span
               className={`whitespace-nowrap text-[12.5px] text-mute ${
-                status === "conflict" || status === "error"
+                status === "conflict" ||
+                status === "error" ||
+                take.at === "working"
                   ? "inline"
                   : "hidden xl:inline"
               }`}
               aria-live="polite"
             >
-              {status === "saving"
-                ? "Saving…"
-                : status === "saved"
-                  ? isGuest
-                    ? "Saved in this browser"
-                    : "Saved"
-                  : status === "conflict"
-                    ? "Changed in another tab. Reload to see it."
-                    : status === "error"
-                      ? "Not saved. Check the connection."
-                      : ""}
+              {take.at === "working"
+                ? "Making a new take…"
+                : status === "saving"
+                  ? "Saving…"
+                  : status === "saved"
+                    ? isGuest
+                      ? "Saved in this browser"
+                      : "Saved"
+                    : status === "conflict"
+                      ? "Changed in another tab. Reload to see it."
+                      : status === "error"
+                        ? "Not saved. Check the connection."
+                        : ""}
             </span>
             {doc && (
               <Button
@@ -711,6 +797,7 @@ export function CutView({
                   labelOf={labels}
                   time={player.time}
                   onSeek={player.seek}
+                  take={takeUI}
                 />
               </div>
             </>
@@ -733,6 +820,7 @@ export function CutView({
                   selected={selected}
                   onChange={change}
                   onDeselect={() => setSelected(null)}
+                  take={takeUI}
                 />
               ) : undefined
             }
