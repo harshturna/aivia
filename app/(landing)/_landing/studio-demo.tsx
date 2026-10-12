@@ -8,6 +8,7 @@ import { RunDemo } from "@/components/studio/run-demo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CLIPS, STILLS, TRACKS } from "@/lib/landing-media";
 import { cn } from "@/lib/utils";
+import { CutScene } from "./cut-scene";
 import { H2, LEDE, WRAP } from "./type";
 
 /**
@@ -53,14 +54,27 @@ function useFollow() {
 export function StudioDemo() {
   const { area, content } = useFollow();
   const [done, setDone] = useState(false);
+  // when the run has made everything, the frame turns to Cut, the way the project does; a
+  // viewer's own choice of view is left alone
+  const [view, setView] = useState<"make" | "cut">("make");
+  const chosen = useRef(false);
+  useEffect(() => {
+    if (chosen.current) return;
+    if (!done) {
+      setView("make");
+      return;
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = window.setTimeout(() => !chosen.current && setView("cut"), 1800);
+    return () => clearTimeout(t);
+  }, [done]);
   return (
     <section className={WRAP}>
       <h2 className={H2}>It plans the work, then does it.</h2>
       <p className={LEDE}>
         Aivia writes the steps before it spends a thing, then makes each piece
-        in front of you. Then cut them together: trim, reorder, retitle, and
-        export, on a timeline at your desk or a storyboard on your phone. A shot
-        that is not right gets a new take, in its place.
+        in front of you. Then cut them together on a timeline, or a storyboard
+        on your phone: trim, reorder, retitle, a new take of any shot, export.
       </p>
 
       {/* a fixed frame: the run scrolls inside it, so nothing around it grows */}
@@ -144,26 +158,60 @@ export function StudioDemo() {
 
           <div className="relative flex h-full min-h-0 flex-col">
             <div className="flex h-13 items-center gap-3 border-b border-border px-6 text-[15px] font-medium">
-              A forest older than memory
-              {!done && (
-                <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
+              <span className="truncate">A forest older than memory</span>
+              {/* the project's two views: the run makes, Cut puts it together (§17.10) */}
+              <fieldset className="inline-flex shrink-0 rounded-control border border-border p-0.5 text-[13px]">
+                <legend className="sr-only">Show the project's view</legend>
+                {(["make", "cut"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    aria-pressed={view === v}
+                    onClick={() => {
+                      chosen.current = true;
+                      setView(v);
+                    }}
+                    className={cn(
+                      "rounded-chip px-3 py-1 font-medium transition-colors",
+                      view === v
+                        ? "bg-surface-3 text-fg"
+                        : "text-fg-2 hover:text-fg"
+                    )}
+                  >
+                    {v === "make" ? "Make" : "Cut"}
+                  </button>
+                ))}
+              </fieldset>
+              {!done && view === "make" && (
+                <span className="inline-flex items-center gap-2 text-[12px] font-medium text-fg-2 max-sm:hidden">
                   <span className="size-1.5 rounded-full bg-sun" /> Running
                 </span>
               )}
-              <span className="ml-auto text-[13px] font-normal text-mute">
-                Rename
-              </span>
             </div>
             <div
               ref={area}
-              className="min-h-0 flex-1 overflow-hidden px-6 py-6 [mask-image:linear-gradient(to_bottom,transparent,black_28px)] md:px-10"
+              className={cn(
+                "min-h-0 flex-1 overflow-hidden px-6 py-6 [mask-image:linear-gradient(to_bottom,transparent,black_28px)] md:px-10",
+                view === "cut" && "hidden"
+              )}
             >
               <div ref={content}>
                 <RunDemo className="mx-auto max-w-[720px]" onDone={setDone} />
               </div>
             </div>
+            {view === "cut" && (
+              <div className="min-h-0 flex-1">
+                <CutScene />
+              </div>
+            )}
             {/* a picture of the composer, not a working one: out of the tab order */}
-            <div className="shrink-0 px-6 pb-5 pt-2 md:px-10" inert>
+            <div
+              className={cn(
+                "shrink-0 px-6 pb-5 pt-2 md:px-10",
+                view === "cut" && "hidden"
+              )}
+              inert
+            >
               <Composer
                 className="mx-auto max-w-[720px]"
                 onSubmit={() => {}}

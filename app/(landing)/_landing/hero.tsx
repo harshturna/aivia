@@ -924,7 +924,7 @@ export function Hero() {
                           slotRefs.current[k] = el;
                         }}
                         aria-hidden
-                        className="mx-[0.08em] inline-block h-[0.72em] rounded-t-full align-[-0.04em] opacity-0 will-change-[opacity]"
+                        className="ml-[0.08em] mr-[0.24em] inline-block h-[0.72em] rounded-t-full align-[-0.04em] opacity-0 will-change-[opacity]"
                         style={{
                           width: `${MEDIUM[k].em}em`,
                           background: MEDIUM[k].tint,
