@@ -15,14 +15,14 @@ export default async function GetStartedPage({
   searchParams: Promise<{ prompt?: string; mode?: string; send?: string }>;
 }) {
   const user = await getUser("SERVER_COMPONENT");
-  if (user) {
-    const { prompt, mode, send } = await searchParams;
-    const next = new URLSearchParams();
-    if (prompt) next.set("prompt", prompt);
-    if (mode) next.set("mode", mode);
-    if (send === "1" && prompt) next.set("send", "1");
-    const query = next.toString();
-    redirect(`/studio${query ? `?${query}` : ""}`);
-  }
-  return <GuestStart />;
+  const { prompt, mode, send } = await searchParams;
+  const next = new URLSearchParams();
+  if (prompt) next.set("prompt", prompt);
+  if (mode) next.set("mode", mode);
+  if (send === "1" && prompt) next.set("send", "1");
+  const query = next.toString();
+  const studio = `/studio${query ? `?${query}` : ""}`;
+  if (user) redirect(studio);
+  // the address comes from here, so the screen renders on the server at once (TICKET-082)
+  return <GuestStart next={studio} />;
 }
