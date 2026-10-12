@@ -229,7 +229,9 @@ export function Timeline({
     const at = zoomAround.current;
     zoomAround.current = null;
     if (el && at) el.scrollLeft = Math.max(0, at.ms * px + GUTTER - at.x);
-  }, [px]);
+    // zoomed so the whole cut fits (Fit): show it from the start
+    else if (el && length * px <= el.clientWidth - GUTTER) el.scrollLeft = 0;
+  }, [px, length]);
 
   // a newly selected piece comes into view when it is off to one side (an added piece too)
   useEffect(() => {
@@ -317,7 +319,7 @@ export function Timeline({
               className="relative flex border-b border-border/60"
               style={{ height: row.height + 12 }}
             >
-              <div className="sticky left-0 z-10 flex w-[84px] shrink-0 items-center gap-1.5 bg-bg px-3 text-[12px] text-mute">
+              <div className="sticky left-0 z-[15] flex w-[84px] shrink-0 items-center gap-1.5 bg-bg px-3 text-[12px] text-mute">
                 <row.icon className="size-3.5" />
                 {row.label}
               </div>
@@ -333,6 +335,21 @@ export function Timeline({
                         };
                   const on = selected === item.id;
                   const label = labelOf(item);
+                  const box = Math.max(6, item.duration * px);
+                  // handles shrink with a short piece, so it keeps a body to choose and move it by
+                  const grip = Math.max(3, Math.min(12, Math.floor(box / 4)));
+                  // on the free rows a shorter piece sits over a longer one, so a piece dropped
+                  // inside another never hides it whole (TICKET-086)
+                  const layer =
+                    isMain || on
+                      ? undefined
+                      : 1 +
+                        Math.min(
+                          7,
+                          ((row.track?.items ?? []) as Item[]).filter(
+                            (other) => other.duration > item.duration
+                          ).length
+                        );
                   return (
                     <div
                       key={item.id}
@@ -347,7 +364,8 @@ export function Timeline({
                       )}
                       style={{
                         left: item.start * px,
-                        width: Math.max(6, item.duration * px),
+                        width: box,
+                        zIndex: layer,
                         height: row.height,
                       }}
                     >
@@ -409,13 +427,20 @@ export function Timeline({
                               doc0: doc,
                             });
                           }}
+                          style={{ width: grip }}
                           className={cn(
-                            "absolute inset-y-0 z-10 w-3 cursor-ew-resize [touch-action:none]",
+                            "absolute inset-y-0 cursor-ew-resize [touch-action:none]",
+                            // the chosen piece's ends sit over any piece it overlaps, so choosing
+                            // a piece always lets you grab both of its ends (TICKET-086)
+                            on ? "z-[12]" : "z-10",
                             edge === "trim-start" ? "left-0" : "right-0",
                             "after:absolute after:inset-y-2 after:w-0.5 after:rounded-full after:bg-fg/0 hover:after:bg-fg/70",
-                            edge === "trim-start"
-                              ? "after:left-1"
-                              : "after:right-1",
+                            // the mark stays inside its handle, or it widens it over the body
+                            grip < 8
+                              ? "after:left-1/2 after:-translate-x-1/2"
+                              : edge === "trim-start"
+                                ? "after:left-1"
+                                : "after:right-1",
                             on && "after:bg-fg/50"
                           )}
                         />

@@ -472,8 +472,13 @@ export function CutView({
   const splitAtPlayhead = useCallback(() => {
     if (!doc) return;
     const t = player.now();
+    const chosen = selected ? findItem(doc, selected) : null;
+    // the chosen piece if the playhead is in it, else the picture under the playhead (TICKET-086)
     const target =
-      (selected && findItem(doc, selected)) ||
+      (chosen &&
+        chosen.item.start < t &&
+        chosen.item.start + chosen.item.duration > t &&
+        chosen) ||
       doc.tracks
         .flatMap((tr) =>
           (tr.items as Item[]).map((item) => ({ item, track: tr }))

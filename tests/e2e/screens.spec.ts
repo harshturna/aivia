@@ -193,6 +193,93 @@ test.describe("as the guest", () => {
     expect(await axe(page)).toEqual([]);
   });
 
+  test("zoomed out, a short still after a crossfade can be chosen, moved and trimmed at both ends", async ({
+    page,
+    viewport,
+  }) => {
+    test.skip((viewport?.width ?? 0) < 1024, "the timeline is the desktop's");
+    const sessions = (await (
+      await page.request.get("/api/sessions")
+    ).json()) as Array<{ id: string; title: string }>;
+    const forest = sessions.find((s) => s.title.startsWith("A forest"));
+    test.skip(!forest, "no forest example for the guest");
+    await page.goto(`/p/${forest?.id}/cut`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Start a cut" }).click();
+    const pieces = page.locator("[data-row=main] [data-item]");
+    await expect(pieces.nth(1)).toBeVisible({ timeout: 30_000 });
+    // trim the last still down as far as it goes, then fit the whole cut
+    const still = pieces.last();
+    const box = await still.boundingBox();
+    if (!box) throw new Error("no still");
+    await page.mouse.move(box.x + box.width - 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x - 400, box.y + box.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await page.getByRole("button", { name: "Fit" }).click();
+    // a long cut's Fit is a few dozen px a second: zoom out to there
+    for (let i = 0; i < 3; i++)
+      await page.getByRole("button", { name: "Zoom out" }).click();
+    await page.keyboard.press("Escape");
+    // every picture: a point of its own body chooses it, then both of its ends are its own
+    for (let i = 0; i < (await pieces.count()); i++) {
+      const piece = pieces.nth(i);
+      const at = await piece.evaluate((el) => {
+        const b = el.getBoundingClientRect();
+        const y = b.top + b.height / 2;
+        const body = el.querySelector("button");
+        for (let x = b.left + 1; x < b.right - 1; x++) {
+          const hit = document.elementFromPoint(x, y);
+          if (hit && body?.contains(hit)) return { x, y };
+        }
+        return null;
+      });
+      expect(at, `picture ${i + 1} has a body to choose it by`).not.toBeNull();
+      if (!at) continue;
+      await page.mouse.click(at.x, at.y);
+      const ends = await piece.evaluate((el) => {
+        const b = el.getBoundingClientRect();
+        const y = b.top + b.height / 2;
+        const own = (x: number) => {
+          const hit = document.elementFromPoint(x, y);
+          return !!hit && el.contains(hit) && hit.tagName === "SPAN";
+        };
+        return { start: own(b.left + 2), end: own(b.right - 2) };
+      });
+      expect(ends, `picture ${i + 1}'s ends once chosen`).toEqual({
+        start: true,
+        end: true,
+      });
+    }
+    // dragging the short still's body moves it; it does not stretch
+    const before = await still.getAttribute("data-item");
+    const label = await still.locator("button").getAttribute("aria-label");
+    const sb = await still.boundingBox();
+    const body = await still.evaluate((el) => {
+      const b = el.getBoundingClientRect();
+      const btn = el.querySelector("button");
+      for (let x = b.left + 1; x < b.right - 1; x++) {
+        const hit = document.elementFromPoint(x, b.top + b.height / 2);
+        if (hit && btn?.contains(hit)) return x;
+      }
+      return null;
+    });
+    if (!sb || body === null) throw new Error("no body on the short still");
+    await page.mouse.move(body, sb.y + sb.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(body - 6, sb.y + sb.height / 2, { steps: 3 });
+    await page.mouse.up();
+    const seconds = (t: string) =>
+      t.split(":").reduce((sum, part) => sum * 60 + Number(part), 0);
+    const span = (l: string | null) => {
+      const [, a, b] = l?.match(/, (\S+) to (\S+)$/) ?? [];
+      return seconds(b) - seconds(a);
+    };
+    const moved = await page
+      .locator(`[data-item="${before}"] button`)
+      .getAttribute("aria-label");
+    expect(span(moved)).toBeCloseTo(span(label), 1);
+  });
+
   test("the image editor opens on a picture, fits, passes axe", async ({
     page,
   }) => {
