@@ -140,7 +140,7 @@ if (process.env.STATES !== "0" && process.env.GUEST !== "0") {
         await shoot("cut-sheet", w, h, async () => {
           await page
             .locator("section", {
-              has: page.getByRole("heading", { name: /^Shots/ }),
+              has: page.getByRole("heading", { name: /^Picture/ }),
             })
             .getByRole("button")
             .first()
