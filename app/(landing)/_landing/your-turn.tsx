@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Composer, type ComposerMode } from "@/components/studio/composer";
 import { cn } from "@/lib/utils";
@@ -15,14 +14,14 @@ const EXAMPLES = [
 
 /** Straight after the sequence: the real composer, handing the line to the Studio. */
 export function YourTurn() {
-  const router = useRouter();
   const [mode, setMode] = useState<ComposerMode>("auto");
   const [text, setText] = useState("");
   const start = (prompt: string, m: ComposerMode) => {
     window.lynq?.track("Hero prompt");
     // send=1: the Studio sends it on arrival, as the send button promised (TICKET-055)
     const params = new URLSearchParams({ prompt, mode: m, send: "1" });
-    router.push(`/get-started?${params.toString()}`);
+    // a full navigation through /start: one loading state into the Studio (TICKET-083)
+    window.location.assign(`/start?${params.toString()}`);
   };
   return (
     // above the hero's pinned stage, which it overlaps as the stage lets go

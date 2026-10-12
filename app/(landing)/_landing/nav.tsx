@@ -48,13 +48,14 @@ export function LandingNav() {
           >
             Sign in
           </Link>
-          <Link
-            href="/get-started"
+          {/* a full navigation through /start: one loading state into the Studio (TICKET-083) */}
+          <a
+            href="/start"
             className={buttonVariants({ size: "sm" })}
             onClick={() => window.lynq?.track("Start making")}
           >
             Start making
-          </Link>
+          </a>
         </div>
       </nav>
     </header>

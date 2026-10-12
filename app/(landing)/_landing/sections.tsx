@@ -119,12 +119,12 @@ export function Close({
           Five free generations to start. Pro is $20 a month, for when one
           sentence turns into a habit.
         </p>
-        <Link
-          href="/get-started"
+        <a
+          href="/start"
           className={cn(buttonVariants({ size: "lg" }), "mt-10")}
         >
           Start making
-        </Link>
+        </a>
       </div>
     </section>
   );
@@ -134,7 +134,7 @@ export function Close({
 // the app's pages ask a signed-out visitor to sign in; the Studio goes through the guest
 // start instead (TICKET-055)
 const FOOTER_LINKS: Array<[string, string]> = [
-  ["Studio", "/get-started"],
+  ["Studio", "/start"],
   ["Pricing", "#pricing"],
   ["Sign in", "/login"],
   ["Create account", "/signup"],
