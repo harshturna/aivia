@@ -231,3 +231,18 @@ describe("a new take", () => {
     expect(replaceMedia(d, "/nowhere.mp4", clip("/x.mp4"))).toBe(d);
   });
 });
+
+describe("a short piece after a crossfade (TICKET-084)", () => {
+  it("never sits wholly inside its neighbour, so both keep their own ends", () => {
+    let d = emptyDoc();
+    d = addToMain(d, clip("/a.mp4", 5000)).doc;
+    d = addToMain(d, still("/b.jpg")).doc;
+    // the still trimmed to 800 ms; the crossfade asks for 500, half the still is 400
+    d = trimEnd(d, main(d)[1].id, 800 - main(d)[1].duration);
+    const [a, b] = main(d);
+    expect(b.duration).toBe(800);
+    // the overlap is at most half the still, so the still ends after the clip does
+    expect(a.start + a.duration - b.start).toBe(400);
+    expect(b.start + b.duration).toBeGreaterThan(a.start + a.duration);
+  });
+});

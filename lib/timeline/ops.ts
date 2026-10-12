@@ -77,10 +77,12 @@ export function packMain(doc: TimelineDoc): TimelineDoc {
     if (i === 0) {
       delete item.transitionIn;
     } else {
+      // a crossfade takes at most half of either piece, so a short piece never sits wholly
+      // inside its neighbour and both pieces keep edges of their own to trim by (TICKET-084)
       const x = Math.min(
         item.transitionIn?.duration ?? 0,
-        item.duration,
-        main.items[i - 1].duration
+        Math.floor(item.duration / 2),
+        Math.floor(main.items[i - 1].duration / 2)
       );
       t -= x;
     }
