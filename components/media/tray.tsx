@@ -3,6 +3,7 @@
 import { Check, Music, PanelRightClose, Play } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useFinePointer } from "@/hooks/use-fine-pointer";
 import { downloadFile, fileNameFrom } from "@/lib/download";
 import type { MediaItem, MediaKind } from "@/lib/media";
 import { cn } from "@/lib/utils";
@@ -42,10 +43,12 @@ function Piece({
   const item = useIndexed(base);
   const actions = actionsFor(item, useMediaHandlers());
   const audio = item.kind === "music" || item.kind === "sound";
+  // dragging is a mouse's gesture: on touch a long press would start the system's drag
+  const fine = useFinePointer();
   return (
     <li
-      className={cn("group relative", audio && "col-span-3")}
-      draggable
+      className={cn("group relative", audio && "col-span-full")}
+      draggable={fine}
       onDragStart={(event) => {
         event.dataTransfer.setData(MEDIA_DRAG, JSON.stringify(item));
         event.dataTransfer.effectAllowed = "copy";
@@ -116,6 +119,7 @@ export function MediaTray({
   libraryHref,
   footer,
   hint = "Drag a piece into the brief to use it. ⌘-click to select.",
+  columns = 3,
 }: {
   groups: Group[];
   /** Show the piece where it was made. */
@@ -127,6 +131,8 @@ export function MediaTray({
   footer?: React.ReactNode;
   /** What the tray's foot says a piece can be dragged into. */
   hint?: string;
+  /** Three in the side tray, two in a phone's sheet (§17.4). */
+  columns?: 2 | 3;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -174,7 +180,7 @@ export function MediaTray({
             onClick={() => setFilter(id)}
             aria-pressed={filter === id}
             className={cn(
-              "h-7 rounded-full px-2.5 text-[12.5px] font-medium transition-colors",
+              "h-7 pointer-coarse:h-11 rounded-full px-2.5 text-[12.5px] font-medium transition-colors",
               filter === id ? "bg-surface-3 text-fg" : "text-fg-2 hover:text-fg"
             )}
           >
@@ -198,7 +204,12 @@ export function MediaTray({
               >
                 {g.brief || "A brief"}
               </h3>
-              <ul className="grid grid-cols-3 gap-1.5">
+              <ul
+                className={cn(
+                  "grid gap-1.5",
+                  columns === 2 ? "grid-cols-2" : "grid-cols-3"
+                )}
+              >
                 {g.items.map((item) => (
                   <Piece
                     key={item.url}

@@ -209,6 +209,7 @@ function ClipOutput({
           item={{ url, kind: "video", prompt }}
           label={prompt || "the clip"}
           video={() => video.current}
+          touchMenu
         />
       </div>
       <Caption prompt={prompt} />

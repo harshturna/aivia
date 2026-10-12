@@ -605,6 +605,12 @@ timeline**: the player, then the shots in order (a handle to reorder, swipe to r
 a sheet with trim handles on that clip and its crossfade), the score as one row, Export. No
 multi-track timeline below 1024.
 
+Built in TICKET-076: the tab bar shows below 640 in Make and below 1024 in Cut (where the header's
+Make | Cut switch steps aside); Media is a sheet from the foot with the tray in two columns, and a
+tap on a piece opens it there with all its actions (and in Make "Show where it was made"): that
+is the action sheet, so no long press is needed. A clip in the thread shows its "⋯" on touch, not
+its one-tap buttons. Pieces drag only with a mouse. Controls are 44 px under a finger.
+
 Built in TICKET-066: the sheet leaves the stage unscrimmed, so a trim shows its new first or
 last frame there; Move earlier and Move later in the sheet are the tap and keyboard path for
 the handle, and Remove for the swipe; a still's trim is its length (1 to 10 s); the opening

@@ -12,7 +12,9 @@ import {
   type MediaIndex,
   MediaIndexProvider,
 } from "@/components/media/actions";
+import { MediaSheet } from "@/components/media/media-sheet";
 import { MEDIA_DRAG, MediaTray } from "@/components/media/tray";
+import { ProjectTabs } from "@/components/shell/project-tabs";
 import { ScreenHeader } from "@/components/shell/screen";
 import { StudioActionsProvider } from "@/components/studio/actions";
 import {
@@ -37,7 +39,6 @@ import {
 import { Run } from "@/components/studio/run";
 import { ProjectViews, queueForCut } from "@/components/timeline/cut-view";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { userProModal } from "@/hooks/useProModal";
 import { ANIMATE_BRIEF, aspectOfSize } from "@/lib/ai/direct";
 import {
@@ -178,6 +179,19 @@ function sentWith(message: UIMessage): Sent {
  * composer floating at the foot. The chat id is the session id; the agent route saves it.
  */
 const NO_VERSIONS: MediaItem[] = [];
+
+/** Whether the window is 1024 px or wider, where the tray sits beside the thread. */
+function useWide() {
+  const [wide, setWide] = useState(true);
+  useEffect(() => {
+    const q = window.matchMedia("(min-width: 1024px)");
+    setWide(q.matches);
+    const on = () => setWide(q.matches);
+    q.addEventListener("change", on);
+    return () => q.removeEventListener("change", on);
+  }, []);
+  return wide;
+}
 
 export function StudioClient({
   id,
@@ -625,6 +639,7 @@ export function StudioClient({
   // ── the project's media (D-005 §17.2, TICKET-063) ──────────────────────────────────
   const [tray, setTray] = useState(initialTray);
   const [traySheet, setTraySheet] = useState(false);
+  const wide = useWide();
   const groups = useMemo(
     () =>
       withVersions(
@@ -932,7 +947,14 @@ export function StudioClient({
                       />
                     }
                     beside={
-                      !empty && <ProjectViews projectId={id} view="make" />
+                      !empty && (
+                        // a phone has the tabs at its foot instead
+                        <ProjectViews
+                          projectId={id}
+                          view="make"
+                          className="max-sm:hidden"
+                        />
+                      )
                     }
                   >
                     {busy && (
@@ -946,10 +968,13 @@ export function StudioClient({
                       <button
                         type="button"
                         onClick={toggleTray}
-                        aria-label={tray ? "Hide the media" : "Show the media"}
+                        // below 1024 it always opens the sheet, whatever the tray was left as
+                        aria-label={
+                          tray && wide ? "Hide the media" : "Show the media"
+                        }
                         aria-keyshortcuts="Meta+."
                         className={cn(
-                          "inline-flex h-8 items-center gap-1.5 rounded-control px-2 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg",
+                          "inline-flex h-8 items-center gap-1.5 rounded-control px-2 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg max-sm:hidden",
                           tray && "lg:hidden"
                         )}
                       >
@@ -1075,7 +1100,13 @@ export function StudioClient({
                         {/* outside the list, so it adds no gap of its own */}
                         <div ref={bottomRef} className="scroll-mb-48" />
                       </div>
-                      <div className="pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_calc(100%-2.5rem),transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto">
+                      <div
+                        className={cn(
+                          "pointer-events-none sticky bottom-0 z-10 bg-[linear-gradient(to_top,var(--color-bg)_calc(100%-2.5rem),transparent)] px-6 pb-4 pt-10 [&>*]:pointer-events-auto",
+                          // above the phone's tabs
+                          "max-sm:pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
+                        )}
+                      >
                         <m.div
                           layoutId="composer"
                           className="mx-auto max-w-[760px]"
@@ -1101,22 +1132,25 @@ export function StudioClient({
                     />
                   </aside>
                 )}
+                {/* below 1024 the media is a sheet from the foot, two columns (§17.4) */}
                 {!empty && (
-                  <Sheet open={traySheet} onOpenChange={setTraySheet}>
-                    <SheetContent
-                      side="right"
-                      className="w-[min(340px,92vw)] p-0"
-                    >
-                      <SheetTitle className="sr-only">Media</SheetTitle>
-                      <MediaTray
-                        groups={groups}
-                        onOpen={openInThread}
-                        libraryHref={
-                          localKey === null ? `/library?project=${id}` : null
-                        }
-                      />
-                    </SheetContent>
-                  </Sheet>
+                  <MediaSheet
+                    open={traySheet}
+                    onOpenChange={setTraySheet}
+                    groups={groups}
+                    onShow={openInThread}
+                    libraryHref={
+                      localKey === null ? `/library?project=${id}` : null
+                    }
+                  />
+                )}
+                {!empty && (
+                  <ProjectTabs
+                    projectId={id}
+                    view="make"
+                    below="sm"
+                    onMedia={() => setTraySheet(true)}
+                  />
                 )}
                 {dragging && (
                   <div className="pointer-events-none absolute inset-3 z-30 grid place-items-center rounded-window border border-dashed border-border-strong bg-bg/80 backdrop-blur-sm">

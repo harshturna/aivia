@@ -29,7 +29,7 @@
   --color-warn: #e0b15a;
   --color-poor: #f2756b;
   --color-scrim: rgb(0 0 0 / 0.6);
-  --color-glass: rgb(14 14 13 / 0.72);
+  --color-glass: rgb(14 14 13 / 0.9);
   --color-transparent: transparent;
   --color-current: currentColor;
 
@@ -111,7 +111,7 @@
   --color-mute: #8e9984;
   --color-faint: #4c5a4f;
   --color-scrim: rgb(5 10 8 / 0.6);
-  --color-glass: rgb(11 20 16 / 0.72);
+  --color-glass: rgb(11 20 16 / 0.9);
   --color-background: var(--color-bg);
   --color-card: var(--color-surface);
   --color-popover: var(--color-surface-2);

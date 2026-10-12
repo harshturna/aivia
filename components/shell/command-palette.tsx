@@ -177,7 +177,7 @@ function Palette({ onClose }: { onClose: () => void }) {
         id: "new",
         label: "New project",
         hint: (
-          <span className="flex gap-0.5">
+          <span className="flex gap-0.5 pointer-coarse:hidden">
             <Kbd>⌘</Kbd>
             <Kbd>⇧</Kbd>
             <Kbd>O</Kbd>
@@ -310,7 +310,7 @@ function Palette({ onClose }: { onClose: () => void }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Search projects, what you made, or type a command…"
+          placeholder="Search or type a command…"
           aria-label="Search and commands"
           aria-controls="palette-list"
           aria-activedescendant={

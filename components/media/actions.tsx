@@ -244,11 +244,17 @@ export function HoverActions({
   label,
   shown = false,
   video,
+  touchMenu = false,
 }: {
   item: MediaItem;
   label: string;
   shown?: boolean;
   video?: () => HTMLVideoElement | null;
+  /**
+   * On a touch screen, always show the "⋯" (and no one-tap buttons): for a clip, whose taps
+   * belong to its own controls (TICKET-076).
+   */
+  touchMenu?: boolean;
 }) {
   const actions = actionsFor(useIndexed(item), useMediaHandlers());
   if (!actions.length) return null;
@@ -256,7 +262,11 @@ export function HoverActions({
   return (
     <div
       data-shown={shown}
-      className="pointer-events-none absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100 data-[shown=true]:pointer-events-auto data-[shown=true]:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100"
+      className={cn(
+        "pointer-events-none absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100 data-[shown=true]:pointer-events-auto data-[shown=true]:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100",
+        touchMenu &&
+          "[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100"
+      )}
     >
       {primary.map((a) => (
         <button
@@ -268,7 +278,7 @@ export function HoverActions({
           }}
           aria-label={`${a.label}${a.cost ? ` (${a.cost})` : ""}: ${label}`}
           title={a.cost ? `${a.label}, ${a.cost}` : a.label}
-          className={ICON}
+          className={cn(ICON, touchMenu && "[@media(hover:none)]:hidden")}
         >
           <a.icon />
         </button>

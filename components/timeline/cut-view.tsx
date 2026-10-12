@@ -18,7 +18,9 @@ import {
   type MediaHandlers,
   MediaHandlersProvider,
 } from "@/components/media/actions";
+import { MediaSheet } from "@/components/media/media-sheet";
 import { MediaTray } from "@/components/media/tray";
+import { ProjectTabs, TABS_ROOM } from "@/components/shell/project-tabs";
 import { ScreenHeader } from "@/components/shell/screen";
 import { measure } from "@/components/studio/measure";
 import { takeFor } from "@/components/studio/piece-request";
@@ -175,6 +177,7 @@ export function CutView({
   >("idle");
   const [starting, setStarting] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [mediaOpen, setMediaOpen] = useState(false);
   const [pxPerSec, setPxPerSec] = useState(60);
   // Fit fills the timeline's real width, measured (TICKET-074)
   const lane = useRef<HTMLDivElement>(null);
@@ -716,15 +719,23 @@ export function CutView({
         <div className="flex min-w-0 flex-1 flex-col">
           <ScreenHeader
             title={title}
-            beside={<ProjectViews projectId={projectId} view="cut" />}
+            beside={
+              // below 1024 the tabs at the foot do this
+              <ProjectViews
+                projectId={projectId}
+                view="cut"
+                className="max-lg:hidden"
+              />
+            }
           >
             <span
               className={`whitespace-nowrap text-[12.5px] text-mute ${
-                status === "conflict" ||
-                status === "error" ||
-                take.at === "working"
+                status === "conflict" || status === "error"
                   ? "inline"
-                  : "hidden xl:inline"
+                  : take.at === "working"
+                    ? // on a phone the sheet says so, and the title keeps its room
+                      "hidden sm:inline"
+                    : "hidden xl:inline"
               }`}
               aria-live="polite"
             >
@@ -745,6 +756,7 @@ export function CutView({
             {doc && (
               <Button
                 size="sm"
+                className="pointer-coarse:h-11"
                 onClick={exportCut}
                 disabled={
                   length <= 0 ||
@@ -940,7 +952,12 @@ export function CutView({
                 />
               </div>
               {/* the storyboard: phones and narrow windows (§17.4) */}
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-border lg:hidden">
+              <div
+                className={cn(
+                  "min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-border lg:hidden",
+                  TABS_ROOM
+                )}
+              >
                 <Storyboard
                   doc={doc}
                   onChange={change}
@@ -948,12 +965,25 @@ export function CutView({
                   time={player.time}
                   onSeek={player.seek}
                   take={takeUI}
+                  onUndo={undo}
                 />
               </div>
             </>
           )}
         </div>
 
+        {/* below 1024: the tabs at the foot, and the media as a sheet (§17.4) */}
+        <MediaSheet
+          open={mediaOpen}
+          onOpenChange={setMediaOpen}
+          groups={groups}
+        />
+        <ProjectTabs
+          projectId={projectId}
+          view="cut"
+          below="lg"
+          onMedia={() => setMediaOpen(true)}
+        />
         <aside
           aria-label="Media"
           className="hidden h-dvh w-[300px] shrink-0 border-l border-border bg-bg lg:block"
@@ -1112,7 +1142,7 @@ function IconButton({
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className="grid size-8 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-40 [&_svg]:size-4"
+      className="grid size-8 pointer-coarse:size-11 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-40 [&_svg]:size-4"
     >
       {children}
     </button>
@@ -1123,14 +1153,19 @@ function IconButton({
 export function ProjectViews({
   projectId,
   view,
+  className,
 }: {
   projectId: string;
   view: "make" | "cut";
+  className?: string;
 }) {
   return (
     <nav
       aria-label="Project"
-      className="inline-flex rounded-control border border-border p-0.5 text-[13px] font-medium"
+      className={cn(
+        "inline-flex rounded-control border border-border p-0.5 text-[13px] font-medium",
+        className
+      )}
     >
       {(
         [
@@ -1143,7 +1178,7 @@ export function ProjectViews({
           href={href}
           aria-current={view === id ? "page" : undefined}
           className={cn(
-            "rounded-chip px-3 py-1 transition-colors",
+            "rounded-chip px-3 py-1 pointer-coarse:py-2.5 transition-colors",
             view === id ? "bg-surface-3 text-fg" : "text-fg-2 hover:text-fg"
           )}
         >

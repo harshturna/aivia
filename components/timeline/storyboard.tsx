@@ -40,6 +40,7 @@ export function Storyboard({
   time,
   onSeek,
   take,
+  onUndo,
 }: {
   doc: TimelineDoc;
   onChange: Change;
@@ -47,8 +48,17 @@ export function Storyboard({
   time: number;
   onSeek: (ms: number) => void;
   take?: TakeUI;
+  /** A swipe removes a shot; the bar it leaves undoes it (TICKET-076). */
+  onUndo?: () => void;
 }) {
   const [open, setOpen] = useState<string | null>(null);
+  const [removed, setRemoved] = useState(false);
+  const removedTimer = useRef(0);
+  const announceRemoved = () => {
+    setRemoved(true);
+    window.clearTimeout(removedTimer.current);
+    removedTimer.current = window.setTimeout(() => setRemoved(false), 5000);
+  };
   const main = doc.tracks.find(
     (t): t is Extract<Track, { kind: "main" }> => t.kind === "main"
   );
@@ -69,6 +79,7 @@ export function Storyboard({
           shots={shots}
           labelOf={labelOf}
           onChange={onChange}
+          onRemoved={announceRemoved}
           onOpen={(id) => {
             const item = shots.find((s) => s.id === id);
             if (item) onSeek(item.start + Math.min(500, item.duration / 2));
@@ -105,7 +116,7 @@ export function Storyboard({
             onChange(r.doc, true);
             setOpen(r.id);
           }}
-          className="flex h-9 items-center gap-2 justify-self-start rounded-control px-2 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
+          className="flex h-9 pointer-coarse:h-11 items-center gap-2 justify-self-start rounded-control px-2 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
         >
           <Plus className="size-4" /> Add a text card at{" "}
           {formatDuration(time / 1000)}
@@ -133,6 +144,26 @@ export function Storyboard({
             ))}
           </ul>
         </Section>
+      )}
+
+      {/* what a swipe did, and the way back, where the thumb is */}
+      {removed && onUndo && (
+        <div
+          role="status"
+          className="fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex items-center justify-between rounded-control border border-border bg-surface-2 py-1 pr-1 pl-3 text-[13px] shadow-float lg:hidden"
+        >
+          Removed
+          <button
+            type="button"
+            onClick={() => {
+              onUndo();
+              setRemoved(false);
+            }}
+            className="min-h-11 rounded-control px-3 font-medium text-fg"
+          >
+            Undo
+          </button>
+        </div>
       )}
 
       <Sheet
@@ -224,12 +255,14 @@ function Shots({
   labelOf,
   onChange,
   onOpen,
+  onRemoved,
 }: {
   doc: TimelineDoc;
   shots: Extract<Track, { kind: "main" }>["items"];
   labelOf: (item: Item) => string;
   onChange: Change;
   onOpen: (id: string) => void;
+  onRemoved: () => void;
 }) {
   const [drag, setDrag] = useState<{
     id: string;
@@ -362,8 +395,10 @@ function Shots({
                   if (swipe?.id !== item.id) return;
                   if (swipe.on) {
                     swiped.current = true;
-                    if (swipe.dx < -SWIPE_REMOVE_PX)
+                    if (swipe.dx < -SWIPE_REMOVE_PX) {
                       onChange(remove(doc, item.id), true);
+                      onRemoved();
+                    }
                   }
                   setSwipe(null);
                 }}
@@ -531,7 +566,7 @@ function ItemSheet({
             type="button"
             disabled={index === 0}
             onClick={() => onChange(moveMain(doc, item.id, index - 1), true)}
-            className="flex h-9 items-center gap-1.5 rounded-control border border-border px-3 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-40"
+            className="flex h-9 pointer-coarse:h-11 items-center gap-1.5 rounded-control border border-border px-3 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-40"
           >
             <ArrowUp className="size-4" /> Move earlier
           </button>
@@ -539,7 +574,7 @@ function ItemSheet({
             type="button"
             disabled={index >= shotCount - 1}
             onClick={() => onChange(moveMain(doc, item.id, index + 1), true)}
-            className="flex h-9 items-center gap-1.5 rounded-control border border-border px-3 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-40"
+            className="flex h-9 pointer-coarse:h-11 items-center gap-1.5 rounded-control border border-border px-3 text-[13px] text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-40"
           >
             <ArrowDown className="size-4" /> Move later
           </button>
@@ -597,7 +632,7 @@ function TrimBar({
         aria-valuemax={source}
         aria-valuenow={value}
         aria-valuetext={seconds(value)}
-        className="absolute top-1/2 z-10 grid h-11 w-6 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none place-items-center"
+        className="absolute top-1/2 z-10 grid h-11 w-6 pointer-coarse:w-10 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none place-items-center"
         style={{ left: pct(value) }}
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);

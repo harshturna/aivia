@@ -24,7 +24,7 @@ const Pill = React.forwardRef<HTMLButtonElement, PillProps>(
           : (props["aria-pressed"] ?? (on ? true : undefined))
       }
       className={cn(
-        "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-medium leading-none transition-colors duration-150 disabled:opacity-40 [&_svg]:size-3.5",
+        "inline-flex h-7 shrink-0 pointer-coarse:min-h-11 items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-medium leading-none transition-colors duration-150 disabled:opacity-40 [&_svg]:size-3.5",
         on
           ? "border-transparent bg-surface-3 text-fg"
           : "border-border bg-transparent text-fg-2 hover:border-border-strong hover:text-fg",

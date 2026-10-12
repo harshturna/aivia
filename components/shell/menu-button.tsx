@@ -18,7 +18,7 @@ export function MenuButton() {
       type="button"
       onClick={open}
       aria-label="Open the menu"
-      className="-ml-1 grid size-9 shrink-0 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg lg:hidden"
+      className="-ml-1 grid size-9 pointer-coarse:size-11 shrink-0 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg lg:hidden"
     >
       <Menu className="size-5" />
     </button>

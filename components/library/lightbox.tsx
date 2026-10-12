@@ -61,6 +61,7 @@ export function Lightbox({
     next: initialNext,
   });
   const { asset, prev, next } = view;
+  const swipeFrom = useRef<{ x: number; y: number } | null>(null);
   const known = useRef(new Map<string, View>());
   const [favorite, setFavorite] = useState(asset.favorite);
   const [confirming, setConfirming] = useState(false);
@@ -223,7 +224,25 @@ export function Lightbox({
         modal ? "h-full" : "h-dvh"
       )}
     >
-      <div className="relative flex min-h-0 items-center justify-center p-4 lg:p-10">
+      <div
+        className="relative flex min-h-0 items-center justify-center p-4 lg:p-10"
+        onPointerDown={(event) => {
+          if (event.pointerType !== "touch") return;
+          swipeFrom.current = { x: event.clientX, y: event.clientY };
+        }}
+        onPointerUp={(event) => {
+          const from = swipeFrom.current;
+          swipeFrom.current = null;
+          if (!from || event.pointerType !== "touch") return;
+          const dx = event.clientX - from.x;
+          // a sideways swipe, not a scroll: next to the left, previous to the right
+          if (
+            Math.abs(dx) > 60 &&
+            Math.abs(dx) > 2 * Math.abs(event.clientY - from.y)
+          )
+            void go(dx < 0 ? next : prev);
+        }}
+      >
         {prev && (
           <button
             type="button"

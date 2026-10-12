@@ -756,7 +756,7 @@ function IconButton({
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className="grid size-8 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-40 [&_svg]:size-4"
+      className="grid size-8 pointer-coarse:size-11 place-items-center rounded-control text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg disabled:opacity-40 [&_svg]:size-4"
     >
       {children}
     </button>
@@ -1012,7 +1012,7 @@ function TextPanel({
                 title={s.name}
                 onClick={() => set({ color: s.hex })}
                 className={cn(
-                  "size-7 rounded-full border border-border-strong outline-offset-2",
+                  "size-7 pointer-coarse:size-11 rounded-full border border-border-strong outline-offset-2",
                   selected.color.toLowerCase() === s.hex.toLowerCase() &&
                     "outline-2 outline-fg"
                 )}
