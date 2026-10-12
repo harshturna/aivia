@@ -36,9 +36,12 @@ export default async function EditPage({ params, searchParams }: Params) {
   let source: { url: string; assetId?: string; prompt: string } | null = null;
   let initialDoc: ImageEdit | null = null;
   const storage = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const editable = (u: string) => isEditableUrl(u, storage, origin);
   if (/^[\w-]{1,64}$/.test(src)) {
     const asset = await getAsset(user.id, src);
-    if (asset?.kind === "image") {
+    if (asset?.kind === "image" && editable(asset.url)) {
       source = { url: asset.url, assetId: asset.id, prompt: asset.prompt };
       // a saved version opens on its steps, so it can be changed rather than redone
       const editId = (asset.params as { edit?: unknown } | null)?.edit;
@@ -46,7 +49,7 @@ export default async function EditPage({ params, searchParams }: Params) {
         const edit = await getEdit(user.id, editId);
         const parsed =
           edit?.kind === "image" ? imageEditSchema.safeParse(edit.doc) : null;
-        if (parsed?.success) {
+        if (parsed?.success && editable(parsed.data.source.url)) {
           initialDoc = parsed.data;
           const parent = parsed.data.source.assetId
             ? await getAsset(user.id, parsed.data.source.assetId)
@@ -59,13 +62,9 @@ export default async function EditPage({ params, searchParams }: Params) {
         }
       }
     }
-  } else if (isEditableUrl(src, storage)) {
+  } else if (editable(src)) {
     // the site's own pictures travel as full addresses, for the AI tools to fetch
-    const h = await headers();
-    const url = src.startsWith("/")
-      ? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}${src}`
-      : src;
-    source = { url, prompt: "" };
+    source = { url: src.startsWith("/") ? `${origin}${src}` : src, prompt: "" };
   }
   if (!source) redirect(`/p/${id}`);
 

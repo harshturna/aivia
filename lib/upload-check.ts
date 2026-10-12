@@ -4,6 +4,21 @@
  * its first bytes are the kind of file its name says.
  */
 export const BUCKET = "media";
+/** Files (exported cuts, edited images) one account keeps (TICKET-079). */
+export const MAX_KEPT = 500;
+
+/** The path inside our bucket of a public address of ours, or null. */
+export function storagePath(base: string, url: string): string | null {
+  const prefix = `${base.replace(/\/$/, "")}/storage/v1/object/public/${BUCKET}/`;
+  try {
+    const href = new URL(url).href;
+    return href.startsWith(prefix)
+      ? decodeURIComponent(href.slice(prefix.length))
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 export const UPLOAD_TYPES = {
   mp4: "video/mp4",

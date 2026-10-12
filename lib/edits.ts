@@ -15,6 +15,13 @@ import type { TimelineDoc } from "@/lib/timeline/schema";
 
 /** A saved cut is small (thirty items is about 15 KB); this keeps it that way. */
 export const MAX_DOC_BYTES = 200 * 1024;
+/** Edits one account holds (TICKET-079): far past real use, short of a flood. */
+export const MAX_EDITS = 500;
+
+/** Whether an account has room for another edit. */
+export async function hasRoomForEdit(userId: string) {
+  return (await prismadb.edit.count({ where: { userId } })) < MAX_EDITS;
+}
 
 export type EditSummary = Pick<
   Edit,

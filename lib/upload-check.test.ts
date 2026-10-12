@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkPath, sniff } from "./upload-check";
+import { checkPath, sniff, storagePath } from "./upload-check";
 
 const me = "1b2c3d4e-0000-4000-8000-000000000001";
 const file = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
@@ -35,5 +35,21 @@ describe("sniff", () => {
   it("names nothing it does not know", () => {
     expect(sniff(bytes(...text("<html>")))).toBeNull();
     expect(sniff(new Uint8Array())).toBeNull();
+  });
+
+  it("finds the path of our own stored file, and nothing else", () => {
+    const base = "https://abc.supabase.co";
+    const u = "11111111-1111-4111-8111-111111111111";
+    const f = "22222222-2222-4222-8222-222222222222";
+    expect(
+      storagePath(base, `${base}/storage/v1/object/public/media/${u}/${f}.jpg`)
+    ).toBe(`${u}/${f}.jpg`);
+    expect(
+      storagePath(
+        base,
+        `${base}/storage/v1/object/public/media/%2e%2e/other/x.jpg`
+      )
+    ).toBeNull();
+    expect(storagePath(base, "https://v3.fal.media/files/a.jpg")).toBeNull();
   });
 });

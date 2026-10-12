@@ -1,6 +1,6 @@
 # TICKET-073: The editor's AI tools behind the server's cap
 
-**Status:** pending
+**Status:** blocked
 **Created:** 2026-10-11
 **Started:** —
 **Completed:** —
@@ -28,13 +28,16 @@ The generative image tools can only run through the server's guard: no client ca
   rows, and deleting an asset leaves its file (`lib/storage.ts`, `assets.ts:199`).
 
 ## Plan
-- [ ] `/api/edit/run`: guard, signed copy, signed transformation, wait, refund on failure;
-      the client calls only it; the unsigned preset no longer used.
-- [ ] Owner step written in the Outcome: turn on strict transformations, then check an
-      unsigned derived URL is refused.
-- [ ] `isEditableUrl` on the normalised URL, used in the schema and on reopen; claim returns
-      the kept ids and the client clears only those; caps on edits and uploads per user;
-      deleting an asset removes its stored file.
+- [ ] Owner, first: add `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` (Cloudinary console,
+      Settings, API Keys) to `.env` and to Railway's variables. The server has only
+      `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` today, so nothing can be signed.
+- [ ] `/api/edit/run`: guard, signed upload of the base, signed transformation URL
+      (`sign_url`), the server waits for the result and refunds on failure; the client calls
+      only it; the unsigned preset no longer used by the app.
+- [ ] Owner, after it ships: Settings, Security, turn on "Strict transformations", and delete
+      or restrict the unsigned upload preset `aivia_transformation`; then an unsigned derived
+      URL must be refused (check with curl).
+- [ ] A per-user cap on storage objects needs a storage policy (live DB change: owner's yes).
 - [ ] Before starting: read every file this touches, list them here, and make the steps
       concrete (CLAUDE.md rule 2). Each fixed finding gets a test that fails before the fix
       where it can be tested.
@@ -43,10 +46,13 @@ The generative image tools can only run through the server's guard: no client ca
 
 ## Progress log
 - 2026-10-11 — Written from the review.
+- 2026-10-11 — Blocked: the server has no Cloudinary API key or secret (only the public cloud
+  name), so signed uploads and signed URLs cannot be built or tested. The hardening that needs
+  no secret moved to TICKET-079.
 
 ## Handoff
-- **State:** not started.
-- **Blocked on:** nothing
+- **State:** not started; blocked.
+- **Blocked on:** the owner adding `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET`.
 - **Next:** plan.
 - **Read first:** this ticket.
 

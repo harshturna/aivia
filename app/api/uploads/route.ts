@@ -3,8 +3,9 @@ import { getAsset, recordAsset } from "@/lib/assets";
 import { setEditOutput } from "@/lib/edits";
 import { getUser } from "@/lib/getUser";
 import { isGuestId } from "@/lib/guest-user";
+import prismadb from "@/lib/prismadb";
 import { getSession, isSessionId } from "@/lib/sessions";
-import { checkPath, publicUrl, sniff } from "@/lib/upload-check";
+import { checkPath, MAX_KEPT, publicUrl, sniff } from "@/lib/upload-check";
 
 /**
  * Records a file the browser put in storage as a library piece (D-005, TICKET-064): an
@@ -23,6 +24,15 @@ export async function POST(req: Request) {
   const path = typeof body?.path === "string" ? body.path : "";
   const ext = checkPath(user.id, path);
   if (!ext) return new NextResponse("Not a file of yours", { status: 400 });
+
+  // kept files per account are bounded (TICKET-079)
+  const keptCount = await prismadb.asset.count({
+    where: { userId: user.id, model: { in: ["aivia/edit", "aivia/cut"] } },
+  });
+  if (keptCount >= MAX_KEPT)
+    return new NextResponse("This account holds as many kept files as it can", {
+      status: 403,
+    });
 
   const url = publicUrl(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", path);
   const head = await fetch(url, { headers: { Range: "bytes=0-15" } })

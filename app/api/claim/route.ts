@@ -8,6 +8,7 @@ import {
   parseClaim,
   parseEdits,
 } from "@/lib/claim";
+import { MAX_EDITS } from "@/lib/edits";
 import { getUser } from "@/lib/getUser";
 import { isGuestId } from "@/lib/guest-user";
 import prismadb from "@/lib/prismadb";
@@ -71,7 +72,14 @@ export async function POST(req: Request) {
       ).map((r) => r.id)
     );
     const projects = new Set([...existing, ...fresh.map((f) => f.id)]);
-    const freshEdits = editPlan.filter((p) => !editsHeld.has(p.id));
+    // an account holds a bounded number of edits (TICKET-079)
+    const editRoom = Math.max(
+      0,
+      MAX_EDITS - (await prismadb.edit.count({ where: { userId: user.id } }))
+    );
+    const freshEdits = editPlan
+      .filter((p) => !editsHeld.has(p.id))
+      .slice(0, editRoom);
     await prismadb.$transaction([
       ...fresh.flatMap(({ s, id }) => {
         const assets = assetsFromMessages(s.messages);
@@ -119,6 +127,8 @@ export async function POST(req: Request) {
     const kept = new Set([...existing, ...fresh.map((f) => f.id)]);
     return NextResponse.json({
       ids: plan.map((p) => p.id).filter((id) => kept.has(id)),
+      // what the browser may let go of: only what the account now holds (TICKET-079)
+      keptLocal: plan.filter((p) => kept.has(p.id)).map((p) => p.s.id),
     });
   } catch (error) {
     console.error("[CLAIM]", error);

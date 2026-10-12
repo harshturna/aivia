@@ -67,6 +67,17 @@ export function deleteLocalSession(id: string) {
   } catch {}
 }
 
+/** Lets go of the sessions an account has taken; the rest stay in this browser. */
+export function removeLocalSessions(ids: string[]) {
+  try {
+    const gone = new Set(ids);
+    const rest = listLocalSessions().filter((s) => !gone.has(s.id));
+    if (rest.length) window.localStorage.setItem(KEY, JSON.stringify(rest));
+    else window.localStorage.removeItem(KEY);
+    window.dispatchEvent(new Event(LOCAL_CHANGED));
+  } catch {}
+}
+
 export function clearLocalSessions() {
   try {
     window.localStorage.removeItem(KEY);
@@ -151,8 +162,13 @@ export async function claimLocalSessions(): Promise<string | null> {
       body: JSON.stringify({ sessions, edits }),
     });
     if (!res.ok) return null;
-    const { ids } = (await res.json()) as { ids: string[] };
-    clearLocalSessions();
+    const { ids, keptLocal } = (await res.json()) as {
+      ids: string[];
+      keptLocal?: string[];
+    };
+    // what the account did not take (it holds a bounded number) stays in this browser
+    if (keptLocal) removeLocalSessions(keptLocal);
+    else clearLocalSessions();
     try {
       window.localStorage.removeItem(EDITS);
     } catch {}

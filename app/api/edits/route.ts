@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { checkDoc, checkImageDoc, createEdit, listEdits } from "@/lib/edits";
+import {
+  checkDoc,
+  checkImageDoc,
+  createEdit,
+  hasRoomForEdit,
+  listEdits,
+} from "@/lib/edits";
 import { getUser } from "@/lib/getUser";
 import { isGuestId } from "@/lib/guest-user";
 import { getSession, isSessionId } from "@/lib/sessions";
@@ -33,6 +39,10 @@ export async function POST(req: Request) {
   const checked =
     kind === "image" ? checkImageDoc(body?.doc) : checkDoc(body?.doc);
   if (!checked.ok) return new NextResponse(checked.error, { status: 400 });
+  if (!(await hasRoomForEdit(user.id)))
+    return new NextResponse("This account holds as many edits as it can", {
+      status: 403,
+    });
   const projectId =
     typeof body?.projectId === "string" &&
     isSessionId(body.projectId) &&

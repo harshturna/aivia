@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isEditableUrl } from "./sources";
 
 /**
  * An image edit (D-005 §17.7, TICKET-067): the steps on a source, never the pixels. Kept whole,
@@ -19,7 +20,19 @@ export const CROP_SHAPES = [
 export type CropShape = (typeof CROP_SHAPES)[number];
 
 const unit = z.number().min(0).max(1);
-const url = z.string().url().max(2000);
+// only addresses the editor would open: never javascript:, never a host someone else chose
+const url = z
+  .string()
+  .max(2000)
+  .refine(
+    (u) =>
+      isEditableUrl(
+        u,
+        process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+        process.env.NEXT_PUBLIC_APP_URL
+      ),
+    "Not an address the editor opens"
+  );
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i);
 
 export const aiStepSchema = z.object({

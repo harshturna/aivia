@@ -218,4 +218,18 @@ describe("an AI step", () => {
       }).crop
     ).toEqual(free.crop);
   });
+
+  it("refuses an address the editor would not open", () => {
+    for (const bad of [
+      "javascript:alert(1)",
+      "http://169.254.169.254/x.jpg",
+      "https://evil.example/a.jpg",
+    ])
+      expect(
+        imageEditSchema.safeParse({
+          ...emptyEdit(source),
+          source: { ...source, url: bad },
+        }).success
+      ).toBe(false);
+  });
 });
