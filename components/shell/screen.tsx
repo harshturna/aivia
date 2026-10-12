@@ -32,7 +32,7 @@ export function ScreenHeader({
     <div
       data-screen-header
       className={cn(
-        "sticky top-0 z-10 flex h-13 shrink-0 items-center gap-3 border-b bg-bg px-3 text-[15px] font-medium transition-colors duration-150 lg:px-6",
+        "sticky top-0 z-20 flex h-13 shrink-0 items-center gap-3 border-b bg-bg px-3 text-[15px] font-medium transition-colors duration-150 lg:px-6",
         scrolled ? "border-border" : "border-transparent",
         className
       )}

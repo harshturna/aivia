@@ -13,6 +13,7 @@ import {
   Undo2,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type MediaHandlers,
@@ -149,6 +150,7 @@ export function CutView({
   /** The project's cut was saved by a newer version of the app. */
   newer?: boolean;
 }) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages ?? []);
   const [title, setTitle] = useState(initialTitle);
   const [doc, setDoc] = useState<TimelineDoc | null>(initialSaved?.doc ?? null);
@@ -234,6 +236,15 @@ export function CutView({
     },
     canvas
   );
+
+  // a saved cut opens fitted to the timeline's width (TICKET-080)
+  const fitted = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the cut first exists
+  useEffect(() => {
+    if (fitted.current || !doc) return;
+    fitted.current = true;
+    setPxPerSec(fitZoom(docDuration(doc)));
+  }, [Boolean(doc)]);
 
   // a cut opens a second in, where something is on screen, not on the black before a fade
   const opened = useRef(false);
@@ -405,7 +416,22 @@ export function CutView({
   const addPiece = useCallback(
     async (item: MediaItem, at?: { ms: number; row: string }) => {
       const media = await mediaOf(item);
-      const base = docNow.current ?? (await startingCut([], null));
+      // no cut yet: start from the project's own layout, as Start a cut does, then add the
+      // piece to it (TICKET-080: it made a cut of one piece)
+      const fresh = !docNow.current;
+      const base = docNow.current ?? (await startingCut(messages, null));
+      const existing = fresh
+        ? Object.entries(base.media).find(([, m]) => m.url === item.url)?.[0]
+        : undefined;
+      if (existing) {
+        change(base, true);
+        const already = base.tracks
+          .flatMap((t) => t.items as Item[])
+          .find((i) => "media" in i && i.media === existing);
+        if (already) setSelected(already.id);
+        setPxPerSec(fitZoom(docDuration(base)));
+        return;
+      }
       let added: { doc: TimelineDoc; id: string };
       if (item.kind === "music" || item.kind === "sound") {
         added = addAudio(base, media, at?.ms ?? 0);
@@ -420,8 +446,9 @@ export function CutView({
       change(added.doc, true);
       // the new piece is selected, which brings it into view: the add is seen (TICKET-074)
       setSelected(added.id);
+      if (fresh) setPxPerSec(fitZoom(docDuration(added.doc)));
     },
-    [change]
+    [change, messages, fitZoom]
   );
 
   // pieces sent here from the Make view
@@ -471,7 +498,14 @@ export function CutView({
       const hit = selected && doc ? findItem(doc, selected) : null;
       // Space on a focused button presses the button; anywhere else it plays
       if (event.key === " ") {
-        if (el.closest("button, a, [role=slider]")) return;
+        // Space plays from anywhere in Cut, as it always did; only the play button itself, a
+        // slider and a menu item keep their own Space (TICKET-080: it repeated Split and Undo)
+        if (
+          el.closest(
+            'button[aria-label^="Play"], button[aria-label^="Pause"], [role=slider], [role=menuitem]'
+          )
+        )
+          return;
         event.preventDefault();
         player.toggle();
       } else if (mod && key === "z") {
@@ -684,10 +718,29 @@ export function CutView({
         prompt: request.prompt,
       });
       const current = docNow.current;
+      // a guest's take on an example is kept the way Make keeps it: in their own copy of the
+      // project, with this cut and the take in it (TICKET-080: it was lost on leaving)
+      if (isGuest && !getLocalSession(projectId) && r.messages && current) {
+        const fork = crypto.randomUUID();
+        saveLocalSession({
+          id: fork,
+          title: `${title} (your copy)`,
+          messages: r.messages as never,
+        });
+        saveLocalEdit({
+          id: crypto.randomUUID(),
+          projectId: fork,
+          title,
+          doc: replaceMedia(current, url, media),
+        });
+        setTake({ at: "idle" });
+        router.push(`/p/${fork}/cut`);
+        return;
+      }
       if (current) change(replaceMedia(current, url, media), true);
       setTake({ at: "idle" });
     },
-    [messages, projectId, isGuest, change]
+    [messages, projectId, isGuest, change, title, router]
   );
   const takeUI = useMemo<TakeUI>(
     () => ({
@@ -712,13 +765,17 @@ export function CutView({
 
   const handlers = useMemo<MediaHandlers>(
     () => ({
-      addToCut: (item) => void addPiece(item),
+      addToCut: (item) => {
+        setMediaOpen(false);
+        void addPiece(item);
+      },
       newTake:
         take.at === "working" || take.at === "limit"
           ? undefined
           : (item) => {
-              if (item.kind === "image" || item.kind === "video")
-                void runTake(item.url);
+              if (item.kind !== "image" && item.kind !== "video") return;
+              setMediaOpen(false);
+              void runTake(item.url);
             },
       canTake: (item) => Boolean(takeFor(messages as never, item.url)),
     }),
@@ -825,15 +882,19 @@ export function CutView({
           ) : (
             <>
               {/* the stage */}
-              <div className="grid shrink-0 place-items-center bg-surface/40 p-3 lg:min-h-0 lg:flex-1 lg:p-4">
-                <canvas
-                  ref={canvas}
-                  // on a short screen (a phone on its side) the stage leaves the storyboard room
-                  className="max-h-full max-w-full rounded-media bg-bg shadow-float max-lg:max-h-[45dvh]"
-                  style={{ aspectRatio: `${doc.width} / ${doc.height}` }}
-                  role="img"
-                  aria-label="The cut"
-                />
+              <div className="relative shrink-0 bg-surface/40 p-3 lg:min-h-0 lg:flex-1">
+                {/* a box with a real height, so the picture is contained in it at any window
+                    height (TICKET-080: it spilled over the controls at 800 px tall) */}
+                <div className="flex items-center justify-center lg:absolute lg:inset-4">
+                  <canvas
+                    ref={canvas}
+                    // on a short screen (a phone on its side) the stage leaves the storyboard room
+                    className="block max-h-full min-h-0 max-w-full min-w-0 rounded-media bg-bg shadow-float max-lg:max-h-[45dvh]"
+                    style={{ aspectRatio: `${doc.width} / ${doc.height}` }}
+                    role="img"
+                    aria-label="The cut"
+                  />
+                </div>
               </div>
               {/* the controls */}
               <div className="flex h-11 shrink-0 items-center gap-1 border-t border-border px-3 text-[13px]">

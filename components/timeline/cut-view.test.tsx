@@ -46,6 +46,9 @@ vi.mock("@/components/timeline/export", () => ({
 vi.mock("@/components/timeline/start", () => ({
   startingCut: async () => (await import("@/lib/timeline/schema")).emptyDoc(),
 }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => {}, replace: () => {}, refresh: () => {} }),
+}));
 vi.mock("next/link", () => ({
   default: (p: { children: React.ReactNode }) => <a href="/">{p.children}</a>,
 }));

@@ -346,6 +346,26 @@ export function ImageEditor({
 
   // leaving inside the app with unsaved changes asks too (TICKET-075)
   const [leaving, setLeaving] = useState<string | null>(null);
+  // any in-app link asks while unsaved: the sidebar, the tray's library link (TICKET-080)
+  useEffect(() => {
+    if (!dirty) return;
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const a = (event.target as HTMLElement).closest<HTMLAnchorElement>(
+        "a[href]"
+      );
+      if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
+      const to = new URL(a.href, window.location.href);
+      if (to.origin !== window.location.origin) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setLeaving(to.pathname + to.search);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [dirty]);
   const leave = useCallback(
     (href: string) => (dirty ? setLeaving(href) : router.push(href)),
     [dirty, router]

@@ -30,14 +30,14 @@ export function CutScene() {
   const still = STILLS.find((s) => s.src.includes("tree")) ?? STILLS[0];
   // the forest's title card, as the run wrote it
   const words = "Older than every map.";
-  // 0: empty lanes; 1..3: pieces land; 4: the still trimmed; 5: playing
+  // 0: empty lanes; 1..3: pieces land; 4: the still trimmed; 5: playing; 6: played to 0:04.1
   const [step, setStep] = useState(0);
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setStep(5);
+      setStep(6);
       return;
     }
-    const timers = [250, 600, 950, 1700, 2300].map((ms, i) =>
+    const timers = [250, 600, 950, 1700, 2300, 8300].map((ms, i) =>
       window.setTimeout(() => setStep(i + 1), ms)
     );
     return () => {
@@ -73,7 +73,7 @@ export function CutScene() {
       <div className="flex h-10 shrink-0 items-center gap-3 border-t border-border px-4 text-[13px] text-fg-2">
         <Play className="size-4 fill-current" />
         <span className="tabular">
-          {step >= 5 ? "0:04.2" : "0:00.0"} / 0:09.0
+          {step >= 6 ? "0:04.1" : "0:00.0"} / 0:09.0
         </span>
         <span className="h-4 w-px bg-border" />
         <Scissors className="size-4" />

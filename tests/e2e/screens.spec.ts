@@ -128,7 +128,7 @@ test.describe("as the guest", () => {
     expect(errors).toEqual([]);
   });
 
-  test("New take swaps a clip in the cut (generation stubbed)", async ({
+  test("New take on an example keeps the take in the guest's copy (generation stubbed)", async ({
     page,
     viewport,
   }) => {
@@ -180,14 +180,17 @@ test.describe("as the guest", () => {
     await expect(clip).toBeVisible({ timeout: 30_000 });
     await clip.click();
     await page.getByRole("button", { name: "New take" }).click();
+    // an example is not the guest's: the take is kept in their own copy, opened in Cut
+    await expect(page).toHaveURL(
+      (u) =>
+        u.pathname.endsWith("/cut") && !u.pathname.includes(forest?.id ?? ""),
+      { timeout: 30_000 }
+    );
+    await expect(page.locator("h1").first()).toContainText("(your copy)");
     await expect(
       page.locator("[data-row=main] button[aria-label^='Second take']")
     ).toBeVisible({ timeout: 30_000 });
     expect(await axe(page)).toEqual([]);
-    await page.getByRole("button", { name: /^Undo/ }).click();
-    await expect(
-      page.locator("[data-row=main] button[aria-label^='Second take']")
-    ).toHaveCount(0);
   });
 
   test("the image editor opens on a picture, fits, passes axe", async ({

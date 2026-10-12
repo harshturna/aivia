@@ -63,8 +63,9 @@ export default async function EditPage({ params, searchParams }: Params) {
       }
     }
   } else if (editable(src)) {
-    // the site's own pictures travel as full addresses, for the AI tools to fetch
-    source = { url: src.startsWith("/") ? `${origin}${src}` : src, prompt: "" };
+    // the site's own pictures stay relative: the doc then saves from any origin (TICKET-080),
+    // and the AI tools make them absolute when they copy them
+    source = { url: src, prompt: "" };
   }
   if (!source) redirect(`/p/${id}`);
 
