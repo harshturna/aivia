@@ -318,6 +318,69 @@ test.describe("as the guest", () => {
     expect(now).toBeLessThanOrEqual(length);
   });
 
+  test("on the storyboard, a tight trim lets go and Removed's Undo only undoes the removal", async ({
+    page,
+    viewport,
+  }) => {
+    test.skip((viewport?.width ?? 0) >= 1024, "the storyboard is the phone's");
+    const sessions = (await (
+      await page.request.get("/api/sessions")
+    ).json()) as Array<{ id: string; title: string }>;
+    const forest = sessions.find((s) => s.title.startsWith("A forest"));
+    test.skip(!forest, "no forest example for the guest");
+    await page.goto(`/p/${forest?.id}/cut`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Start a cut" }).click();
+    const shots = page.locator("section", {
+      has: page.getByRole("heading", { name: /^Picture/ }),
+    });
+    await expect(shots.locator("li")).toHaveCount(2, { timeout: 30_000 });
+    // swipe the second shot away, then another edit: the bar goes with it
+    const tree = await shots.locator("li").nth(1).boundingBox();
+    if (!tree) throw new Error("no shot");
+    await page.mouse.move(tree.x + tree.width - 30, tree.y + tree.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(tree.x + tree.width - 200, tree.y + tree.height / 2, {
+      steps: 10,
+    });
+    await page.mouse.up();
+    // by its markup: while a sheet is open the rest of the page is hidden from roles
+    const bar = page.locator("[role=status]").filter({ hasText: "Removed" });
+    await expect(bar).toBeVisible();
+    await page.getByRole("button", { name: /^Add a text card/ }).click();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    // at once, not when the bar times out after 5 s
+    await expect(bar).toHaveCount(0, { timeout: 1000 });
+    // the clip's start pushed to its end, then pulled back: the start handle still takes it
+    await shots.locator("li").first().getByRole("button").last().click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    // the sheet has finished rising before a handle is measured
+    await page
+      .getByRole("dialog")
+      .evaluate((el) =>
+        Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished))
+      );
+    const start = page.getByRole("slider", { name: "Start of the clip" });
+    const track = await start.locator("..").boundingBox();
+    let handle = await start.boundingBox();
+    if (!track || !handle) throw new Error("no trim bar");
+    const y = handle.y + handle.height / 2;
+    await page.mouse.move(handle.x + handle.width / 2, y);
+    await page.mouse.down();
+    await page.mouse.move(track.x + track.width, y, { steps: 10 });
+    await page.mouse.up();
+    handle = await start.boundingBox();
+    if (!handle) throw new Error("no handle");
+    await page.mouse.move(handle.x + handle.width / 2 - 4, y);
+    await page.mouse.down();
+    await page.mouse.move(track.x + track.width * 0.3, y, { steps: 10 });
+    await page.mouse.up();
+    expect(Number(await start.getAttribute("aria-valuenow"))).toBeLessThan(
+      3000
+    );
+    expect(await axe(page)).toEqual([]);
+  });
+
   test("the image editor opens on a picture, fits, passes axe", async ({
     page,
   }) => {

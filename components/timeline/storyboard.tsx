@@ -9,11 +9,19 @@ import {
   Type,
   Volume2,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { formatDuration } from "@/lib/duration";
-import { addText, findItem, moveMain, remove } from "@/lib/timeline/ops";
 import {
+  addText,
+  findItem,
+  moveFree,
+  moveMain,
+  remove,
+  trimEnd,
+} from "@/lib/timeline/ops";
+import {
+  docDuration,
   endOf,
   type Item,
   type TimelineDoc,
@@ -54,11 +62,24 @@ export function Storyboard({
   const [open, setOpen] = useState<string | null>(null);
   const [removed, setRemoved] = useState(false);
   const removedTimer = useRef(0);
+  /** Changes to the cut since the swipe; the removal is the first (TICKET-088). */
+  const sinceRemoved = useRef(-1);
   const announceRemoved = () => {
     setRemoved(true);
+    sinceRemoved.current = 0;
     window.clearTimeout(removedTimer.current);
     removedTimer.current = window.setTimeout(() => setRemoved(false), 5000);
   };
+  // any edit after the removal takes the bar away, so its Undo only ever undoes the removal
+  // biome-ignore lint/correctness/useExhaustiveDependencies: counts changes to the cut
+  useEffect(() => {
+    if (sinceRemoved.current < 0) return;
+    sinceRemoved.current++;
+    if (sinceRemoved.current > 1) {
+      sinceRemoved.current = -1;
+      setRemoved(false);
+    }
+  }, [doc]);
   const main = doc.tracks.find(
     (t): t is Extract<Track, { kind: "main" }> => t.kind === "main"
   );
@@ -568,6 +589,42 @@ function ItemSheet({
         </label>
       )}
 
+      {/* on a phone a card's time and length, and a sound's length, are set here (TICKET-088) */}
+      {item.type === "text" && (
+        <SheetRange
+          label="Starts at"
+          name="card-start"
+          value={item.start}
+          min={0}
+          max={Math.max(item.start, docDuration(doc) - item.duration)}
+          onChange={(ms, commit) =>
+            onChange(commit ? doc : moveFree(doc, item.id, ms), commit)
+          }
+        />
+      )}
+      {(item.type === "text" || item.type === "audio") && (
+        <SheetRange
+          label="Length"
+          name="piece-length"
+          value={item.duration}
+          min={STILL_MS.min}
+          max={
+            item.type === "audio"
+              ? Math.max(
+                  item.duration,
+                  (doc.media[item.media]?.durationMs ?? item.duration) - item.in
+                )
+              : STILL_MS.max
+          }
+          onChange={(ms, commit) =>
+            onChange(
+              commit ? doc : trimEnd(doc, item.id, ms - item.duration),
+              commit
+            )
+          }
+        />
+      )}
+
       {isShot && shotCount > 1 && (
         <div className="flex gap-2">
           <button
@@ -598,6 +655,44 @@ function ItemSheet({
         take={take}
       />
     </div>
+  );
+}
+
+/** A time on a slider: live while it moves, one step of history when it lets go. */
+function SheetRange({
+  label,
+  name,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  name: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (ms: number, commit: boolean) => void;
+}) {
+  return (
+    <label className="grid gap-1 text-[13px]">
+      <span className="flex justify-between text-fg-2">
+        {label}
+        <span className="tabular text-mute">{seconds(value)}</span>
+      </span>
+      <input
+        type="range"
+        name={name}
+        min={min}
+        max={max}
+        step={100}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value), false)}
+        onPointerUp={() => onChange(value, true)}
+        onKeyUp={() => onChange(value, true)}
+        className="w-full accent-primary"
+      />
+    </label>
   );
 }
 
@@ -647,15 +742,19 @@ function TrimBar({
         style={{ left: pct(value) }}
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
-          last.current = { edge, ms: value };
+          // handles close together overlap: the edge nearer the finger takes it (TICKET-088)
+          const ms = at(event.clientX);
+          const near = Math.abs(ms - from) <= Math.abs(ms - to) ? "in" : "out";
+          last.current = { edge: near, ms: near === "in" ? from : to };
         }}
         onPointerMove={(event) => {
-          if (last.current?.edge !== edge) return;
+          if (!last.current) return;
           last.current.ms = at(event.clientX);
-          set(last.current.ms, false);
+          (last.current.edge === "in" ? onIn : onOut)(last.current.ms, false);
         }}
         onPointerUp={() => {
-          if (last.current?.edge === edge) set(last.current.ms, true);
+          if (last.current)
+            (last.current.edge === "in" ? onIn : onOut)(last.current.ms, true);
           last.current = null;
         }}
         onKeyDown={(event) => {
