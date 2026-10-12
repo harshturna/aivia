@@ -121,3 +121,46 @@ describe("alphaOf", () => {
     expect(alphaOf(item, 500, 500, 2000)).toBe(0);
   });
 });
+
+describe("a crossfade (TICKET-074)", () => {
+  // two stills end to end with a 500 ms crossfade, from the ops the editor uses
+  const two = async () => {
+    const { addToMain, split, trimEnd } = await import("./ops");
+    let d = emptyDoc();
+    d = addToMain(d, { url: "https://v3.fal.media/a.jpg", kind: "image" }).doc;
+    d = addToMain(d, { url: "https://v3.fal.media/b.jpg", kind: "image" }).doc;
+    return { d, split, trimEnd };
+  };
+
+  it("lays the incoming picture over the outgoing one, which holds, so no background shows", async () => {
+    const { d } = await two();
+    const main = d.tracks.find((t) => t.kind === "main");
+    if (main?.kind !== "main") throw new Error("no main");
+    const [, b] = main.items;
+    const mid = b.start + 250;
+    const layers = layersAt(d, mid);
+    expect(
+      layers.map((l) => [l.item.id === b.id ? "in" : "out", l.alpha])
+    ).toEqual([
+      ["out", 1],
+      ["in", 0.5],
+    ]);
+  });
+
+  it("never fades in for longer than the overlap, and splits no half under the minimum", async () => {
+    const { d, split, trimEnd } = await two();
+    const main = d.tracks.find((t) => t.kind === "main");
+    if (main?.kind !== "main") throw new Error("no main");
+    // the first still trimmed to 200 ms: the overlap is clamped, the fade must follow it
+    const short = trimEnd(d, main.items[0].id, -2800);
+    const m2 = short.tracks.find((t) => t.kind === "main");
+    if (m2?.kind !== "main") throw new Error("no main");
+    const [a, b] = m2.items;
+    const overlap = a.start + a.duration - b.start;
+    const atOverlapEnd = layersAt(short, b.start + overlap).find(
+      (l) => l.item.id === b.id
+    );
+    expect(atOverlapEnd?.alpha).toBe(1);
+    expect(split(d, main.items[0].id, main.items[0].start + 150).id).toBeNull();
+  });
+});

@@ -100,6 +100,8 @@ export function drawFrame(
   ctx.globalAlpha = 1;
   ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, w, h);
+  // a card on screen speaks for the frame: a still's own words wait (TICKET-074)
+  const card = layers.some((r) => r.layer.kind === "text");
   for (const r of layers) {
     ctx.globalAlpha = r.layer.alpha;
     if (r.layer.kind === "video") {
@@ -109,7 +111,7 @@ export function drawFrame(
       const picture = (r as Extract<Resolved, { layer: { kind: "image" } }>)
         .picture;
       if (picture) drawCover(ctx, picture, w, h, r.layer.zoom);
-      if (r.layer.item.text) {
+      if (r.layer.item.text && !card) {
         scrim(ctx, w, h);
         words(ctx, r.layer.item.text, "caption", h * 0.84, w, h, theme);
       }

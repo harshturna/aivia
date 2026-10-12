@@ -112,6 +112,8 @@ export async function mixAudio(doc: TimelineDoc, seconds: number) {
   return ctx.startRendering();
 }
 
+export const EXPORT_WIDTH = 1280;
+
 export async function renderTimeline(
   doc: TimelineDoc,
   onProgress: (fraction: number) => void,
@@ -119,7 +121,10 @@ export async function renderTimeline(
 ): Promise<Rendered> {
   requireSecure();
   const mb = await import("mediabunny");
-  const { width, height, fps } = doc;
+  // written at 1280 wide (720p for 16:9) whatever size the cut was laid out at (§17.5)
+  const { fps } = doc;
+  const width = EXPORT_WIDTH;
+  const height = Math.round((EXPORT_WIDTH * doc.height) / doc.width / 2) * 2;
   const durationMs = docDuration(doc);
   if (durationMs <= 0) throw new Error("There is nothing in this cut yet");
 

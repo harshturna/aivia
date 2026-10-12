@@ -49,18 +49,31 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(initialCollapsed && !inSheet);
+  // Cut wants the room: the rail while it is open, the person's own choice kept for after
+  // (§17.2, TICKET-074); opening it in Cut lasts until Cut is left
+  const inCut = /^\/p\/[^/]+\/cut/.test(pathname ?? "");
+  const [openInCut, setOpenInCut] = useState(false);
+  useEffect(() => {
+    if (!inCut) setOpenInCut(false);
+  }, [inCut]);
 
   const toggle = useCallback(() => {
+    if (inCut) {
+      setOpenInCut((o) => !o);
+      return;
+    }
     setCollapsed((c) => {
       const next = !c;
       document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
       return next;
     });
-  }, []);
+  }, [inCut]);
 
   useEffect(() => {
     if (inSheet) return;
     const onKey = (event: KeyboardEvent) => {
+      // Cut takes ⌘B for split before this sees it (TICKET-074)
+      if (event.defaultPrevented) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "b") {
         event.preventDefault();
         toggle();
@@ -70,7 +83,7 @@ export function Sidebar({
     return () => window.removeEventListener("keydown", onKey);
   }, [toggle, inSheet]);
 
-  const rail = collapsed && !inSheet;
+  const rail = !inSheet && (inCut ? !openInCut : collapsed);
 
   return (
     <nav
@@ -175,6 +188,8 @@ export function Sidebar({
         <AccountMenu user={user} rail={rail}>
           <button
             type="button"
+            // on the rail only the initial shows: the button still says whose it is
+            aria-label={rail ? `Account: ${user.name}` : undefined}
             className={cn(
               "flex w-full items-center gap-2.5 rounded-control text-left transition-colors hover:bg-surface-2",
               rail ? "h-9 justify-center" : "h-10 px-2"

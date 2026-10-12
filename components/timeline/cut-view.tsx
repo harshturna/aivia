@@ -23,9 +23,9 @@ import { ScreenHeader } from "@/components/shell/screen";
 import { measure } from "@/components/studio/measure";
 import { takeFor } from "@/components/studio/piece-request";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { userProModal } from "@/hooks/useProModal";
 import { downloadFile, fileNameFrom } from "@/lib/download";
-import { formatDuration } from "@/lib/duration";
 import {
   getLocalSession,
   listLocalEdits,
@@ -39,12 +39,17 @@ import {
   addText,
   addToMain,
   findItem,
+  moveFree,
+  moveMain,
   remove,
   replaceMedia,
   split,
+  trimEnd,
+  trimStart,
 } from "@/lib/timeline/ops";
 import {
   docDuration,
+  endOf,
   type Item,
   type Media,
   type TimelineDoc,
@@ -66,6 +71,16 @@ import { usePlayer } from "./use-player";
  * the browser, and keeps the export in the project when signed in.
  */
 export const MAX_EXPORT_MS = 60_000;
+const MIN_ZOOM = 8;
+const MAX_ZOOM = 400;
+/** The timeline's label column (timeline.tsx). */
+const GUTTER = 84;
+
+/** m:ss.t, so a frame step shows. */
+const formatTenths = (ms: number) => {
+  const t = Math.max(0, Math.round(ms / 100)) / 10;
+  return `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, "0")}`;
+};
 const NO_VERSIONS: MediaItem[] = [];
 const ADD_KEY = (project: string) => `aivia:add-to-cut:${project}`;
 
@@ -161,6 +176,15 @@ export function CutView({
   const [starting, setStarting] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [pxPerSec, setPxPerSec] = useState(60);
+  // Fit fills the timeline's real width, measured (TICKET-074)
+  const lane = useRef<HTMLDivElement>(null);
+  const fitZoom = useCallback((ms: number) => {
+    const room = (lane.current?.clientWidth || 900) - GUTTER - 32;
+    return Math.max(
+      MIN_ZOOM,
+      Math.min(MAX_ZOOM, room / Math.max(1, ms / 1000))
+    );
+  }, []);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [exporting, setExporting] = useState<
     | null
@@ -348,14 +372,9 @@ export function CutView({
       setSelected(null);
       void persist(first);
       // fit the new cut to the timeline's width
-      setPxPerSec(
-        Math.max(
-          12,
-          Math.min(160, 900 / Math.max(1, docDuration(first) / 1000))
-        )
-      );
+      setPxPerSec(fitZoom(docDuration(first)));
     },
-    [messages, persist, setCut, setHistory]
+    [messages, persist, setCut, setHistory, fitZoom]
   );
 
   // "Cut it together" on a run starts the cut when there is none yet
@@ -383,18 +402,20 @@ export function CutView({
     async (item: MediaItem, at?: { ms: number; row: string }) => {
       const media = await mediaOf(item);
       const base = docNow.current ?? (await startingCut([], null));
-      let next: TimelineDoc;
+      let added: { doc: TimelineDoc; id: string };
       if (item.kind === "music" || item.kind === "sound") {
-        next = addAudio(base, media, at?.ms ?? 0).doc;
+        added = addAudio(base, media, at?.ms ?? 0);
       } else {
         const main = base.tracks.find((t) => t.kind === "main");
         const index =
           at && main?.kind === "main"
             ? main.items.filter((i) => i.start + i.duration / 2 < at.ms).length
             : undefined;
-        next = addToMain(base, media, index).doc;
+        added = addToMain(base, media, index);
       }
-      change(next, true);
+      change(added.doc, true);
+      // the new piece is selected, which brings it into view: the add is seen (TICKET-074)
+      setSelected(added.id);
     },
     [change]
   );
@@ -419,7 +440,7 @@ export function CutView({
   // ── the keyboard: only when focus is in the editor and not in a field ──────────────────
   const splitAtPlayhead = useCallback(() => {
     if (!doc) return;
-    const t = player.time;
+    const t = player.now();
     const target =
       (selected && findItem(doc, selected)) ||
       doc.tracks
@@ -435,24 +456,26 @@ export function CutView({
     if (!target) return;
     const r = split(doc, target.item.id, t);
     if (r.id) change(r.doc, true);
-  }, [doc, player.time, selected, change]);
+  }, [doc, player.now, selected, change]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const el = event.target as HTMLElement;
       if (el.closest("input, textarea, [contenteditable=true], [role=dialog]"))
         return;
       const mod = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+      const hit = selected && doc ? findItem(doc, selected) : null;
+      // Space on a focused button presses the button; anywhere else it plays
       if (event.key === " ") {
+        if (el.closest("button, a, [role=slider]")) return;
         event.preventDefault();
         player.toggle();
-      } else if (mod && event.key.toLowerCase() === "z") {
+      } else if (mod && key === "z") {
         event.preventDefault();
         if (event.shiftKey) redo();
         else undo();
-      } else if (event.key.toLowerCase() === "s" && !mod) {
-        event.preventDefault();
-        splitAtPlayhead();
-      } else if (mod && event.key.toLowerCase() === "b") {
+      } else if ((key === "s" && !mod) || (mod && key === "b")) {
+        // taken here first (capture), so the sidebar leaves ⌘B to Cut (TICKET-074)
         event.preventDefault();
         splitAtPlayhead();
       } else if (
@@ -463,16 +486,47 @@ export function CutView({
         event.preventDefault();
         change(remove(doc, selected), true);
         setSelected(null);
+      } else if (
+        (event.key === "ArrowLeft" || event.key === "ArrowRight") &&
+        event.altKey &&
+        hit &&
+        doc
+      ) {
+        // the keyboard's move: a picture one place along, anything else a frame (Shift: 1 s)
+        event.preventDefault();
+        const dir = event.key === "ArrowLeft" ? -1 : 1;
+        if (hit.track.kind === "main")
+          change(
+            moveMain(doc, hit.item.id, Math.max(0, hit.index + dir)),
+            true
+          );
+        else
+          change(
+            moveFree(
+              doc,
+              hit.item.id,
+              hit.item.start + dir * (event.shiftKey ? 1000 : 1000 / doc.fps)
+            ),
+            true
+          );
+      } else if ((event.key === "[" || event.key === "]") && hit && doc) {
+        // the keyboard's trim: the selected item's start or end to the playhead
+        event.preventDefault();
+        const t = player.now();
+        if (event.key === "[" && t > hit.item.start && t < endOf(hit.item))
+          change(trimStart(doc, hit.item.id, t - hit.item.start), true);
+        if (event.key === "]" && t > hit.item.start)
+          change(trimEnd(doc, hit.item.id, t - endOf(hit.item)), true);
       } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         event.preventDefault();
         const step =
           (event.shiftKey ? 1000 : 1000 / (doc?.fps ?? 24)) *
           (event.key === "ArrowLeft" ? -1 : 1);
-        player.seek(player.time + step);
+        player.seek(player.now() + step);
       } else if (event.key === "Escape") setSelected(null);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [player, undo, redo, splitAtPlayhead, selected, doc, change]);
 
   // a finished export's file is freed when the view goes, as on Close
@@ -484,6 +538,13 @@ export function CutView({
     },
     []
   );
+
+  /** Esc, the close button or Cancel: a running export stops, a finished one's file is freed. */
+  const closeExport = () => {
+    if (exporting?.at === "rendering") exporting.abort.abort();
+    if (exporting?.at === "done") URL.revokeObjectURL(exporting.url);
+    setExporting(null);
+  };
 
   // ── export ────────────────────────────────────────────────────────────────────────
   const length = doc ? docDuration(doc) : 0;
@@ -653,8 +714,10 @@ export function CutView({
     <MediaHandlersProvider value={handlers}>
       <div className="relative flex h-dvh min-h-0">
         <div className="flex min-w-0 flex-1 flex-col">
-          <ScreenHeader title={title}>
-            <ProjectViews projectId={projectId} view="cut" />
+          <ScreenHeader
+            title={title}
+            beside={<ProjectViews projectId={projectId} view="cut" />}
+          >
             <span
               className={`whitespace-nowrap text-[12.5px] text-mute ${
                 status === "conflict" ||
@@ -741,7 +804,8 @@ export function CutView({
               <div className="grid shrink-0 place-items-center bg-surface/40 p-3 lg:min-h-0 lg:flex-1 lg:p-4">
                 <canvas
                   ref={canvas}
-                  className="max-h-full max-w-full rounded-media bg-bg shadow-float"
+                  // on a short screen (a phone on its side) the stage leaves the storyboard room
+                  className="max-h-full max-w-full rounded-media bg-bg shadow-float max-lg:max-h-[45dvh]"
                   style={{ aspectRatio: `${doc.width} / ${doc.height}` }}
                   role="img"
                   aria-label="The cut"
@@ -759,9 +823,8 @@ export function CutView({
                     <Play className="fill-current" />
                   )}
                 </IconButton>
-                <span className="tabular w-[92px] text-fg-2">
-                  {formatDuration(player.time / 1000)} /{" "}
-                  {formatDuration(length / 1000)}
+                <span className="tabular w-[104px] text-fg-2">
+                  {formatTenths(player.time)} / {formatTenths(length)}
                 </span>
                 {player.loading && (
                   <span className="text-mute">Loading sound…</span>
@@ -819,26 +882,25 @@ export function CutView({
                 <div className="hidden lg:contents">
                   <IconButton
                     label="Zoom out"
-                    onClick={() => setPxPerSec((z) => Math.max(8, z / 1.4))}
+                    disabled={pxPerSec <= MIN_ZOOM}
+                    onClick={() =>
+                      setPxPerSec((z) => Math.max(MIN_ZOOM, z / 1.4))
+                    }
                   >
                     <Minus />
                   </IconButton>
                   <IconButton
                     label="Zoom in"
-                    onClick={() => setPxPerSec((z) => Math.min(400, z * 1.4))}
+                    disabled={pxPerSec >= MAX_ZOOM}
+                    onClick={() =>
+                      setPxPerSec((z) => Math.min(MAX_ZOOM, z * 1.4))
+                    }
                   >
                     <Plus />
                   </IconButton>
                   <button
                     type="button"
-                    onClick={() =>
-                      setPxPerSec(
-                        Math.max(
-                          8,
-                          Math.min(400, 900 / Math.max(1, length / 1000))
-                        )
-                      )
-                    }
+                    onClick={() => setPxPerSec(fitZoom(length))}
                     className="rounded-control px-2 py-1 text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
                   >
                     Fit
@@ -846,7 +908,7 @@ export function CutView({
                 </div>
               </div>
               {/* the timeline: wide screens; the storyboard serves phones (TICKET-066) */}
-              <div className="hidden h-[272px] shrink-0 lg:block">
+              <div ref={lane} className="hidden h-[272px] shrink-0 lg:block">
                 <Timeline
                   doc={doc}
                   pxPerSec={pxPerSec}
@@ -860,6 +922,21 @@ export function CutView({
                     void addPiece(item, { ms, row })
                   }
                   labelOf={labels}
+                />
+              </div>
+              {/* the phone's playhead: drag to any moment (the timeline's ruler is desktop's) */}
+              <div className="flex h-9 shrink-0 items-center px-3 lg:hidden">
+                <input
+                  type="range"
+                  name="playhead"
+                  aria-label="Playhead"
+                  aria-valuetext={formatTenths(player.time)}
+                  min={0}
+                  max={Math.max(1, length)}
+                  step={1000 / (doc.fps || 24)}
+                  value={Math.min(player.time, length)}
+                  onChange={(e) => player.seek(Number(e.target.value))}
+                  className="w-full accent-primary"
                 />
               </div>
               {/* the storyboard: phones and narrow windows (§17.4) */}
@@ -900,107 +977,118 @@ export function CutView({
           />
         </aside>
 
-        {exporting && (
-          <div className="absolute inset-0 z-40 grid place-items-center bg-scrim p-4 backdrop-blur-sm">
-            <div className="w-full max-w-[560px] rounded-panel border border-border bg-surface-2 p-6 shadow-float">
-              <h2 className="text-[17px] font-medium">Export</h2>
-              {exporting.at === "rendering" && (
-                <>
-                  <div className="mt-4 h-1 overflow-hidden rounded-full bg-surface-3">
-                    <div
-                      className="h-full bg-sun transition-[width]"
-                      style={{
-                        width: `${Math.round(exporting.progress * 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <p
-                    className="tabular mt-2 text-[13px] text-fg-2"
-                    aria-live="polite"
-                  >
-                    Making the film, {Math.round(exporting.progress * 100)}%
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="mt-4"
-                    onClick={() => exporting.abort.abort()}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              )}
-              {exporting.at === "failed" && (
-                <>
-                  <p role="alert" className="mt-3 text-[13.5px] text-fg-2">
-                    {exporting.message}
-                  </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="mt-4"
-                    onClick={() => setExporting(null)}
-                  >
-                    Close
-                  </Button>
-                </>
-              )}
-              {exporting.at === "done" && (
-                <>
-                  <video
-                    src={exporting.url}
-                    controls
-                    playsInline
-                    className="mt-4 max-h-[50vh] w-full rounded-media bg-bg"
-                  />
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        downloadFile(exporting.url, fileNameFrom(title, "cut"))
-                      }
+        {/* a real dialog: focus stays in it, Esc closes (or cancels), nothing behind takes keys */}
+        <Dialog
+          open={Boolean(exporting)}
+          onOpenChange={(open) => {
+            if (!open) closeExport();
+          }}
+        >
+          <DialogContent className="max-w-[560px]" aria-describedby={undefined}>
+            <DialogTitle>Export</DialogTitle>
+            {exporting && (
+              <div>
+                {exporting.at === "rendering" && (
+                  <>
+                    <div className="mt-4 h-1 overflow-hidden rounded-full bg-surface-3">
+                      <div
+                        className="h-full bg-sun transition-[width]"
+                        style={{
+                          width: `${Math.round(exporting.progress * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <p
+                      className="tabular mt-2 text-[13px] text-fg-2"
+                      aria-live="polite"
                     >
-                      <Download /> Download
-                    </Button>
-                    {!isGuest && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={keep}
-                        disabled={
-                          exporting.kept === "keeping" ||
-                          exporting.kept === "yes"
-                        }
-                      >
-                        {exporting.kept === "yes"
-                          ? "In the project"
-                          : exporting.kept === "keeping"
-                            ? "Keeping…"
-                            : "Keep in project"}
-                      </Button>
-                    )}
-                    {exporting.kept === "failed" && (
-                      <span role="alert" className="text-[13px] text-fg-2">
-                        It was not kept. Try again.
-                      </span>
-                    )}
+                      Making the film, {Math.round(exporting.progress * 100)}%
+                    </p>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
-                      className="ml-auto"
-                      onClick={() => {
-                        URL.revokeObjectURL(exporting.url);
-                        setExporting(null);
-                      }}
+                      className="mt-4"
+                      onClick={() => exporting.abort.abort()}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
+                {exporting.at === "failed" && (
+                  <>
+                    <p role="alert" className="mt-3 text-[13.5px] text-fg-2">
+                      {exporting.message}
+                    </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => setExporting(null)}
                     >
                       Close
                     </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+                  </>
+                )}
+                {exporting.at === "done" && (
+                  <>
+                    <video
+                      src={exporting.url}
+                      controls
+                      playsInline
+                      className="mt-4 max-h-[50vh] w-full rounded-media bg-bg"
+                    />
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          downloadFile(
+                            exporting.url,
+                            fileNameFrom(title, "cut")
+                          )
+                        }
+                      >
+                        <Download /> Download
+                      </Button>
+                      {!isGuest && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={keep}
+                          disabled={
+                            exporting.kept === "keeping" ||
+                            exporting.kept === "yes"
+                          }
+                        >
+                          {exporting.kept === "yes"
+                            ? "In the project"
+                            : exporting.kept === "keeping"
+                              ? "Keeping…"
+                              : "Keep in project"}
+                        </Button>
+                      )}
+                      {exporting.kept === "failed" && (
+                        <span role="alert" className="text-[13px] text-fg-2">
+                          It was not kept. Try again.
+                        </span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-auto"
+                        onClick={() => {
+                          URL.revokeObjectURL(exporting.url);
+                          setExporting(null);
+                        }}
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </MediaHandlersProvider>
   );

@@ -36,18 +36,25 @@ export function alphaOf(
 }
 
 /**
- * The fades a main-track item really has: its own, widened by the crossfade it makes with its
- * neighbours (an item with `transitionIn` fades in over it; the one before fades out over it).
+ * The fades a main-track item really has (TICKET-074): its own, and over a crossfade the
+ * incoming item fades in on top of the outgoing one, which holds at full strength beneath it.
+ * (Fading both would let the background through at the middle.) The fade in is never longer
+ * than the overlap the packing really made.
  */
 export function mainFades(items: VisualItem[], index: number) {
   const item = items[index];
-  const next = items[index + 1];
-  const fadeIn = Math.max(item.fadeIn ?? 0, item.transitionIn?.duration ?? 0);
-  const fadeOut = Math.max(
-    item.fadeOut ?? 0,
-    next?.transitionIn ? next.transitionIn.duration : 0
-  );
-  return { fadeIn, fadeOut };
+  const prev = items[index - 1];
+  const overlap = prev ? Math.max(0, endOf(prev) - item.start) : undefined;
+  const crossfade = item.transitionIn
+    ? Math.min(
+        item.transitionIn.duration,
+        overlap ?? item.transitionIn.duration
+      )
+    : 0;
+  return {
+    fadeIn: Math.max(item.fadeIn ?? 0, crossfade),
+    fadeOut: item.fadeOut ?? 0,
+  };
 }
 
 export function layersAt(doc: TimelineDoc, ms: number): Layer[] {

@@ -11,10 +11,13 @@ import { MenuButton } from "./menu-button";
  */
 export function ScreenHeader({
   title,
+  beside,
   children,
   className,
 }: {
   title: React.ReactNode;
+  /** Sits right after the title, so it stays put whatever the header holds on its right. */
+  beside?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
 }) {
@@ -36,6 +39,7 @@ export function ScreenHeader({
     >
       <MenuButton />
       <h1 className="truncate text-[15px] font-medium">{title}</h1>
+      {beside}
       {children && (
         <div className="ml-auto flex items-center gap-2 text-[13px] font-normal text-fg-2">
           {children}

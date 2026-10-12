@@ -326,6 +326,8 @@ export function usePlayer(
     pause,
     seek,
     toggle: () => (playing || starting.current ? pause() : void play()),
+    /** The playhead to the millisecond (`time` is refreshed every 120 ms while playing). */
+    now: () => timeRef.current,
     onTick,
     fontReady: () =>
       document.fonts

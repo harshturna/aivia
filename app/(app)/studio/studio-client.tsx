@@ -931,6 +931,9 @@ export function StudioClient({
                         local={isGuest}
                       />
                     }
+                    beside={
+                      !empty && <ProjectViews projectId={id} view="make" />
+                    }
                   >
                     {busy && (
                       <span className="inline-flex items-center gap-2 text-[12.5px] font-medium text-fg-2">
@@ -938,7 +941,6 @@ export function StudioClient({
                         Running
                       </span>
                     )}
-                    {!empty && <ProjectViews projectId={id} view="make" />}
                     {/* the project's media: the tray at 1024 and up, a sheet below (TICKET-063) */}
                     {!empty && (
                       <button

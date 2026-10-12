@@ -333,7 +333,8 @@ export function split(
   if (!hit) return { doc, id: null };
   const item = hit.item;
   const first = Math.round(at - item.start);
-  if (first < MIN_ITEM_MS / 2 || item.duration - first < MIN_ITEM_MS / 2)
+  // neither half shorter than any item may be (TICKET-074)
+  if (first < MIN_ITEM_MS || item.duration - first < MIN_ITEM_MS)
     return { doc, id: null };
   const rest = structuredClone(item) as Item;
   rest.id = newId(next, item.type === "video" ? "clip" : item.type);

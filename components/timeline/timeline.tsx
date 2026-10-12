@@ -1,7 +1,14 @@
 "use client";
 
 import { Film, Image as ImageIcon, Music, Type, Volume2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { formatDuration } from "@/lib/duration";
 import type { MediaItem } from "@/lib/media";
 import { mainFades } from "@/lib/timeline/layout";
@@ -200,6 +207,10 @@ export function Timeline({
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
       const anchor = msAt(event.clientX);
+      zoomAround.current = {
+        ms: anchor,
+        x: event.clientX - el.getBoundingClientRect().left,
+      };
       onZoom(
         Math.max(
           8,
@@ -211,6 +222,27 @@ export function Timeline({
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, [msAt, onZoom, pxPerSec]);
+
+  const zoomAround = useRef<{ ms: number; x: number } | null>(null);
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    const at = zoomAround.current;
+    zoomAround.current = null;
+    if (el && at) el.scrollLeft = Math.max(0, at.ms * px + GUTTER - at.x);
+  }, [px]);
+
+  // a newly selected piece comes into view when it is off to one side (an added piece too)
+  useEffect(() => {
+    const el = scroller.current;
+    const node = selected
+      ? el?.querySelector<HTMLElement>(`[data-item="${CSS.escape(selected)}"]`)
+      : null;
+    if (!el || !node) return;
+    const left = node.offsetLeft;
+    const view = el.clientWidth - GUTTER;
+    if (left < el.scrollLeft || left > el.scrollLeft + view - 40)
+      el.scrollTo({ left: Math.max(0, left - 24), behavior: "smooth" });
+  }, [selected]);
 
   // ruler ticks: a label every second or every few, as the zoom allows
   const ticks = useMemo(() => {
@@ -304,6 +336,7 @@ export function Timeline({
                   return (
                     <div
                       key={item.id}
+                      data-item={item.id}
                       className={cn(
                         "absolute top-1.5 overflow-hidden rounded-control border text-[12px] transition-colors",
                         on
@@ -387,6 +420,13 @@ export function Timeline({
               </div>
             </div>
           ))}
+
+          {/* the end of the cut: sound that runs on past it is not in the film (TICKET-074) */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-7 bottom-0 z-20 border-l border-border-strong bg-bg/60"
+            style={{ left: GUTTER + length * px, right: 0 }}
+          />
 
           {/* the playhead and a snap mark */}
           <div
