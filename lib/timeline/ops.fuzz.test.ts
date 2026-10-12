@@ -88,6 +88,21 @@ function check(d: TimelineDoc) {
   }
   const main = mainOf(d)?.items ?? [];
   if (main[0]?.transitionIn) problems.push("the opening picture crossfades in");
+  // TICKET-087: black before the first picture only under a card
+  const cards = d.tracks.find((t) => t.kind === "text")?.items ?? [];
+  if (
+    main[0] &&
+    main[0].start > 0 &&
+    !cards.some((c) => c.start < main[0].start)
+  )
+    problems.push(`the film opens on ${main[0].start} ms of black`);
+  for (const item of allItems(d))
+    for (const fade of ["fadeIn", "fadeOut"] as const)
+      if (
+        fade in item &&
+        ((item as unknown as Record<string, number>)[fade] ?? 0) > item.duration
+      )
+        problems.push(`${item.id}'s ${fade} is longer than it`);
   for (let i = 1; i < main.length; i++) {
     const prev = main[i - 1];
     const item = main[i];

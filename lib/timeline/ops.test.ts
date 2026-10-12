@@ -255,3 +255,72 @@ describe("a short piece after a crossfade (TICKET-084)", () => {
     expect(b.start + b.duration).toBeGreaterThan(a.start + a.duration);
   });
 });
+
+describe("the cut's opening and end (TICKET-087)", () => {
+  /** Three pieces after a title card, the first shot held back under the card. */
+  function titled() {
+    const card = addText(three(), 0);
+    const d = structuredClone(card.doc);
+    main(d)[0].start = 1300;
+    return { doc: moveFree(d, card.id, 0), card: card.id };
+  }
+
+  it("keeps black before the first shot only while a card plays over it", () => {
+    const { doc, card } = titled();
+    expect(main(doc)[0].start).toBe(1300);
+    const gone = remove(doc, card);
+    expect(main(gone)[0].start).toBe(0);
+    packed(gone);
+    const moved = moveFree(doc, card, 3000);
+    expect(main(moved)[0].start).toBe(0);
+  });
+
+  it("never puts a new card past the end of the film", () => {
+    const d = three();
+    const r = addText(d, docDuration(d) + 2000);
+    expect(endOf(findItem(r.doc, r.id)?.item ?? main(d)[0])).toBe(
+      docDuration(d)
+    );
+    expect(docDuration(r.doc)).toBe(docDuration(d));
+  });
+
+  it("runs a score to the cut's new end as pictures are added", () => {
+    const d = addAudio(three(), {
+      url: "/s.mp3",
+      kind: "music",
+      durationMs: 60000,
+    }).doc;
+    const grown = addToMain(d, clip("/d.mp4")).doc;
+    const score = grown.tracks.find(
+      (t) => t.kind === "audio" && t.role === "score"
+    );
+    expect(score?.items[0] && endOf(score.items[0])).toBe(docDuration(grown));
+    // but no further than the music goes
+    const short = addAudio(three(), {
+      url: "/t.mp3",
+      kind: "music",
+      durationMs: docDuration(three()) + 500,
+    }).doc;
+    const capped = addToMain(short, clip("/d.mp4")).doc;
+    const music = capped.tracks.find(
+      (t) => t.kind === "audio" && t.role === "score"
+    )?.items[0];
+    expect(music?.duration).toBe(docDuration(three()) + 500);
+  });
+
+  it("keeps fades within a piece trimmed short", () => {
+    let d = addAudio(three(), {
+      url: "/s.mp3",
+      kind: "music",
+      durationMs: 60000,
+    }).doc;
+    const score = d.tracks.find((t) => t.kind === "audio")?.items[0];
+    if (!score) throw new Error("no score");
+    d = update(d, score.id, { fadeIn: 900, fadeOut: 4100 });
+    d = trimEnd(d, score.id, 1000 - score.duration);
+    const after = findItem(d, score.id)?.item;
+    expect(after?.duration).toBe(1000);
+    expect(after && "fadeOut" in after && after.fadeOut).toBe(1000);
+    expect(after && "fadeIn" in after && after.fadeIn).toBe(900);
+  });
+});

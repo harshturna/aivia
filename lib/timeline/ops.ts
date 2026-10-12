@@ -68,11 +68,27 @@ function sourceLeft(doc: TimelineDoc, item: Item) {
   return length === undefined ? Number.POSITIVE_INFINITY : length - item.in;
 }
 
-/** Lays the main track end to end from its first item's start, overlapping by each crossfade. */
+/** A piece's fades never run longer than the piece (TICKET-087). */
+function fitFades(item: Item) {
+  if ("fadeIn" in item && item.fadeIn !== undefined)
+    item.fadeIn = Math.min(item.fadeIn, item.duration);
+  if ("fadeOut" in item && item.fadeOut !== undefined)
+    item.fadeOut = Math.min(item.fadeOut, item.duration);
+}
+
+/**
+ * Lays the main track end to end from its first item's start, overlapping by each crossfade;
+ * every edit ends here, so it also keeps each piece's fades within it.
+ */
 export function packMain(doc: TimelineDoc): TimelineDoc {
+  for (const track of doc.tracks)
+    for (const item of track.items as Item[]) fitFades(item);
   const main = mainOf(doc);
   if (!main?.items.length) return doc;
-  let t = main.items[0].start;
+  // black before the first picture is kept only for a card to play over (TICKET-087)
+  const first = main.items[0].start;
+  const cards = doc.tracks.find((t) => t.kind === "text")?.items ?? [];
+  let t = cards.some((card) => card.start < first) ? first : 0;
   main.items.forEach((item, i) => {
     if (i === 0) {
       delete item.transitionIn;
@@ -138,7 +154,19 @@ export function addToMain(
           motion: { from: 1, to: DEFAULTS.push },
         };
   main.items.splice(at, 0, item);
-  return { doc: packMain(next), id };
+  const before = docDuration(doc);
+  packMain(next);
+  // a score that ran to the end of the cut keeps running to its new end (TICKET-087)
+  const after = docDuration(next);
+  for (const track of next.tracks)
+    if (track.kind === "audio" && track.role === "score")
+      for (const music of track.items)
+        if (endOf(music) >= before && after > before)
+          music.duration = Math.max(
+            music.duration,
+            Math.min(after - music.start, sourceLeft(next, music))
+          );
+  return { doc: next, id };
 }
 
 /** A track or a sound on its row, from a time, as long as the cut (or its own length). */
@@ -192,7 +220,12 @@ export function addText(
   if (!track || track.kind !== "text") return { doc, id: "" };
   const id = newId(next, "text");
   // a card never lands on one already showing there, or it hides it whole (TICKET-085)
-  let at = Math.max(0, Math.round(start));
+  // never past the film's end: a card at the end lands over the last picture (TICKET-087)
+  const length = docDuration(doc);
+  let at = Math.max(
+    0,
+    Math.round(Math.min(start, length > 0 ? length - DEFAULTS.text : 0))
+  );
   for (const card of track.items)
     if (card.start <= at && at < endOf(card)) at = endOf(card);
   track.items.push({
@@ -242,7 +275,7 @@ export function moveFree(
   if (!hit || hit.track.kind === "main") return doc;
   hit.item.start = Math.max(0, Math.round(start));
   (hit.track.items as Item[]).sort((a, b) => a.start - b.start);
-  return next;
+  return packMain(next);
 }
 
 /** Trims an item's start by `delta` ms (positive shortens it), keeping its end where it was. */
@@ -261,12 +294,10 @@ export function trimStart(
   if (hit.track.kind !== "main") d = Math.max(d, -item.start);
   if (item.type === "video" || item.type === "audio") item.in += d;
   item.duration -= d;
-  if (hit.track.kind === "main") {
-    if (hit.index === 0) item.start = Math.max(0, item.start + d);
-    return packMain(next);
-  }
-  item.start += d;
-  return next;
+  if (hit.track.kind === "main" && hit.index === 0)
+    item.start = Math.max(0, item.start + d);
+  else if (hit.track.kind !== "main") item.start += d;
+  return packMain(next);
 }
 
 /** Trims an item's end by `delta` ms (positive lengthens it), within what its source holds. */
@@ -284,7 +315,7 @@ export function trimEnd(
     MIN_ITEM_MS,
     Math.min(item.duration + Math.round(delta), max)
   );
-  return hit.track.kind === "main" ? packMain(next) : next;
+  return packMain(next);
 }
 
 /**
@@ -367,10 +398,7 @@ export function split(
     item.motion = { from: item.motion.from, to: mid };
   }
   (hit.track.items as Item[]).splice(hit.index + 1, 0, rest);
-  return {
-    doc: hit.track.kind === "main" ? packMain(next) : next,
-    id: rest.id,
-  };
+  return { doc: packMain(next), id: rest.id };
 }
 
 /** Removes an item; on the main track the rest close up. */
@@ -381,7 +409,6 @@ export function remove(doc: TimelineDoc, id: string): TimelineDoc {
   const first =
     hit.track.kind === "main" && hit.index === 0 ? hit.item.start : null;
   (hit.track.items as Item[]).splice(hit.index, 1);
-  if (hit.track.kind !== "main") return next;
   const main = mainOf(next);
   if (main?.items.length && first !== null) main.items[0].start = first;
   return packMain(next);

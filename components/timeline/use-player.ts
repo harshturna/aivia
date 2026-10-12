@@ -293,8 +293,14 @@ export function usePlayer(
   // the picture follows every edit while paused
   // biome-ignore lint/correctness/useExhaustiveDependencies: redraw when the cut changes
   useEffect(() => {
-    if (!playing)
-      void paint(Math.min(timeRef.current, docDuration(doc)), false);
+    if (playing) return;
+    // the cut got shorter than the playhead: it moves to the new end (TICKET-087)
+    const length = docDuration(doc);
+    if (timeRef.current > length) {
+      tell(length);
+      setTime(length);
+    }
+    void paint(timeRef.current, false);
   }, [doc]);
 
   useEffect(

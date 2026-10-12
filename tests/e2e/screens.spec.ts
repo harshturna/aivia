@@ -280,6 +280,44 @@ test.describe("as the guest", () => {
     expect(span(moved)).toBeCloseTo(span(label), 1);
   });
 
+  test("deleting the title card closes the black, and the playhead stays in the cut", async ({
+    page,
+    viewport,
+  }) => {
+    test.skip((viewport?.width ?? 0) < 1024, "the timeline is the desktop's");
+    const sessions = (await (
+      await page.request.get("/api/sessions")
+    ).json()) as Array<{ id: string; title: string }>;
+    const forest = sessions.find((s) => s.title.startsWith("A forest"));
+    test.skip(!forest, "no forest example for the guest");
+    await page.goto(`/p/${forest?.id}/cut`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Start a cut" }).click();
+    const card = page.locator("[data-row=text] [data-item] button").first();
+    await expect(card).toBeVisible({ timeout: 30_000 });
+    await card.click();
+    await page.keyboard.press("Delete");
+    const first = page.locator("[data-row=main] [data-item] button").first();
+    await expect(first).toHaveAttribute("aria-label", / 0:00 to /);
+    // the last shot chosen, the playhead at the end, then the shot removed: it follows the end in
+    const last = page.locator("[data-row=main] [data-item]").last();
+    await last.locator("button").click();
+    const end = await last.boundingBox();
+    const ruler = await page
+      .locator(".sticky.top-0.z-20 > .cursor-ew-resize")
+      .boundingBox();
+    if (!end || !ruler) throw new Error("no ruler");
+    await page.mouse.click(end.x + end.width - 1, ruler.y + 10);
+    await page.keyboard.press("Delete");
+    const readout = page.getByText(/^\d+:\d\d\.\d \/ \d+:\d\d\.\d$/);
+    await expect(readout).toBeVisible();
+    const [now, length] = ((await readout.textContent()) ?? "")
+      .split(" / ")
+      .map((t) =>
+        t.split(":").reduce((sum, part) => sum * 60 + Number(part), 0)
+      );
+    expect(now).toBeLessThanOrEqual(length);
+  });
+
   test("the image editor opens on a picture, fits, passes axe", async ({
     page,
   }) => {
