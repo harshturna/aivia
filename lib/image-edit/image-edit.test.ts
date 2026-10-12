@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { fitCrop, moveCrop, resizeCrop, turnCrop, turned } from "./geometry";
+import {
+  fitCrop,
+  moveCrop,
+  resizeCrop,
+  turnCrop,
+  turned,
+  withStep,
+} from "./geometry";
 import { adjustMatrix, applyMatrix, isIdentity } from "./matrix";
 import {
   baseOf,
@@ -169,5 +176,46 @@ describe("the crop", () => {
     expect(t.y).toBeCloseTo(0.1);
     expect([t.width, t.height]).toEqual([0.3, 0.5]);
     expect(turnCrop(c, "flip").x).toBeCloseTo(0.4);
+  });
+});
+
+describe("an AI step", () => {
+  it("refits a fixed-shape crop when Fill changes the picture's shape", () => {
+    const doc = { ...emptyEdit(source), crop: fitCrop("1:1", source) };
+    const filled = withStep(doc, {
+      tool: "fill",
+      aspect: "9:16",
+      url: "https://res.cloudinary.com/x/f.jpg",
+      width: 900,
+      height: 1600,
+    });
+    expect(filled.ai).toHaveLength(1);
+    // still square in pixels on the new 900x1600 picture
+    const c = filled.crop;
+    expect(c?.shape).toBe("1:1");
+    expect(((c?.width ?? 0) * 900) / ((c?.height ?? 1) * 1600)).toBeCloseTo(1);
+  });
+
+  it("leaves the crop alone when the shape is the same or free", () => {
+    const same = { ...emptyEdit(source), crop: fitCrop("1:1", source) };
+    const restored = withStep(same, {
+      tool: "restore",
+      url: "https://res.cloudinary.com/x/r.jpg",
+      width: 1600,
+      height: 900,
+    });
+    expect(restored.crop).toEqual(same.crop);
+    const free = {
+      ...emptyEdit(source),
+      crop: { shape: "free" as const, x: 0.1, y: 0.1, width: 0.5, height: 0.5 },
+    };
+    expect(
+      withStep(free, {
+        tool: "fill",
+        url: "https://res.cloudinary.com/x/f.jpg",
+        width: 900,
+        height: 1600,
+      }).crop
+    ).toEqual(free.crop);
   });
 });

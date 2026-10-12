@@ -21,6 +21,7 @@ import {
   type ComposerMode,
 } from "@/components/studio/composer";
 import { LimitMessage } from "@/components/studio/limit-message";
+import { measure } from "@/components/studio/measure";
 import type { ToolPart } from "@/components/studio/outputs";
 import {
   costOf,
@@ -426,6 +427,8 @@ export function StudioClient({
         scene?: string;
         /** A piece made again carries its own parameters (TICKET-051). */
         params?: Partial<ModeParams>;
+        /** New take (TICKET-068): a fork from an example keeps the example's name. */
+        take?: boolean;
       }
     ) => {
       if (busy || limit || inFlight.current) return;
@@ -490,8 +493,10 @@ export function StudioClient({
         const fork = crypto.randomUUID();
         setLocalKey(fork);
         window.history.replaceState(null, "", `/p/${fork}`);
-        // named after what they asked, so it is not a second "Owl over a frozen lake"
-        if (messages.length > 0) setTitle(titleFromBrief(text));
+        // named after what they asked, so it is not a second "Owl over a frozen lake";
+        // a take asked for no new subject, so the copy keeps the example's name
+        if (messages.length > 0)
+          setTitle(extra?.take ? `${title} (your copy)` : titleFromBrief(text));
       }
       if (messages.length === 0) {
         setTitle(titleFromBrief(text));
@@ -519,6 +524,7 @@ export function StudioClient({
       isGuest,
       localKey,
       id,
+      title,
     ]
   );
 
@@ -566,13 +572,7 @@ export function StudioClient({
     },
     [send]
   );
-  const actions = useMemo(
-    () => ({
-      animate: busy || limit ? undefined : animate,
-      cut: { projectId: id },
-    }),
-    [animate, busy, limit, isGuest, id]
-  );
+  const actions = useMemo(() => ({ cut: { projectId: id } }), [id]);
 
   // A guest's session lives in this browser (TICKET-041): reopened on arrival, kept as
   // each run finishes.
@@ -731,33 +731,35 @@ export function StudioClient({
         busy || limit
           ? undefined
           : (item) => {
-              // the piece's own shape, for a run that did not name one
-              const el = document.querySelector<
-                HTMLImageElement | HTMLVideoElement
-              >(
-                `img[src="${CSS.escape(item.url)}"], video[data-media-url="${CSS.escape(item.url)}"]`
-              );
-              const size =
-                el instanceof HTMLImageElement
-                  ? { width: el.naturalWidth, height: el.naturalHeight }
-                  : el instanceof HTMLVideoElement
-                    ? { width: el.videoWidth, height: el.videoHeight }
-                    : undefined;
-              const request = takeFor(
-                messages as unknown as Parameters<typeof takeFor>[0],
-                item.url,
-                size
-              );
-              if (!request) return;
-              const still = request.files[0];
-              void send(request.prompt, request.mode, [], {
-                params: request.params,
-                scene: request.scene,
-                ...(still
-                  ? { still: { url: still.url, mediaType: still.mediaType } }
-                  : {}),
-              });
+              void (async () => {
+                // the piece's own shape, read from its file, for a run that named none
+                const size = await measure(
+                  item.url,
+                  item.kind === "video" ? "video" : "image"
+                );
+                const request = takeFor(
+                  messages as unknown as Parameters<typeof takeFor>[0],
+                  item.url,
+                  size
+                );
+                if (!request) return;
+                const still = request.files[0];
+                void send(request.prompt, request.mode, [], {
+                  params: request.params,
+                  scene: request.scene,
+                  ...(still
+                    ? { still: { url: still.url, mediaType: still.mediaType } }
+                    : {}),
+                  // a take on an example makes the guest's own copy: named for the example
+                  take: true,
+                });
+              })();
             },
+      canTake: (item) =>
+        takeFor(
+          messages as unknown as Parameters<typeof takeFor>[0],
+          item.url
+        ) !== null,
       // the piece waits for the Cut view, which adds it as it opens (TICKET-065)
       addToCut: (item) => {
         queueForCut(id, item);

@@ -35,6 +35,9 @@ export function pieceRequest(part: PartLike): PieceRequest {
     amount?: number;
     aspect?: string;
     seconds?: number;
+    /** What the planner's tools write (`lib/ai/tools.ts`). */
+    durationSeconds?: number;
+    animate?: boolean;
   };
   const nearest = <T extends number>(options: readonly T[], value?: number) =>
     value === undefined
@@ -60,11 +63,19 @@ export function pieceRequest(part: PartLike): PieceRequest {
       break;
     case "tool-generate_music":
       mode = "music";
-      params.musicSeconds = nearest([15, 30, 60] as const, input.seconds) ?? 30;
+      params.musicSeconds =
+        nearest(
+          [15, 30, 60] as const,
+          input.durationSeconds ?? input.seconds
+        ) ?? 30;
       break;
     default:
       mode = "sound";
-      params.soundSeconds = nearest([0, 2, 5, 10] as const, input.seconds) ?? 0;
+      params.soundSeconds =
+        nearest(
+          [0, 2, 5, 10] as const,
+          input.durationSeconds ?? input.seconds
+        ) ?? 0;
   }
   return { prompt, mode, params };
 }
@@ -146,6 +157,16 @@ function requestFor(messages: MessageLike[], url: string): TakeRequest | null {
       .map((p) => p.text ?? "")
       .join("")
       .trim();
+    // a clip animated from a pasted photo cannot be made again: the photo was never kept,
+    // and without it the take would be an unrelated clip at full price (TICKET-072)
+    const images = (brief?.parts ?? []).filter(
+      (p) => p.type === "file" && p.mediaType?.startsWith("image/") && p.url
+    );
+    const animated =
+      piece.mode === "video" &&
+      (images.length > 0 || (part.input as { animate?: boolean })?.animate);
+    if (animated && !images.some((p) => !p.url?.startsWith("data:")))
+      return null;
     // a direct run, repeated as it was sent: its words, its parameters, its still
     if (brief && sent?.mode && sent.mode !== "auto" && sent.mode === piece.mode)
       return {

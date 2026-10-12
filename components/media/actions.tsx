@@ -43,6 +43,8 @@ export type MediaHandlers = {
   addToCut?: (item: MediaItem) => void;
   /** Paid: makes the piece again from its brief (in Cut, swapped in place). */
   newTake?: (item: MediaItem) => void;
+  /** Whether this piece can be made again (a run here made it); New take shows only then. */
+  canTake?: (item: MediaItem) => boolean;
 };
 
 const Handlers = createContext<MediaHandlers>({});
@@ -99,7 +101,8 @@ export function actionsFor(item: MediaItem, h: MediaHandlers): MediaAction[] {
       run: () => h.favourite?.(item),
     };
   const take = (primary: boolean) =>
-    !!h.newTake && {
+    !!h.newTake &&
+    (h.canTake?.(item) ?? true) && {
       id: "take",
       label: "New take",
       icon: RefreshCw,

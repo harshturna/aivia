@@ -153,4 +153,52 @@ describe("making a piece again", () => {
       takeFor(messages, "/s.jpg", { width: 1600, height: 900 })?.params.aspect
     ).toBe("1:1");
   });
+
+  it("offers no take of a clip animated from a pasted photo, and keeps a planned track's length", () => {
+    const messages = [
+      {
+        id: "u1",
+        role: "user",
+        metadata: { mode: "video", params: { aspect: "9:16" } },
+        parts: [
+          { type: "text", text: "Bring this to life" },
+          {
+            type: "file",
+            mediaType: "image/jpeg",
+            url: "data:image/jpeg;base64,AAAA",
+          },
+        ],
+      },
+      {
+        id: "a1",
+        role: "assistant",
+        parts: [
+          out(
+            "tool-generate_video",
+            { prompt: "motion", animate: true },
+            { url: "/clip.mp4" }
+          ),
+        ],
+      },
+      {
+        id: "u2",
+        role: "user",
+        metadata: { mode: "auto" },
+        parts: [{ type: "text", text: "A score" }],
+      },
+      {
+        id: "a2",
+        role: "assistant",
+        parts: [
+          out(
+            "tool-generate_music",
+            { prompt: "strings", durationSeconds: 60 },
+            { url: "/m.mp3" }
+          ),
+        ],
+      },
+    ];
+    expect(takeFor(messages, "/clip.mp4")).toBeNull();
+    expect(takeFor(messages, "/m.mp3")?.params).toEqual({ musicSeconds: 60 });
+  });
 });

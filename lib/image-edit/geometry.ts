@@ -1,4 +1,10 @@
-import type { Crop, CropShape } from "./schema";
+import {
+  type AiStep,
+  baseOf,
+  type Crop,
+  type CropShape,
+  type ImageEdit,
+} from "./schema";
 
 /**
  * The editor's shapes (TICKET-067). A crop is held in fractions of the turned picture; these
@@ -109,4 +115,21 @@ export function turnCrop(crop: Crop, by: "cw" | "flip"): Crop {
     width: crop.height,
     height: crop.width,
   };
+}
+
+/**
+ * An AI step added to an edit (TICKET-072). The result can change the picture's shape (Fill), so
+ * a fixed-shape crop is fitted again to the new picture; a free crop keeps its fractions.
+ */
+export function withStep(doc: ImageEdit, step: AiStep): ImageEdit {
+  const before = baseOf(doc);
+  const next: ImageEdit = { ...doc, ai: [...doc.ai, step] };
+  const reshaped =
+    Math.abs(before.width / before.height - step.width / step.height) > 0.01;
+  if (doc.crop && doc.crop.shape !== "free" && reshaped)
+    next.crop = fitCrop(
+      doc.crop.shape,
+      turned({ width: step.width, height: step.height }, doc.rotate)
+    );
+  return next;
 }

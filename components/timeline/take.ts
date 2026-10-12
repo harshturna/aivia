@@ -14,7 +14,13 @@ import type { TakeRequest } from "@/components/studio/piece-request";
  */
 export type TakeResult =
   | { ok: true; url: string; messages: UIMessage[] }
-  | { ok: false; limit?: "free" | "guest"; message: string };
+  | {
+      ok: false;
+      limit?: "free" | "guest";
+      message: string;
+      /** The run as the server saved it, when it ran and failed (it cost nothing). */
+      messages?: UIMessage[];
+    };
 
 export async function makeTake(
   projectId: string,
@@ -82,6 +88,14 @@ export async function makeTake(
     return {
       ok: false,
       message: "The take did not come back, so it cost nothing. Try again.",
+      ...(answer
+        ? {
+            messages: [
+              ...all,
+              { ...answer, id: answer.id || crypto.randomUUID() },
+            ],
+          }
+        : {}),
     };
   return {
     ok: true,

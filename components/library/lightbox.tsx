@@ -4,12 +4,8 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Download,
-  Film,
-  Heart,
   MessageSquare,
   Trash2,
-  Wand2,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -23,7 +19,6 @@ import { useLibraryHandlers } from "@/components/media/library-handlers";
 import { AudioRow } from "@/components/studio/audio-row";
 import { titleFrom } from "@/components/studio/outputs";
 import { Button } from "@/components/ui/button";
-import { downloadFile, fileNameFrom } from "@/lib/download";
 import { formatDuration } from "@/lib/duration";
 import { cn } from "@/lib/utils";
 import type { LibraryAsset } from "./types";

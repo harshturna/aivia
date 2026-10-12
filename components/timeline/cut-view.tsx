@@ -20,6 +20,7 @@ import {
 } from "@/components/media/actions";
 import { MediaTray } from "@/components/media/tray";
 import { ScreenHeader } from "@/components/shell/screen";
+import { measure } from "@/components/studio/measure";
 import { takeFor } from "@/components/studio/piece-request";
 import { Button } from "@/components/ui/button";
 import { userProModal } from "@/hooks/useProModal";
@@ -571,32 +572,39 @@ export function CutView({
   // ── New take: the piece made again from its brief, swapped in where it stands ─────────
   const proModal = userProModal();
   const [take, setTake] = useState<TakeState>({ at: "idle" });
+  const taking = useRef(false);
   const runTake = useCallback(
     async (url: string) => {
-      if (take.at === "working") return;
-      // the piece's own shape, for a run that did not name one
+      // claimed before anything awaits: a second click cannot start a second paid take
+      if (taking.current) return;
+      taking.current = true;
+      setTake({ at: "working", url });
       const used = Object.values(docNow.current?.media ?? {}).find(
         (m) => m.url === url
       );
-      const size =
-        used?.kind === "video"
-          ? await probeVideo(url).catch(() => undefined)
-          : await new Promise<{ width: number; height: number } | undefined>(
-              (resolve) => {
-                const img = new Image();
-                img.onload = () =>
-                  resolve({
-                    width: img.naturalWidth,
-                    height: img.naturalHeight,
-                  });
-                img.onerror = () => resolve(undefined);
-                img.src = url;
-              }
-            );
+      // the piece's own shape, for a run that did not name one
+      const size = await measure(
+        url,
+        used?.kind === "video" ? "video" : "image"
+      );
       const request = takeFor(messages as never, url, size);
-      if (!request) return;
-      setTake({ at: "working", url });
+      if (!request) {
+        taking.current = false;
+        setTake({ at: "idle" });
+        return;
+      }
       const r = await makeTake(projectId, messages as never, request);
+      taking.current = false;
+      // the run is kept as the server keeps it, whether or not it made something
+      if (r.messages) {
+        setMessages(r.messages as unknown as Message[]);
+        const local = isGuest ? getLocalSession(projectId) : null;
+        if (local)
+          saveLocalSession({
+            ...local,
+            messages: r.messages as unknown as typeof local.messages,
+          });
+      }
       if (!r.ok) {
         setTake(
           r.limit
@@ -605,14 +613,6 @@ export function CutView({
         );
         return;
       }
-      // the take is a run of the project: the tray shows it, the guest's copy keeps it
-      setMessages(r.messages as unknown as Message[]);
-      const local = isGuest ? getLocalSession(projectId) : null;
-      if (local)
-        saveLocalSession({
-          ...local,
-          messages: r.messages as unknown as typeof local.messages,
-        });
       const media = await mediaOf({
         url: r.url,
         kind: request.mode === "video" ? "video" : "image",
@@ -622,7 +622,7 @@ export function CutView({
       if (current) change(replaceMedia(current, url, media), true);
       setTake({ at: "idle" });
     },
-    [messages, take.at, projectId, isGuest, change]
+    [messages, projectId, isGuest, change]
   );
   const takeUI = useMemo<TakeUI>(
     () => ({
@@ -644,8 +644,9 @@ export function CutView({
               if (item.kind === "image" || item.kind === "video")
                 void runTake(item.url);
             },
+      canTake: (item) => Boolean(takeFor(messages as never, item.url)),
     }),
-    [addPiece, runTake, take.at]
+    [addPiece, runTake, take.at, messages]
   );
 
   return (

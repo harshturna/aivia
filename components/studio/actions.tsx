@@ -7,13 +7,6 @@ import { createContext, useContext } from "react";
  * renders outputs without a provider, so its outputs offer no actions.
  */
 export type StudioActions = {
-  /** Turn a still into a short clip in this session. */
-  animate?: (still: {
-    url: string;
-    prompt: string;
-    width: number;
-    height: number;
-  }) => void;
   /** "Cut it together" opens the project's Cut view on a run (TICKET-065). */
   cut?: { projectId: string };
 };

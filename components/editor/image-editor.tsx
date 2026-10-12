@@ -30,13 +30,14 @@ import { userProModal } from "@/hooks/useProModal";
 import { downloadFile, fileNameFrom } from "@/lib/download";
 import {
   EDIT_TOOLS,
+  type EditInput,
   type EditTool,
   FILL_ASPECTS,
   type FillAspect,
   isReady,
 } from "@/lib/edit";
 import { getLocalSession } from "@/lib/guest-local";
-import { fitCrop, turnCrop, turned } from "@/lib/image-edit/geometry";
+import { fitCrop, turnCrop, turned, withStep } from "@/lib/image-edit/geometry";
 import {
   type Adjust,
   baseOf,
@@ -124,6 +125,9 @@ export function ImageEditor({
   const [messages, setMessages] = useState<Message[]>(initialMessages ?? []);
   const [title, setTitle] = useState(initialTitle);
   const [doc, setDoc] = useState<ImageEdit | null>(initialDoc);
+  // the picture as it is now, for an AI step that lands later (TICKET-072)
+  const docNow = useRef(doc);
+  docNow.current = doc;
   const [history, setHistory] = useState<{ stack: ImageEdit[]; at: number }>({
     stack: initialDoc ? [initialDoc] : [],
     at: initialDoc ? 0 : -1,
@@ -256,6 +260,7 @@ export function ImageEditor({
 
   // ── editing: every landed change is one undo step ───────────────────────────────────
   const change = useCallback((next: ImageEdit, commit: boolean) => {
+    docNow.current = next;
     setDoc(next);
     if (!commit) return;
     setSaving((s) => (s === "saving" ? s : "idle"));
@@ -268,10 +273,36 @@ export function ImageEditor({
     setHistory((h) => {
       const at = h.at + by;
       if (at < 0 || at >= h.stack.length) return h;
+      docNow.current = h.stack[at];
       setDoc(h.stack[at]);
       return { ...h, at };
     });
   }, []);
+  // ── AI: one run at a time, charged once; its result joins the picture as it is now ──────
+  const [ai, setAi] = useState<AiRun>({ at: "idle" });
+  const aiBusy = useRef(false);
+  const runAi = useCallback(
+    async (input: EditInput) => {
+      const start = docNow.current;
+      // set before anything awaits, so a second click cannot start a second paid run
+      if (aiBusy.current || !start) return;
+      aiBusy.current = true;
+      setAi({ at: "working" });
+      const r = await runTool(baseOf(start), input);
+      aiBusy.current = false;
+      if (!r.ok) {
+        setAi(
+          r.limit
+            ? { at: "limit", who: r.limit }
+            : { at: "failed", message: r.message }
+        );
+        return;
+      }
+      change(withStep(docNow.current ?? start, r.step), true);
+      setAi({ at: "idle" });
+    },
+    [change]
+  );
   const dirty = Boolean(
     doc && savedDoc.current && doc !== savedDoc.current && isChanged(doc)
   );
@@ -609,9 +640,8 @@ export function ImageEditor({
               {doc && tab === "ai" && (
                 <AiPanel
                   doc={doc}
-                  onApplied={(stepDone) =>
-                    change({ ...doc, ai: [...doc.ai, stepDone] }, true)
-                  }
+                  state={ai}
+                  onRun={runAi}
                   onUpgrade={proModal.onOpen}
                 />
               )}
@@ -1079,36 +1109,30 @@ function TextHandles({
   );
 }
 
+type AiRun =
+  | { at: "idle" }
+  | { at: "working" }
+  | { at: "failed"; message: string }
+  | { at: "limit"; who: "free" | "guest" };
+
 function AiPanel({
   doc,
-  onApplied,
+  state,
+  onRun,
   onUpgrade,
 }: {
   doc: ImageEdit;
-  onApplied: (step: ImageEdit["ai"][number]) => void;
+  state: AiRun;
+  onRun: (input: EditInput) => void;
   onUpgrade: () => void;
 }) {
   const [tool, setTool] = useState<EditTool>("restore");
   const [object, setObject] = useState("");
   const [color, setColor] = useState("");
   const [aspect, setAspect] = useState<FillAspect>("16:9");
-  const [state, setState] = useState<
-    | { at: "idle" }
-    | { at: "working" }
-    | { at: "failed"; message: string }
-    | { at: "limit"; who: "free" | "guest" }
-  >({ at: "idle" });
   const meta = EDIT_TOOLS.find((t) => t.id === tool) ?? EDIT_TOOLS[0];
   const input = { tool, object, color, aspect };
-  const run = async () => {
-    setState({ at: "working" });
-    const r = await runTool(baseOf(doc), input);
-    if (r.ok) {
-      onApplied(r.step);
-      setState({ at: "idle" });
-    } else if (r.limit) setState({ at: "limit", who: r.limit });
-    else setState({ at: "failed", message: r.message });
-  };
+  const run = () => onRun(input);
   const applied = doc.ai.map(
     (s) => EDIT_TOOLS.find((t) => t.id === s.tool)?.label ?? s.tool
   );

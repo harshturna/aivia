@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { readPlan } from "@/lib/ai/plan";
 import { canCut, collectCut } from "@/lib/cut";
-import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
 import { ToolOutput, type ToolPart } from "./outputs";
 
