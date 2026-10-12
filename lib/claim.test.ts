@@ -152,3 +152,67 @@ describe("hardening (TICKET-042)", () => {
     expect(a).not.toBe(ID);
   });
 });
+
+describe("parseEdits", () => {
+  const doc = {
+    schema: "aivia.timeline",
+    version: 1,
+    fps: 24,
+    width: 1280,
+    height: 720,
+    media: {
+      a: {
+        url: "https://v3.fal.media/files/a.mp4",
+        kind: "video",
+        durationMs: 5000,
+      },
+      b: { url: "javascript:alert(1)", kind: "image" },
+    },
+    tracks: [
+      { id: "text", kind: "text", items: [] },
+      {
+        id: "main",
+        kind: "main",
+        items: [
+          {
+            id: "1",
+            type: "video",
+            media: "a",
+            in: 0,
+            start: 0,
+            duration: 5000,
+            volume: 0,
+          },
+          { id: "2", type: "image", media: "b", start: 5000, duration: 3000 },
+        ],
+      },
+    ],
+  };
+  const id = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+
+  it("keeps a cut and leaves out media at unsafe addresses", async () => {
+    const { parseEdits } = await import("./claim");
+    const [edit] = parseEdits({
+      edits: [{ id, projectId: null, title: "My cut", doc }],
+    });
+    expect(Object.keys(edit.doc.media)).toEqual(["a"]);
+    const main = edit.doc.tracks.find((t) => t.kind === "main");
+    expect(main?.items.map((i) => i.id)).toEqual(["1"]);
+  });
+
+  it("drops junk, bad ids and documents that are not cuts", async () => {
+    const { parseEdits } = await import("./claim");
+    expect(parseEdits({ edits: [{ id: "nope", doc }] })).toEqual([]);
+    expect(parseEdits({ edits: [{ id, doc: { hello: 1 } }] })).toEqual([]);
+    expect(parseEdits({ edits: "x" })).toEqual([]);
+    expect(parseEdits(null)).toEqual([]);
+  });
+
+  it("gives an edit its own claimed id, distinct from a session's", async () => {
+    const { claimedEditId, claimedSessionId } = await import("./claim");
+    expect(await claimedEditId("u", id)).not.toBe(
+      await claimedSessionId("u", id)
+    );
+    expect(await claimedEditId("u", id)).toBe(await claimedEditId("u", id));
+  });
+});

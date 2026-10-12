@@ -23,6 +23,8 @@ export interface RecordAssetInput {
   width?: number | null;
   height?: number | null;
   durationSec?: number | null;
+  /** The piece this was edited from (D-005, TICKET-064). */
+  parentAssetId?: string | null;
 }
 
 /**
@@ -53,6 +55,7 @@ export async function recordAsset(input: RecordAssetInput): Promise<Asset> {
       height: input.height ?? null,
       durationSec: input.durationSec ?? null,
       favorite: false,
+      parentAssetId: input.parentAssetId ?? null,
       createdAt: new Date(),
     };
   return prismadb.asset.create({
@@ -68,6 +71,7 @@ export async function recordAsset(input: RecordAssetInput): Promise<Asset> {
       width: input.width ?? null,
       height: input.height ?? null,
       durationSec: input.durationSec ?? null,
+      parentAssetId: input.parentAssetId ?? null,
     },
   });
 }

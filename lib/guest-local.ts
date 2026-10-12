@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  type LocalEdit,
   type LocalMessage,
   type LocalSession,
+  MAX_EDIT_BYTES,
+  MAX_LOCAL_EDITS,
   MAX_LOCAL_SESSIONS,
   MAX_SESSION_BYTES,
   sanitizeMessages,
@@ -71,6 +74,46 @@ export function clearLocalSessions() {
   } catch {}
 }
 
+const EDITS = "aivia:guest-edits";
+
+/** A guest's cuts in this browser (D-005, TICKET-064): at most five, each at most 100 KB. */
+export function listLocalEdits(): LocalEdit[] {
+  try {
+    const raw = window.localStorage.getItem(EDITS);
+    const list = raw ? (JSON.parse(raw) as LocalEdit[]) : [];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalEdit(edit: Omit<LocalEdit, "updatedAt">) {
+  try {
+    if (JSON.stringify(edit.doc).length > MAX_EDIT_BYTES) return false;
+    const rest = listLocalEdits().filter((e) => e.id !== edit.id);
+    window.localStorage.setItem(
+      EDITS,
+      JSON.stringify(
+        [{ ...edit, updatedAt: Date.now() }, ...rest].slice(0, MAX_LOCAL_EDITS)
+      )
+    );
+    window.dispatchEvent(new Event(LOCAL_CHANGED));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function deleteLocalEdit(id: string) {
+  try {
+    window.localStorage.setItem(
+      EDITS,
+      JSON.stringify(listLocalEdits().filter((e) => e.id !== id))
+    );
+    window.dispatchEvent(new Event(LOCAL_CHANGED));
+  } catch {}
+}
+
 const PENDING = "aivia:claim-pending";
 
 /**
@@ -95,7 +138,8 @@ export function isClaimPending() {
 /** After sign-in or sign-up: move this browser's guest work into the account. */
 export async function claimLocalSessions(): Promise<string | null> {
   const sessions = listLocalSessions();
-  if (!sessions.length) {
+  const edits = listLocalEdits();
+  if (!sessions.length && !edits.length) {
     // nothing here to bring: a choice left from an earlier sign-up no longer applies
     setClaimPending(false);
     return null;
@@ -104,11 +148,14 @@ export async function claimLocalSessions(): Promise<string | null> {
     const res = await fetch("/api/claim", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sessions }),
+      body: JSON.stringify({ sessions, edits }),
     });
     if (!res.ok) return null;
     const { ids } = (await res.json()) as { ids: string[] };
     clearLocalSessions();
+    try {
+      window.localStorage.removeItem(EDITS);
+    } catch {}
     setClaimPending(false);
     return ids[0] ?? null;
   } catch {

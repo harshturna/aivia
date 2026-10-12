@@ -2,9 +2,11 @@ import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import {
   assetsFromMessages,
+  claimedEditId,
   claimedSessionId,
   MAX_CLAIMED_SESSIONS,
   parseClaim,
+  parseEdits,
 } from "@/lib/claim";
 import { getUser } from "@/lib/getUser";
 import { isGuestId } from "@/lib/guest-user";
@@ -24,8 +26,12 @@ export async function POST(req: Request) {
   if (isGuestId(user.id))
     return new NextResponse("Sign up to keep your work", { status: 403 });
 
-  const sessions = parseClaim(await req.json().catch(() => null));
-  if (!sessions) return new NextResponse("Nothing to claim", { status: 400 });
+  const body = await req.json().catch(() => null);
+  const sessions = parseClaim(body) ?? [];
+  // a guest's cuts come along too, each onto its claimed project (TICKET-064)
+  const edits = parseEdits(body);
+  if (!sessions.length && !edits.length)
+    return new NextResponse("Nothing to claim", { status: 400 });
 
   try {
     const plan = await Promise.all(
@@ -47,8 +53,27 @@ export async function POST(req: Request) {
     });
     const room = Math.max(0, MAX_CLAIMED_SESSIONS - held);
     const fresh = plan.filter((p) => !existing.has(p.id)).slice(0, room);
-    await prismadb.$transaction(
-      fresh.flatMap(({ s, id }) => {
+    const editPlan = await Promise.all(
+      edits.map(async (e) => ({
+        e,
+        id: await claimedEditId(user.id, e.id),
+        projectId: e.projectId
+          ? await claimedSessionId(user.id, e.projectId)
+          : null,
+      }))
+    );
+    const editsHeld = new Set(
+      (
+        await prismadb.edit.findMany({
+          where: { id: { in: editPlan.map((p) => p.id) } },
+          select: { id: true },
+        })
+      ).map((r) => r.id)
+    );
+    const projects = new Set([...existing, ...fresh.map((f) => f.id)]);
+    const freshEdits = editPlan.filter((p) => !editsHeld.has(p.id));
+    await prismadb.$transaction([
+      ...fresh.flatMap(({ s, id }) => {
         const assets = assetsFromMessages(s.messages);
         return [
           prismadb.session.create({
@@ -75,8 +100,21 @@ export async function POST(req: Request) {
               ]
             : []),
         ];
-      })
-    );
+      }),
+      ...freshEdits.map(({ e, id, projectId }) =>
+        prismadb.edit.create({
+          data: {
+            id,
+            userId: user.id,
+            projectId: projectId && projects.has(projectId) ? projectId : null,
+            kind: "timeline",
+            title: e.title,
+            doc: e.doc as unknown as Prisma.InputJsonValue,
+            version: e.doc.version,
+          },
+        })
+      ),
+    ]);
     // newest first: the client opens ids[0]; only ids that exist now are returned
     const kept = new Set([...existing, ...fresh.map((f) => f.id)]);
     return NextResponse.json({

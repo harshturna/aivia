@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import type { CutPieces } from "@/lib/cut";
+import { uploadMedia } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import type { Rendered } from "./cut-render";
 
@@ -68,8 +69,8 @@ export function CutAction({
   );
 }
 
-/** What the library route accepts: set under Vercel's 4.5 MB limit (TICKET-042); the site runs on Railway now and the cap stays, keeping uploads small. */
-const KEEP_BYTES = 4 * 1024 * 1024;
+/** What storage keeps in one file (TICKET-064); a 60 s cut is about 20 MB. */
+const KEEP_BYTES = 100 * 1024 * 1024;
 
 type Done = { at: "done"; result: Rendered; url: string };
 type State =
@@ -166,15 +167,25 @@ function CutBody({
   const save = async () => {
     if (state.at !== "done" || tooLarge) return;
     setSaved("saving");
-    const form = new FormData();
-    form.set("file", state.result.blob, `cut.${state.result.ext}`);
-    form.set("title", title);
-    form.set("seconds", String(state.result.seconds));
-    if (sessionId) form.set("sessionId", sessionId);
-    const res = await fetch("/api/cuts", { method: "POST", body: form }).catch(
-      () => null
-    );
-    setSaved(res?.ok ? "yes" : "failed");
+    // straight to storage from the browser, then recorded by the server (TICKET-064)
+    try {
+      const path = await uploadMedia(state.result.blob, state.result.ext);
+      const res = await fetch("/api/uploads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path,
+          title,
+          seconds: state.result.seconds,
+          width: state.result.width,
+          height: state.result.height,
+          sessionId,
+        }),
+      });
+      setSaved(res.ok ? "yes" : "failed");
+    } catch {
+      setSaved("failed");
+    }
   };
 
   const slug =

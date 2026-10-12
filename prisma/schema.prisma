@@ -89,6 +89,7 @@ model Session {
   updatedAt DateTime @updatedAt
 
   assets Asset[]
+  edits  Edit[]
 
   @@index([userId, updatedAt])
 }
@@ -101,23 +102,54 @@ enum AssetKind {
 }
 
 model Asset {
-  id          String    @id @default(uuid())
-  userId      String
-  sessionId   String?
-  kind        AssetKind
-  url         String
-  posterUrl   String?
-  prompt      String
-  model       String
-  params      Json      @default("{}")
-  width       Int?
-  height      Int?
-  durationSec Float?
-  favorite    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
+  id            String    @id @default(uuid())
+  userId        String
+  sessionId     String?
+  kind          AssetKind
+  url           String
+  posterUrl     String?
+  prompt        String
+  model         String
+  params        Json      @default("{}")
+  width         Int?
+  height        Int?
+  durationSec   Float?
+  favorite      Boolean   @default(false)
+  /// The piece this one was edited from (D-005): an edited image beside its original.
+  parentAssetId String?
+  createdAt     DateTime  @default(now())
 
   session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([sessionId])
+}
+
+// Edits (D-005, TICKET-064): a project's cuts and image edits, each one versioned document.
+enum EditKind {
+  timeline
+  image
+}
+
+model Edit {
+  id            String   @id @default(uuid())
+  userId        String
+  projectId     String?
+  kind          EditKind
+  title         String   @default("Untitled edit")
+  /// A TimelineDoc (lib/timeline) or an image edit, read through its migrate().
+  doc           Json
+  /// The document's schema version, beside it for cheap filtering.
+  version       Int
+  /// Bumped on every save; a save that read an older rev is refused (409).
+  rev           Int      @default(0)
+  /// The last export kept in the library.
+  outputAssetId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project Session? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId, updatedAt])
+  @@index([projectId])
 }

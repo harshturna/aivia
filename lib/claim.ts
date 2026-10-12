@@ -4,6 +4,8 @@
  * tested here. Input arrives from a browser, so every message and part is checked.
  */
 import { isSessionId } from "@/lib/session-text";
+import { migrate } from "@/lib/timeline/migrate";
+import type { TimelineDoc } from "@/lib/timeline/schema";
 
 type Part = {
   type: string;
@@ -26,7 +28,20 @@ export type LocalSession = {
   messages: LocalMessage[];
 };
 
+/** A guest's cut, kept in the browser until it is claimed (D-005, TICKET-064). */
+export type LocalEdit = {
+  id: string;
+  /** The browser project it belongs to, if any. */
+  projectId: string | null;
+  title: string;
+  updatedAt: number;
+  doc: TimelineDoc;
+};
+
 export const MAX_LOCAL_SESSIONS = 5;
+export const MAX_LOCAL_EDITS = 5;
+/** Per edit, as JSON: a cut of thirty items is about 15 KB. */
+export const MAX_EDIT_BYTES = 100_000;
 /** Claimed sessions one account may hold: a few browsers' worth, not a loop (TICKET-046). */
 export const MAX_CLAIMED_SESSIONS = 20;
 /** Per session, as JSON: a few runs of URLs and text are far under this. */
@@ -140,15 +155,71 @@ export function parseClaim(body: unknown): LocalSession[] | null {
  * retried claim finds the session it already made instead of duplicating it. It is a valid
  * uuid, distinct from the browser id (a guest may have continued a shared example).
  */
-export async function claimedSessionId(userId: string, localId: string) {
+export async function claimedSessionId(
+  userId: string,
+  localId: string,
+  /** A different salt gives a different id for the same browser id (an edit's, TICKET-064). */
+  salt = "aivia-claim"
+) {
   const bytes = new Uint8Array(
     await crypto.subtle.digest(
       "SHA-256",
-      new TextEncoder().encode(`aivia-claim:${userId}:${localId}`)
+      new TextEncoder().encode(`${salt}:${userId}:${localId}`)
     )
   ).slice(0, 16);
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/** The account's id for a claimed edit: the same derivation as a session's, its own salt. */
+export const claimedEditId = (userId: string, localId: string) =>
+  claimedSessionId(userId, localId, "aivia-claim-edit");
+
+/**
+ * A claim's edits as the server accepts them: real ids, a current cut under the size cap, and
+ * only media at safe addresses (an unsafe one leaves its items out).
+ */
+export function parseEdits(body: unknown): LocalEdit[] {
+  const list = isObject(body) ? body.edits : null;
+  if (!Array.isArray(list)) return [];
+  const out: LocalEdit[] = [];
+  for (const raw of list.slice(0, MAX_LOCAL_EDITS)) {
+    if (!isObject(raw) || typeof raw.id !== "string" || !isSessionId(raw.id))
+      continue;
+    if (JSON.stringify(raw.doc ?? null).length > MAX_EDIT_BYTES) continue;
+    const loaded = migrate(raw.doc);
+    if (!loaded.ok || !loaded.doc) continue;
+    const doc = loaded.doc;
+    const safe = new Set(
+      Object.entries(doc.media)
+        .filter(([, m]) => m.url.length <= MAX_URL && SAFE_URL.test(m.url))
+        .map(([key]) => key)
+    );
+    const media = Object.fromEntries(
+      Object.entries(doc.media).filter(([key]) => safe.has(key))
+    );
+    const tracks = doc.tracks.map((track) =>
+      track.kind === "text"
+        ? track
+        : track.kind === "main"
+          ? { ...track, items: track.items.filter((i) => safe.has(i.media)) }
+          : { ...track, items: track.items.filter((i) => safe.has(i.media)) }
+    ) as TimelineDoc["tracks"];
+    out.push({
+      id: raw.id,
+      projectId:
+        typeof raw.projectId === "string" && isSessionId(raw.projectId)
+          ? raw.projectId
+          : null,
+      title:
+        String(raw.title ?? "")
+          .trim()
+          .slice(0, 120) || "A cut",
+      updatedAt: Number(raw.updatedAt) || Date.now(),
+      doc: { ...doc, media, tracks },
+    });
+  }
+  return out;
 }
