@@ -17,9 +17,9 @@ export async function GET(req: Request) {
   if (mode) next.set("mode", mode);
   if (prompt && from.get("send") === "1") next.set("send", "1");
   const query = next.toString();
-  const studio = new URL(`/studio${query ? `?${query}` : ""}`, req.url);
+  const studio = `/studio${query ? `?${query}` : ""}`;
 
-  if (await getUser("ROUTE_HANDLER")) return NextResponse.redirect(studio, 303);
+  if (await getUser("ROUTE_HANDLER")) return go(studio);
 
   const email = process.env.GUEST_EMAIL;
   const password = process.env.GUEST_PASSWORD;
@@ -29,10 +29,19 @@ export async function GET(req: Request) {
       email,
       password,
     });
-    if (!error) return NextResponse.redirect(studio, 303);
+    if (!error) return go(studio);
     console.error("[START]", error.message);
   } else console.error("[START] GUEST_EMAIL / GUEST_PASSWORD are not set");
 
-  const retry = new URL(`/get-started${query ? `?${query}` : ""}`, req.url);
-  return NextResponse.redirect(retry, 303);
+  return go(`/get-started${query ? `?${query}` : ""}`);
+}
+
+/**
+ * A redirect by path, not by absolute address: behind the host's proxy `req.url` is the server's
+ * own address (https://localhost:8080 on Railway), which a visitor's browser cannot reach.
+ */
+function go(path: string) {
+  const res = new NextResponse(null, { status: 303 });
+  res.headers.set("Location", path);
+  return res;
 }

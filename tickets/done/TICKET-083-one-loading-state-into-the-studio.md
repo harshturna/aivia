@@ -42,6 +42,10 @@ Start making goes from the landing to the Studio with one loading state, the Stu
   its composer goes there with `window.location.assign`: full navigations, so the landing stays up
   until the Studio paints. `/get-started` stays for the retry and old links.
 
+- 2026-10-12 — Deployed, and the live check failed: behind Railway's proxy `req.url` is
+  `https://localhost:8080`, so `/start` redirected visitors there. `/start` now answers with a
+  relative `Location` (`/studio?…`), set with the session cookie.
+
 ## Verification
 - Frame recording from Start making (`.audit/t083/after/rec.mjs`, `sheet.png`, `sheet2.png`): the
   landing stays on screen through `/start` and the Studio's request, then the Studio's skeleton for
@@ -49,6 +53,8 @@ Start making goes from the landing to the Studio with one loading state, the Stu
   screen 0.28–1.67 s, the skeleton, and black between on a slow connection).
 - `.audit/t083/prompt.mjs`: a brief typed in the landing's composer opened a new project and was sent
   to the Studio ("A lighthouse in a storm"). `/get-started` still answers 200.
+- After the proxy fix: `curl -D - http://localhost:3005/start?prompt=hi&mode=image&send=1` answers
+  `location: /studio?prompt=hi&mode=image&send=1` with the session cookie.
 - `npm run verify`: lint, typecheck, ticket check (83), 174 unit tests passed.
 - `npx playwright test` (alone): 42 passed, 2 skipped.
 
