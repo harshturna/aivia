@@ -50,9 +50,17 @@ vi.mock("@/lib/prismadb", () => ({
   },
 }));
 
-const { checkDoc, createEdit, deleteEdit, getEdit, MAX_DOC_BYTES, saveEdit } =
-  await import("./edits");
+const {
+  checkDoc,
+  checkImageDoc,
+  createEdit,
+  deleteEdit,
+  getEdit,
+  MAX_DOC_BYTES,
+  saveEdit,
+} = await import("./edits");
 const { emptyDoc } = await import("./timeline/schema");
+const { emptyEdit } = await import("./image-edit/schema");
 
 beforeEach(() => {
   rows.length = 0;
@@ -97,5 +105,23 @@ describe("edits", () => {
       ok: false,
       error: "The cut is too large to save",
     });
+  });
+
+  it("keeps an image edit's steps, as an image edit, and nothing else", async () => {
+    const steps = emptyEdit({
+      url: "https://v3.fal.media/files/a.jpg",
+      assetId: "a1",
+      width: 1200,
+      height: 1800,
+    });
+    expect(checkImageDoc(steps).ok).toBe(true);
+    expect(checkImageDoc(emptyDoc()).ok).toBe(false);
+    expect(checkImageDoc({ ...steps, rotate: 45 }).ok).toBe(false);
+    const made = await createEdit("u1", {
+      projectId: "p1",
+      doc: steps,
+      kind: "image",
+    });
+    expect(made).toMatchObject({ kind: "image", title: "Untitled edit" });
   });
 });

@@ -28,7 +28,7 @@ import {
   listLocalEdits,
   saveLocalEdit,
 } from "@/lib/guest-local";
-import { type MediaItem, mediaByBrief } from "@/lib/media";
+import { type MediaItem, mediaByBrief, withVersions } from "@/lib/media";
 import { uploadMedia } from "@/lib/storage";
 import {
   addAudio,
@@ -59,6 +59,7 @@ import { usePlayer } from "./use-player";
  * the browser, and keeps the export in the project when signed in.
  */
 export const MAX_EXPORT_MS = 60_000;
+const NO_VERSIONS: MediaItem[] = [];
 const ADD_KEY = (project: string) => `aivia:add-to-cut:${project}`;
 
 type Message = { id: string; role: string; parts: unknown[] };
@@ -107,6 +108,7 @@ export function CutView({
   initialMessages,
   saved: initialSaved,
   run,
+  versions = NO_VERSIONS,
 }: {
   projectId: string;
   title: string;
@@ -116,6 +118,8 @@ export function CutView({
   saved: Saved;
   /** "Cut it together" on a run: start from that run if there is no cut yet. */
   run: string | null;
+  /** The project's edited images and kept cuts, on top of the tray (TICKET-067). */
+  versions?: MediaItem[];
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages ?? []);
   const [title, setTitle] = useState(initialTitle);
@@ -475,7 +479,10 @@ export function CutView({
     }
   };
 
-  const groups = useMemo(() => mediaByBrief(messages as never), [messages]);
+  const groups = useMemo(
+    () => withVersions(versions, mediaByBrief(messages as never)),
+    [messages, versions]
+  );
   const labels = useMemo(() => {
     const prompts = new Map(
       groups.flatMap((g) => g.items.map((i) => [i.url, i.prompt] as const))

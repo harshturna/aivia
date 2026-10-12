@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EditorDemo } from "./_landing/editor-demo";
 import { Hero } from "./_landing/hero";
 import { LandingNav } from "./_landing/nav";
 import { Close, LandingFooter, Modes } from "./_landing/sections";
@@ -30,6 +31,9 @@ export default function LandingPage() {
         </div>
         <div className={`${LATER} [contain-intrinsic-size:auto_960px]`}>
           <StudioDemo />
+        </div>
+        <div className={`${LATER} [contain-intrinsic-size:auto_840px]`}>
+          <EditorDemo />
         </div>
         <div className={`${LATER} [contain-intrinsic-size:auto_900px]`}>
           <Modes />

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkDoc, createEdit, listEdits } from "@/lib/edits";
+import { checkDoc, checkImageDoc, createEdit, listEdits } from "@/lib/edits";
 import { getUser } from "@/lib/getUser";
 import { isGuestId } from "@/lib/guest-user";
 import { getSession, isSessionId } from "@/lib/sessions";
@@ -14,7 +14,10 @@ export async function GET(req: Request) {
   return NextResponse.json(await listEdits(user.id, project));
 }
 
-/** A new cut, on a project the caller owns (or on none). The guest keeps cuts in the browser. */
+/**
+ * A new cut or image edit, on a project the caller owns (or on none). The guest keeps cuts in
+ * the browser and downloads its image edits.
+ */
 export async function POST(req: Request) {
   const user = await getUser("ROUTE_HANDLER");
   if (!user) return new NextResponse("Unauthorized", { status: 401 });
@@ -24,8 +27,11 @@ export async function POST(req: Request) {
     projectId?: unknown;
     title?: unknown;
     doc?: unknown;
+    kind?: unknown;
   } | null;
-  const checked = checkDoc(body?.doc);
+  const kind = body?.kind === "image" ? "image" : "timeline";
+  const checked =
+    kind === "image" ? checkImageDoc(body?.doc) : checkDoc(body?.doc);
   if (!checked.ok) return new NextResponse(checked.error, { status: 400 });
   const projectId =
     typeof body?.projectId === "string" &&
@@ -37,6 +43,7 @@ export async function POST(req: Request) {
     projectId,
     title: typeof body?.title === "string" ? body.title : undefined,
     doc: checked.doc,
+    kind,
   });
   return NextResponse.json(edit, { status: 201 });
 }

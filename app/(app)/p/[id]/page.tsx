@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { listVersions } from "@/lib/assets";
 import { getUser } from "@/lib/getUser";
 import { isGuestUser } from "@/lib/guest-user";
+import { versionItems } from "@/lib/media";
 import { getSession, isSessionId, projectTitle } from "@/lib/sessions";
 import { StudioClient } from "../../studio/studio-client";
 
@@ -40,6 +42,7 @@ export default async function ProjectPage({ params }: Params) {
         initialMessages={session.messages}
         initialTitle={projectTitle(session.title)}
         trayOpen={trayOpen}
+        versions={versionItems(await listVersions(user.id, session.id))}
       />
     );
   if (!isGuest) notFound();

@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Image as ImageIcon,
-  LayoutGrid,
-  Plus,
-  Search,
-  Users,
-  Wand2,
-} from "lucide-react";
+import { House, LayoutGrid, Plus, Search, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Logo from "@/components/Logo";
 import { Composer } from "@/components/studio/composer";
@@ -22,9 +15,8 @@ import { H2, LEDE, WRAP } from "./type";
  * sidebar and the replayed run, the composer at its foot.
  */
 const NAV = [
-  { label: "Studio", icon: ImageIcon, on: true },
+  { label: "Home", icon: House, on: true },
   { label: "Library", icon: LayoutGrid },
-  { label: "Edit", icon: Wand2 },
   { label: "Characters", icon: Users },
 ];
 const RECENT = [

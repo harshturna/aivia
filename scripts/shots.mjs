@@ -13,7 +13,7 @@ const BASE = process.env.BASE ?? "http://localhost:3005";
 const OUT = ".shots";
 const PAGES = (
   process.env.PAGES ??
-  "/,/login,/signup,/studio,/library,/edit,/characters,/characters/new,/settings"
+  "/,/login,/signup,/studio,/library,/characters,/characters/new,/settings"
 ).split(",");
 const WIDTHS = (process.env.WIDTHS ?? "1440,1024,768,390")
   .split(",")
@@ -146,6 +146,31 @@ if (process.env.STATES !== "0" && process.env.GUEST !== "0") {
             .first()
             .click();
         });
+    }
+  // the image editor on the example's picture: as it opens, and with words on it
+  const picture = example
+    ? (
+        await (
+          await page.request.get(
+            `${BASE}/api/assets?project=${example.id}&kind=image`
+          )
+        ).json()
+      ).items?.[0]
+    : null;
+  if (picture)
+    for (const [w, h] of [
+      [1440, 900],
+      [390, 844],
+    ]) {
+      await shoot("editor", w, h, async () => {
+        await open(`/p/${example.id}/edit?src=${picture.id}`);
+        await page.getByRole("img", { name: /^The picture/ }).waitFor();
+        await page.waitForTimeout(1200);
+      });
+      await shoot("editor-words", w, h, async () => {
+        await page.getByRole("tab", { name: "Text" }).click();
+        await page.getByRole("button", { name: "Add words" }).click();
+      });
     }
   await shoot("landing-reduced", 390, 844, async () => {
     await page.emulateMedia({ reducedMotion: "reduce" });

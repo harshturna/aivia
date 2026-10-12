@@ -643,8 +643,10 @@ compositor (`lib/timeline`) used by both.
 
 ### 17.7 The image editor, v1
 
-Opened from **Edit** on any image, anywhere. It takes the stage (in Make the thread gives way;
-the tray stays). `?edit=[assetId]` in the address, so Back closes it.
+Opened from **Edit** on any image, anywhere. It takes the stage (the thread gives way; the tray
+stays) at `/p/[id]/edit?src=[assetId or address]`, a view of the project beside Make and Cut, so
+Back closes it (TICKET-067: a route rather than `?edit=` on the Make view, the same behaviour
+without folding a third screen into Make). `/edit?asset=` from older links lands there.
 
 ```
 ┌────┬──────────────────────────────────────────────┬──────────┐
@@ -667,6 +669,12 @@ the tray stays). `?edit=[assetId]` in the address, so Back closes it.
   editor. Cancel discards.
 - **Not in v1:** layers, brushes and masks, a filter gallery, compositing images, stickers,
   prompt edits ("Describe a change", second wave once a priced model is chosen).
+- **Built (TICKET-067):** one render for the stage and Save (turn, crop, a 4×5 colour matrix on
+  the pixels, the words wrapped inside the picture); the crop box is our own (free and fixed
+  shapes); "Hold to compare" sits in the tools row; the colours are Paper, Ink, Sun, Bark,
+  Water and Fern; the guest's Save is Download. Saved versions and kept cuts show at the top of
+  the tray as "Edits and cuts". Uploading an outside photo waits for the tray's Upload
+  (TICKET-070).
 
 ### 17.8 Data
 

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CutView } from "@/components/timeline/cut-view";
+import { listVersions } from "@/lib/assets";
 import { getEdit, listEdits } from "@/lib/edits";
 import { getUser } from "@/lib/getUser";
 import { isGuestUser } from "@/lib/guest-user";
+import { versionItems } from "@/lib/media";
 import { getSession, isSessionId, projectTitle } from "@/lib/sessions";
 import { migrate } from "@/lib/timeline/migrate";
 import type { TimelineDoc } from "@/lib/timeline/schema";
@@ -49,6 +51,7 @@ export default async function CutPage({ params, searchParams }: Params) {
       initialMessages={session ? (session.messages as never) : null}
       saved={saved}
       run={run && /^[\w-]{1,64}$/.test(run) ? run : null}
+      versions={session ? versionItems(await listVersions(user.id, id)) : []}
     />
   );
 }

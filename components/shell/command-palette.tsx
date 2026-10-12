@@ -12,7 +12,6 @@ import {
   Users,
   Video,
   Volume2,
-  Wand2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -222,13 +221,6 @@ function Palette({ onClose }: { onClose: () => void }) {
         icon: LayoutGrid,
         group: "Go to",
         run: () => go("/library"),
-      },
-      {
-        id: "edit",
-        label: "Edit a photo",
-        icon: Wand2,
-        group: "Go to",
-        run: () => go("/edit"),
       },
       {
         id: "chr",

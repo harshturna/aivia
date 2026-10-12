@@ -52,6 +52,38 @@ export function nameFrom(prompt: string, fallback: string) {
   return n || fallback;
 }
 
+/** A project's versions as tray pieces (TICKET-067): edited images and kept cuts. */
+export function versionItems(
+  assets: Array<{
+    id: string;
+    url: string;
+    kind: string;
+    prompt: string;
+    sessionId: string | null;
+    favorite: boolean;
+  }>
+): MediaItem[] {
+  return assets
+    .filter((a) => a.kind === "image" || a.kind === "video")
+    .map((a) => ({
+      url: a.url,
+      kind: a.kind as MediaKind,
+      prompt: a.prompt,
+      assetId: a.id,
+      projectId: a.sessionId,
+      favorite: a.favorite,
+    }));
+}
+
+/** The tray's groups: the versions first, as one group, then the briefs. */
+export function withVersions<
+  T extends { id: string; brief: string; items: MediaItem[] },
+>(versions: MediaItem[], briefs: T[]) {
+  return versions.length
+    ? [{ id: "versions", brief: "Edits and cuts", items: versions }, ...briefs]
+    : briefs;
+}
+
 const KIND_OF_TOOL: Record<string, MediaKind> = {
   "tool-generate_image": "image",
   "tool-generate_video": "video",

@@ -12,6 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         "/studio",
         "/library",
         "/edit",
+        "/p",
         "/characters",
         "/settings",
         "/api",

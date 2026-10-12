@@ -29,6 +29,12 @@ export async function PUT(req: Request, { params }: Params) {
     return new NextResponse("The rev you read is required", { status: 400 });
   let doc: Parameters<typeof saveEdit>[3]["doc"];
   if (body.doc !== undefined) {
+    // an image edit is the steps behind one saved version: it is kept as it was
+    const edit = await getEdit(user.id, (await params).id);
+    if (edit?.kind === "image")
+      return new NextResponse("An image edit is kept as it was saved", {
+        status: 400,
+      });
     const checked = checkDoc(body.doc);
     if (!checked.ok) return new NextResponse(checked.error, { status: 400 });
     doc = checked.doc;

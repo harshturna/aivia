@@ -125,6 +125,20 @@ export async function listAssets(
   return { items, nextCursor: hasMore ? items[items.length - 1].id : null };
 }
 
+/** A project's own versions (TICKET-067): edited images and kept cuts, newest first. */
+export async function listVersions(userId: string, projectId: string) {
+  if (isGuestId(userId)) return [];
+  return prismadb.asset.findMany({
+    where: {
+      userId,
+      sessionId: projectId,
+      model: { in: ["aivia/edit", "aivia/cut"] },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: 48,
+  });
+}
+
 export async function getAsset(userId: string, id: string) {
   return prismadb.asset.findFirst({
     where: {

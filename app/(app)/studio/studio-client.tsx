@@ -49,6 +49,7 @@ import {
   type MediaItem,
   mediaByBrief,
   nameFrom,
+  withVersions,
 } from "@/lib/media";
 import { messageText, titleFromBrief } from "@/lib/session-text";
 import { cn } from "@/lib/utils";
@@ -215,6 +216,8 @@ function sentWith(message: UIMessage): Sent {
  * The Studio (design §5): a new session's empty state, then every exchange as a run, the
  * composer floating at the foot. The chat id is the session id; the agent route saves it.
  */
+const NO_VERSIONS: MediaItem[] = [];
+
 export function StudioClient({
   id,
   initialMessages = [],
@@ -229,6 +232,7 @@ export function StudioClient({
   projects = [],
   trayOpen: initialTray = true,
   initialRef,
+  versions = NO_VERSIONS,
 }: {
   id: string;
   initialMessages?: UIMessage[];
@@ -255,6 +259,8 @@ export function StudioClient({
   trayOpen?: boolean;
   /** A piece from the library to attach as the brief's reference, on arrival. */
   initialRef?: { url: string; prompt: string };
+  /** The project's edited images and kept cuts, on top of the tray (TICKET-067). */
+  versions?: MediaItem[];
 }) {
   const router = useRouter();
   const proModal = userProModal();
@@ -661,8 +667,11 @@ export function StudioClient({
   const [traySheet, setTraySheet] = useState(false);
   const groups = useMemo(
     () =>
-      mediaByBrief(messages as unknown as Parameters<typeof mediaByBrief>[0]),
-    [messages]
+      withVersions(
+        versions,
+        mediaByBrief(messages as unknown as Parameters<typeof mediaByBrief>[0])
+      ),
+    [messages, versions]
   );
   const toggleTray = useCallback(() => {
     if (window.matchMedia("(min-width: 1024px)").matches)
@@ -718,11 +727,10 @@ export function StudioClient({
   const handlers = useMemo<MediaHandlers>(
     () => ({
       open: (item) => window.open(item.url, "_blank", "noopener,noreferrer"),
+      // the editor opens in the project, on the piece (TICKET-067)
       edit: (item) =>
         router.push(
-          item.assetId
-            ? `/edit?asset=${item.assetId}`
-            : `/edit?url=${encodeURIComponent(item.url)}`
+          `/p/${item.projectId ?? id}/edit?src=${encodeURIComponent(item.assetId ?? item.url)}`
         ),
       animate:
         busy || limit
@@ -785,23 +793,34 @@ export function StudioClient({
   );
 
   /** Shows a piece where it was made: the thread scrolls to it and marks it briefly. */
-  const openInThread = useCallback((item: MediaItem) => {
-    setTraySheet(false);
-    const el =
-      document.querySelector<HTMLElement>(
-        `[data-media-url="${CSS.escape(item.url)}"]`
-      ) ??
-      document.querySelector<HTMLElement>(`img[src="${CSS.escape(item.url)}"]`);
-    if (!el) return;
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
-    el.animate(
-      [
-        { outline: "2px solid var(--color-fg)", outlineOffset: "4px" },
-        { outline: "2px solid transparent", outlineOffset: "4px" },
-      ],
-      { duration: 1400, easing: "ease-out" }
-    );
-  }, []);
+  const openInThread = useCallback(
+    (item: MediaItem) => {
+      setTraySheet(false);
+      const el =
+        document.querySelector<HTMLElement>(
+          `[data-media-url="${CSS.escape(item.url)}"]`
+        ) ??
+        document.querySelector<HTMLElement>(
+          `img[src="${CSS.escape(item.url)}"]`
+        );
+      // a version is not in the thread: an image opens in the editor, a cut plays
+      if (!el) {
+        if (item.kind === "image" && item.assetId)
+          router.push(`/p/${id}/edit?src=${item.assetId}`);
+        else window.open(item.url, "_blank", "noopener,noreferrer");
+        return;
+      }
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.animate(
+        [
+          { outline: "2px solid var(--color-fg)", outlineOffset: "4px" },
+          { outline: "2px solid transparent", outlineOffset: "4px" },
+        ],
+        { duration: 1400, easing: "ease-out" }
+      );
+    },
+    [router, id]
+  );
 
   // a piece from the library, attached as the reference for the first brief
   const refAttached = useRef(false);

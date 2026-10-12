@@ -1,5 +1,6 @@
 import type { Edit, Prisma } from "@prisma/client";
 import { isGuestId } from "@/lib/guest-user";
+import { type ImageEdit, imageEditSchema } from "@/lib/image-edit/schema";
 import prismadb from "@/lib/prismadb";
 import { migrate } from "@/lib/timeline/migrate";
 import type { TimelineDoc } from "@/lib/timeline/schema";
@@ -8,7 +9,8 @@ import type { TimelineDoc } from "@/lib/timeline/schema";
  * Edits (D-005, TICKET-064): a project's cuts, each one versioned document saved whole. Every
  * read and write is scoped by the owner; the shared guest account writes nothing (its edits
  * live in the browser). A save names the `rev` it read: a stale one is refused, so two tabs
- * cannot silently overwrite each other. Image edits join with TICKET-067.
+ * cannot silently overwrite each other. An image edit (TICKET-067) is the steps behind one saved
+ * version, written once.
  */
 
 /** A saved cut is small (thirty items is about 15 KB); this keeps it that way. */
@@ -42,6 +44,18 @@ export function checkDoc(
   return { ok: true, doc: loaded.doc };
 }
 
+/** An image edit's steps, fit to save: the current shape, under the size cap. */
+export function checkImageDoc(
+  raw: unknown
+): { ok: true; doc: ImageEdit } | { ok: false; error: string } {
+  if (JSON.stringify(raw ?? null).length > MAX_DOC_BYTES)
+    return { ok: false, error: "The edit is too large to save" };
+  const parsed = imageEditSchema.safeParse(raw);
+  return parsed.success
+    ? { ok: true, doc: parsed.data }
+    : { ok: false, error: "That is not an image edit Aivia can open" };
+}
+
 export async function listEdits(userId: string, projectId: string) {
   if (isGuestId(userId)) return [];
   return prismadb.edit.findMany({
@@ -58,7 +72,12 @@ export async function getEdit(userId: string, id: string) {
 
 export async function createEdit(
   userId: string,
-  input: { projectId: string | null; title?: string; doc: TimelineDoc }
+  input: {
+    projectId: string | null;
+    title?: string;
+    doc: TimelineDoc | ImageEdit;
+    kind?: "timeline" | "image";
+  }
 ) {
   if (isGuestId(userId))
     throw new Error("The guest keeps edits in the browser");
@@ -66,8 +85,10 @@ export async function createEdit(
     data: {
       userId,
       projectId: input.projectId,
-      kind: "timeline",
-      title: input.title?.slice(0, 120) || "Untitled cut",
+      kind: input.kind ?? "timeline",
+      title:
+        input.title?.slice(0, 120) ||
+        (input.kind === "image" ? "Untitled edit" : "Untitled cut"),
       doc: input.doc as unknown as Prisma.InputJsonValue,
       version: input.doc.version,
     },

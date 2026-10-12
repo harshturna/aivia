@@ -74,7 +74,6 @@ test.describe("as the guest", () => {
   for (const path of [
     "/studio",
     "/library",
-    "/edit",
     "/characters",
     "/characters/new",
     "/settings",
@@ -127,6 +126,42 @@ test.describe("as the guest", () => {
       expect(await axe(page)).toEqual([]);
     }
     expect(errors).toEqual([]);
+  });
+
+  test("the image editor opens on a picture, fits, passes axe", async ({
+    page,
+  }) => {
+    const sessions = (await (
+      await page.request.get("/api/sessions")
+    ).json()) as Array<{ id: string }>;
+    test.skip(sessions.length === 0, "no saved session for the guest");
+    const images = (await (
+      await page.request.get(`/api/assets?project=${sessions[0].id}&kind=image`)
+    ).json()) as { items: Array<{ id: string }> };
+    test.skip(images.items.length === 0, "no picture in the example");
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto(`/p/${sessions[0].id}/edit?src=${images.items[0].id}`, {
+      waitUntil: "networkidle",
+    });
+    await expect(page.getByRole("img", { name: /^The picture/ })).toBeVisible();
+    await fits(page);
+    expect(await axe(page)).toEqual([]);
+    // words on the picture, and the text tools, pass too
+    await page.getByRole("tab", { name: "Text" }).click();
+    await page.getByRole("button", { name: "Add words" }).click();
+    await expect(
+      page.getByRole("textbox", { name: "The words" })
+    ).toBeVisible();
+    expect(await axe(page)).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
+  test("an old Edit address opens the picture in its project", async ({
+    page,
+  }) => {
+    await page.goto("/edit", { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/studio$/);
   });
 
   test("the lightbox traps focus and closes on Escape", async ({ page }) => {
