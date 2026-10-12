@@ -605,6 +605,11 @@ timeline**: the player, then the shots in order (a handle to reorder, swipe to r
 a sheet with trim handles on that clip and its crossfade), the score as one row, Export. No
 multi-track timeline below 1024.
 
+Built in TICKET-066: the sheet leaves the stage unscrimmed, so a trim shows its new first or
+last frame there; Move earlier and Move later in the sheet are the tap and keyboard path for
+the handle, and Remove for the swipe; a still's trim is its length (1 to 10 s); the opening
+shot keeps its start when its in-point moves (a storyboard has no places, so no gap opens).
+
 ### 17.5 Cut and the timeline, v1
 
 - **Starting a cut:** an empty Cut view says "Start a cut", which lays out today's template

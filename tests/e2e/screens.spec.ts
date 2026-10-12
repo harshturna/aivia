@@ -117,6 +117,15 @@ test.describe("as the guest", () => {
     });
     await fits(page);
     expect(await axe(page)).toEqual([]);
+    // a phone edits on the storyboard: a shot opens its sheet
+    if ((page.viewportSize()?.width ?? 0) < 1024) {
+      const shots = page.locator("section", {
+        has: page.getByRole("heading", { name: /^Shots/ }),
+      });
+      await shots.getByRole("button").first().click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      expect(await axe(page)).toEqual([]);
+    }
     expect(errors).toEqual([]);
   });
 

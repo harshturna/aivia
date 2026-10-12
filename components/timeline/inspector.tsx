@@ -14,11 +14,14 @@ export function Inspector({
   selected,
   onChange,
   onDeselect,
+  heading = true,
 }: {
   doc: TimelineDoc;
   selected: string | null;
   onChange: (doc: TimelineDoc, commit: boolean) => void;
   onDeselect: () => void;
+  /** Off where the item is already named (the storyboard's sheet). */
+  heading?: boolean;
 }) {
   const hit = selected ? findItem(doc, selected) : null;
   if (!hit)
@@ -82,10 +85,12 @@ export function Inspector({
 
   return (
     <div className="grid gap-3">
-      <div className="flex items-baseline justify-between">
-        <h3 className="text-[13px] font-medium">{name}</h3>
-        <span className="tabular text-[12px] text-mute">{span}</span>
-      </div>
+      {heading && (
+        <div className="flex items-baseline justify-between">
+          <h3 className="text-[13px] font-medium">{name}</h3>
+          <span className="tabular text-[12px] text-mute">{span}</span>
+        </div>
+      )}
 
       {item.type === "text" && (
         <>

@@ -120,6 +120,33 @@ if (process.env.STATES !== "0" && process.env.GUEST !== "0") {
     const sound = (list.items ?? list)[0];
     if (sound) await open(`/library/a/${sound.id}`);
   });
+  // Cut: empty, then started (the timeline at 1440, the storyboard and its sheet at 390)
+  const example = (
+    await (await page.request.get(`${BASE}/api/sessions?limit=8`)).json()
+  )[0];
+  if (example)
+    for (const [w, h] of [
+      [1440, 900],
+      [390, 844],
+    ]) {
+      await page.evaluate(() => localStorage.removeItem("aivia:guest-edits"));
+      await shoot("cut-empty", w, h, () => open(`/p/${example.id}/cut`));
+      await shoot("cut", w, h, async () => {
+        await page.getByRole("button", { name: "Start a cut" }).click();
+        await page.getByRole("img", { name: "The cut" }).waitFor();
+        await page.waitForTimeout(2500);
+      });
+      if (w < 1024)
+        await shoot("cut-sheet", w, h, async () => {
+          await page
+            .locator("section", {
+              has: page.getByRole("heading", { name: /^Shots/ }),
+            })
+            .getByRole("button")
+            .first()
+            .click();
+        });
+    }
   await shoot("landing-reduced", 390, 844, async () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await open("/");

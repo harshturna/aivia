@@ -48,6 +48,7 @@ import { cn } from "@/lib/utils";
 import { probeVideo, type Rendered, renderTimeline } from "./export";
 import { Inspector } from "./inspector";
 import { startingCut } from "./start";
+import { Storyboard } from "./storyboard";
 import { Timeline } from "./timeline";
 import { usePlayer } from "./use-player";
 
@@ -571,7 +572,7 @@ export function CutView({
           ) : (
             <>
               {/* the stage */}
-              <div className="grid min-h-0 flex-1 place-items-center bg-surface/40 p-4">
+              <div className="grid shrink-0 place-items-center bg-surface/40 p-3 lg:min-h-0 lg:flex-1 lg:p-4">
                 <canvas
                   ref={canvas}
                   className="max-h-full max-w-full rounded-media bg-bg shadow-float"
@@ -599,33 +600,36 @@ export function CutView({
                 {player.loading && (
                   <span className="text-mute">Loading sound…</span>
                 )}
-                <span className="mx-1 h-5 w-px bg-border" />
-                <IconButton
-                  label="Split at the playhead (S)"
-                  onClick={splitAtPlayhead}
-                >
-                  <Scissors />
-                </IconButton>
-                <IconButton
-                  label="Remove (Delete)"
-                  disabled={!selected}
-                  onClick={() => {
-                    if (doc && selected) change(remove(doc, selected), true);
-                    setSelected(null);
-                  }}
-                >
-                  <Trash2 />
-                </IconButton>
-                <IconButton
-                  label="Add a text card at the playhead"
-                  onClick={() => {
-                    const r = addText(doc, player.time);
-                    change(r.doc, true);
-                    setSelected(r.id);
-                  }}
-                >
-                  <Type />
-                </IconButton>
+                {/* split and cards belong to the timeline; the storyboard has its own */}
+                <div className="hidden lg:contents">
+                  <span className="mx-1 h-5 w-px bg-border" />
+                  <IconButton
+                    label="Split at the playhead (S)"
+                    onClick={splitAtPlayhead}
+                  >
+                    <Scissors />
+                  </IconButton>
+                  <IconButton
+                    label="Remove (Delete)"
+                    disabled={!selected}
+                    onClick={() => {
+                      if (doc && selected) change(remove(doc, selected), true);
+                      setSelected(null);
+                    }}
+                  >
+                    <Trash2 />
+                  </IconButton>
+                  <IconButton
+                    label="Add a text card at the playhead"
+                    onClick={() => {
+                      const r = addText(doc, player.time);
+                      change(r.doc, true);
+                      setSelected(r.id);
+                    }}
+                  >
+                    <Type />
+                  </IconButton>
+                </div>
                 <IconButton
                   label="Undo (⌘Z)"
                   disabled={history.at <= 0}
@@ -646,32 +650,34 @@ export function CutView({
                     Over a minute: trim to export
                   </span>
                 )}
-                <IconButton
-                  label="Zoom out"
-                  onClick={() => setPxPerSec((z) => Math.max(8, z / 1.4))}
-                >
-                  <Minus />
-                </IconButton>
-                <IconButton
-                  label="Zoom in"
-                  onClick={() => setPxPerSec((z) => Math.min(400, z * 1.4))}
-                >
-                  <Plus />
-                </IconButton>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPxPerSec(
-                      Math.max(
-                        8,
-                        Math.min(400, 900 / Math.max(1, length / 1000))
+                <div className="hidden lg:contents">
+                  <IconButton
+                    label="Zoom out"
+                    onClick={() => setPxPerSec((z) => Math.max(8, z / 1.4))}
+                  >
+                    <Minus />
+                  </IconButton>
+                  <IconButton
+                    label="Zoom in"
+                    onClick={() => setPxPerSec((z) => Math.min(400, z * 1.4))}
+                  >
+                    <Plus />
+                  </IconButton>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPxPerSec(
+                        Math.max(
+                          8,
+                          Math.min(400, 900 / Math.max(1, length / 1000))
+                        )
                       )
-                    )
-                  }
-                  className="rounded-control px-2 py-1 text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
-                >
-                  Fit
-                </button>
+                    }
+                    className="rounded-control px-2 py-1 text-fg-2 transition-colors hover:bg-surface-2 hover:text-fg"
+                  >
+                    Fit
+                  </button>
+                </div>
               </div>
               {/* the timeline: wide screens; the storyboard serves phones (TICKET-066) */}
               <div className="hidden h-[272px] shrink-0 lg:block">
@@ -690,9 +696,16 @@ export function CutView({
                   labelOf={labels}
                 />
               </div>
-              <p className="border-t border-border px-4 py-3 text-[13px] text-mute lg:hidden">
-                Open this on a wider screen to edit the cut on its timeline.
-              </p>
+              {/* the storyboard: phones and narrow windows (§17.4) */}
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-border lg:hidden">
+                <Storyboard
+                  doc={doc}
+                  onChange={change}
+                  labelOf={labels}
+                  time={player.time}
+                  onSeek={player.seek}
+                />
+              </div>
             </>
           )}
         </div>

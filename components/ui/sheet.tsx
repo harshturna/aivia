@@ -52,14 +52,24 @@ const sheetVariants = cva(
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+    VariantProps<typeof sheetVariants> {
+  /** Classes for the scrim behind the sheet (a lighter one where what is behind still matters). */
+  overlayClassName?: string;
+}
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
 >(
   (
-    { side = "right", className, children, onCloseAutoFocus, ...props },
+    {
+      side = "right",
+      className,
+      overlayClassName,
+      children,
+      onCloseAutoFocus,
+      ...props
+    },
     ref
   ) => {
     const { opener, onCloseAutoFocus: returnFocus } = useReturnFocus({
@@ -67,7 +77,7 @@ const SheetContent = React.forwardRef<
     });
     return (
       <SheetPortal>
-        <SheetOverlay />
+        <SheetOverlay className={overlayClassName} />
         <SheetPrimitive.Content
           ref={ref}
           onCloseAutoFocus={returnFocus}
