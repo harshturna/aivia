@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useFinePointer } from "@/hooks/use-fine-pointer";
 import { downloadFile, fileNameFrom } from "@/lib/download";
 import type { MediaItem, MediaKind } from "@/lib/media";
+import { shortName } from "@/lib/short-name";
 import { cn } from "@/lib/utils";
 import { actionsFor, MediaMenu, useIndexed, useMediaHandlers } from "./actions";
 
@@ -35,10 +36,13 @@ function Piece({
   item: base,
   selected,
   onActivate,
+  mark,
 }: {
   item: MediaItem;
   selected: boolean;
   onActivate: (item: MediaItem, toggle: boolean) => void;
+  /** "In the cut", "Editing": where this piece is in use (TICKET-077). */
+  mark?: string;
 }) {
   const item = useIndexed(base);
   const actions = actionsFor(item, useMediaHandlers());
@@ -90,9 +94,14 @@ function Piece({
           </>
         )}
         {audio && (
-          <span className="flex h-full items-center gap-2 px-2.5 text-[12.5px] text-fg-2">
+          <span className="flex h-full items-center gap-2 px-2.5 text-[12px] text-fg-2">
             <Music className="size-3.5 shrink-0 text-mute" />
-            <span className="truncate">{item.prompt || "Track"}</span>
+            <span className="truncate">{shortName(item.prompt, "Track")}</span>
+          </span>
+        )}
+        {mark && !audio && (
+          <span className="absolute right-1 bottom-1 rounded-chip bg-bg/75 px-1.5 text-[12px] leading-5 text-fg">
+            {mark}
           </span>
         )}
         {selected && (
@@ -120,6 +129,7 @@ export function MediaTray({
   footer,
   hint = "Drag a piece into the brief to use it. ⌘-click to select.",
   columns = 3,
+  marks,
 }: {
   groups: Group[];
   /** Show the piece where it was made. */
@@ -133,6 +143,8 @@ export function MediaTray({
   hint?: string;
   /** Three in the side tray, two in a phone's sheet (§17.4). */
   columns?: 2 | 3;
+  /** Pieces in use here, by address, with what to say (TICKET-077). */
+  marks?: Map<string, string>;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -159,7 +171,7 @@ export function MediaTray({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex h-13 shrink-0 items-center gap-2 px-4">
         <h2 className="text-[15px] font-medium">Media</h2>
-        <span className="tabular text-[12.5px] text-mute">{all.length}</span>
+        <span className="tabular text-[12px] text-mute">{all.length}</span>
         {onClose && (
           <button
             type="button"
@@ -180,7 +192,7 @@ export function MediaTray({
             onClick={() => setFilter(id)}
             aria-pressed={filter === id}
             className={cn(
-              "h-7 pointer-coarse:h-11 rounded-full px-2.5 text-[12.5px] font-medium transition-colors",
+              "h-7 pointer-coarse:h-11 rounded-full px-2.5 text-[12px] font-medium transition-colors",
               filter === id ? "bg-surface-3 text-fg" : "text-fg-2 hover:text-fg"
             )}
           >
@@ -216,6 +228,7 @@ export function MediaTray({
                     item={item}
                     selected={selected.has(item.url)}
                     onActivate={activate}
+                    mark={marks?.get(item.url)}
                   />
                 ))}
               </ul>

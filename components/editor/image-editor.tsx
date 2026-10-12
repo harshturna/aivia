@@ -58,6 +58,7 @@ import {
   type TextBox,
 } from "@/lib/image-edit/schema";
 import { type MediaItem, mediaByBrief, withVersions } from "@/lib/media";
+import { shortName } from "@/lib/short-name";
 import { uploadMedia } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { runTool } from "./ai";
@@ -104,9 +105,10 @@ const PREVIEW_SIDE = 1600;
 
 function readSwatches() {
   const css = getComputedStyle(document.documentElement);
-  return SWATCHES.map((s) => {
+  // only tokens that resolve to a plain hex make swatches: the doc stores hex (TICKET-077)
+  return SWATCHES.flatMap((s) => {
     const raw = css.getPropertyValue(s.token).trim();
-    return { name: s.name, hex: /^#[0-9a-f]{6}$/i.test(raw) ? raw : "#ffffff" };
+    return /^#[0-9a-f]{6}$/i.test(raw) ? [{ name: s.name, hex: raw }] : [];
   });
 }
 
@@ -350,7 +352,7 @@ export function ImageEditor({
   );
 
   const backHref = `/p/${projectId}`;
-  const name = source.prompt.split(/\s+/).slice(0, 5).join(" ") || "image";
+  const name = shortName(source.prompt, "Image");
 
   // ── Save: a new version beside the original; the guest downloads it ────────────────────
   const save = async () => {
@@ -415,6 +417,11 @@ export function ImageEditor({
     () => withVersions(versions, mediaByBrief(messages as never)),
     [messages, versions]
   );
+  // the tray marks the picture on the stage
+  const editing = useMemo(
+    () => new Map([[source.url, "Editing"]] as const),
+    [source.url]
+  );
   const openHere = useCallback(
     (item: MediaItem) => {
       if (item.kind !== "image") return;
@@ -469,7 +476,7 @@ export function ImageEditor({
             }
           >
             <span
-              className="hidden whitespace-nowrap text-[12.5px] text-mute xl:inline"
+              className="hidden whitespace-nowrap text-[12px] text-mute xl:inline"
               aria-live="polite"
             >
               {saving === "saving"
@@ -485,7 +492,7 @@ export function ImageEditor({
             {saving === "failed" && (
               <span
                 role="alert"
-                className="whitespace-nowrap text-[12.5px] text-fg-2"
+                className="whitespace-nowrap text-[12px] text-fg-2"
               >
                 Not saved. Try again.
               </span>
@@ -699,6 +706,7 @@ export function ImageEditor({
         >
           <MediaTray
             groups={groups}
+            marks={editing}
             onOpen={openHere}
             hint="Choose another image to edit it instead."
           />
@@ -712,7 +720,7 @@ export function ImageEditor({
       >
         <DialogContent aria-describedby={undefined}>
           <DialogTitle>Leave without saving?</DialogTitle>
-          <p className="text-[13.5px] text-fg-2">
+          <p className="text-[13px] text-fg-2">
             The changes to this picture since it was last saved will be lost.
           </p>
           <div className="flex justify-end gap-2">
@@ -938,13 +946,14 @@ function TextPanel({
       commit
     );
   const add = () => {
+    if (!swatches.length) return;
     let n = doc.texts.length + 1;
     while (doc.texts.some((t) => t.id === `words-${n}`)) n++;
     const box: TextBox = {
       id: `words-${n}`,
       text: "Your words",
       face: "display",
-      color: swatches[0]?.hex ?? "#ffffff",
+      color: swatches[0].hex,
       size: 0.09,
       x: 0.5,
       y: doc.texts.length ? Math.min(0.85, 0.5 + 0.12 * doc.texts.length) : 0.5,
@@ -959,7 +968,7 @@ function TextPanel({
           size="sm"
           variant="secondary"
           onClick={add}
-          disabled={doc.texts.length >= 12}
+          disabled={doc.texts.length >= 12 || !swatches.length}
         >
           <Plus /> Add words
         </Button>
@@ -1304,8 +1313,8 @@ function AiPanel({
         >
           {state.at === "working" ? "Working on it…" : meta.action}
         </Button>
-        <span className="pb-2 text-[12.5px] text-mute">
-          {meta.hint}. Uses 1 generation.
+        <span className="pb-2 text-[12px] text-mute">
+          1 generation. {meta.hint}.
         </span>
       </div>
       <div aria-live="polite" className="text-[13px] text-fg-2">

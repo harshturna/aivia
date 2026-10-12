@@ -1,6 +1,6 @@
 "use client";
 
-import { Film, Image as ImageIcon, Music, Type, Volume2 } from "lucide-react";
+import { Film, Music, Type, Volume2 } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -41,7 +41,7 @@ const ROWS: Array<{
   height: number;
   icon: typeof Type;
 }> = [
-  { key: "text", label: "Text", height: 36, icon: Type },
+  { key: "text", label: "Words", height: 36, icon: Type },
   { key: "main", label: "Picture", height: 60, icon: Film },
   { key: "score", label: "Score", height: 40, icon: Music },
   { key: "sound", label: "Sound", height: 40, icon: Volume2 },
@@ -369,9 +369,15 @@ export function Timeline({
                         }}
                         className="flex size-full cursor-grab items-center gap-1.5 overflow-hidden px-2 text-left active:cursor-grabbing"
                       >
-                        {item.type === "image" && (
-                          <ImageIcon className="size-3.5 shrink-0 text-mute" />
-                        )}
+                        {/* a frame of the picture, so the row reads as pictures (TICKET-077) */}
+                        {(item.type === "image" || item.type === "video") &&
+                          doc.media[item.media] && (
+                            <Frame
+                              url={doc.media[item.media].url}
+                              kind={item.type}
+                              at={item.type === "video" ? item.in : 0}
+                            />
+                          )}
                         <span className="truncate">{label}</span>
                       </button>
                       {/* fades drawn as ramps at the edges */}
@@ -447,5 +453,38 @@ export function Timeline({
         </div>
       </div>
     </div>
+  );
+}
+
+/** One frame of a picture item, at its in-point, as tall as the row. */
+function Frame({
+  url,
+  kind,
+  at,
+}: {
+  url: string;
+  kind: "image" | "video";
+  at: number;
+}) {
+  const box = "-ml-1.5 h-full aspect-video shrink-0 rounded-chip object-cover";
+  return kind === "video" ? (
+    <video
+      src={`${url}#t=${(at + 100) / 1000}`}
+      preload="metadata"
+      muted
+      playsInline
+      aria-hidden
+      tabIndex={-1}
+      className={`${box} pointer-events-none`}
+    />
+  ) : (
+    // biome-ignore lint/performance/noImgElement: a frame of the person's own picture
+    <img
+      src={url}
+      alt=""
+      loading="lazy"
+      draggable={false}
+      className={`${box} pointer-events-none`}
+    />
   );
 }

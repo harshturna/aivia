@@ -73,7 +73,7 @@ export function Storyboard({
 
   return (
     <div className="grid gap-6 px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-      <Section title="Shots" count={shots.length}>
+      <Section title="Picture" count={shots.length}>
         <Shots
           doc={doc}
           shots={shots}
@@ -123,28 +123,37 @@ export function Storyboard({
         </button>
       </Section>
 
-      {audio.length > 0 && (
-        <Section title="Sound" count={audio.length}>
-          <ul className="grid gap-1.5">
-            {audio.map(({ item, role }) => (
-              <li key={item.id}>
-                <Row
-                  icon={
-                    role === "score" ? (
-                      <Music className="size-4 text-mute" />
-                    ) : (
-                      <Volume2 className="size-4 text-mute" />
-                    )
-                  }
-                  label={labelOf(item)}
-                  meta={`${role === "score" ? "Score" : "Sound"}, ${seconds(item.duration)}`}
-                  onOpen={() => setOpen(item.id)}
-                />
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+      {/* the same four as the timeline: Picture, Words, Score, Sound (TICKET-077) */}
+      {(["score", "sound"] as const).map((role) => {
+        const rows = audio.filter((a) => a.role === role);
+        if (!rows.length) return null;
+        return (
+          <Section
+            key={role}
+            title={role === "score" ? "Score" : "Sound"}
+            count={rows.length}
+          >
+            <ul className="grid gap-1.5">
+              {rows.map(({ item }) => (
+                <li key={item.id}>
+                  <Row
+                    icon={
+                      role === "score" ? (
+                        <Music className="size-4 text-mute" />
+                      ) : (
+                        <Volume2 className="size-4 text-mute" />
+                      )
+                    }
+                    label={labelOf(item)}
+                    meta={seconds(item.duration)}
+                    onOpen={() => setOpen(item.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </Section>
+        );
+      })}
 
       {/* what a swipe did, and the way back, where the thumb is */}
       {removed && onUndo && (
@@ -241,7 +250,7 @@ function Row({
         {icon}
       </span>
       <span className="grid min-w-0 flex-1">
-        <span className="truncate text-[13.5px]">{label}</span>
+        <span className="truncate text-[13px]">{label}</span>
         <span className="tabular text-[12px] text-mute">{meta}</span>
       </span>
     </button>
@@ -417,9 +426,7 @@ function Shots({
                   at={item.type === "video" ? item.in : 0}
                 />
                 <span className="grid min-w-0 flex-1">
-                  <span className="truncate text-[13.5px]">
-                    {labelOf(item)}
-                  </span>
+                  <span className="truncate text-[13px]">{labelOf(item)}</span>
                   <span className="tabular flex gap-2 text-[12px] text-mute">
                     <span>{seconds(item.duration)}</span>
                     {index > 0 && item.transitionIn && (
@@ -507,6 +514,7 @@ function ItemSheet({
 
       {range && (
         <TrimBar
+          url={doc.media[(item as { media: string }).media]?.url}
           source={range.source}
           from={range.from}
           to={range.to}
@@ -598,12 +606,15 @@ function ItemSheet({
  * and use the arrow keys (a tenth of a second; with Shift, a second).
  */
 function TrimBar({
+  url,
   source,
   from,
   to,
   onIn,
   onOut,
 }: {
+  /** The clip, for frames across the bar (TICKET-077). */
+  url?: string;
   source: number;
   from: number;
   to: number;
@@ -669,9 +680,34 @@ function TrimBar({
         </span>
       </div>
       <div ref={bar} className="relative mx-3 h-11">
-        <div className="absolute inset-x-0 top-1/2 h-8 -translate-y-1/2 rounded-chip bg-surface-3" />
+        {/* the whole source as frames; what is cut away dims */}
+        <div className="absolute inset-x-0 top-1/2 flex h-8 -translate-y-1/2 overflow-hidden rounded-chip bg-surface-3">
+          {url &&
+            [0, 1, 2, 3, 4].map((i) => (
+              <video
+                key={i}
+                src={`${url}#t=${((i + 0.5) * source) / 5000}`}
+                preload="metadata"
+                muted
+                playsInline
+                aria-hidden
+                tabIndex={-1}
+                className="pointer-events-none h-full min-w-0 flex-1 object-cover"
+              />
+            ))}
+        </div>
         <div
-          className="absolute top-1/2 h-8 -translate-y-1/2 rounded-chip border-2 border-fg bg-surface-2"
+          aria-hidden
+          className="absolute top-1/2 left-0 h-8 -translate-y-1/2 rounded-l-chip bg-bg/70"
+          style={{ width: pct(from) }}
+        />
+        <div
+          aria-hidden
+          className="absolute top-1/2 right-0 h-8 -translate-y-1/2 rounded-r-chip bg-bg/70"
+          style={{ width: pct(source - to) }}
+        />
+        <div
+          className="absolute top-1/2 h-8 -translate-y-1/2 rounded-chip border-2 border-fg"
           style={{ left: pct(from), width: pct(to - from) }}
         />
         {handle("in")}

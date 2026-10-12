@@ -585,10 +585,17 @@ panel, a long-press sheet on touch) and "⋯" for the rest.
 
 | Kind | Primary | In "⋯" |
 |---|---|---|
-| Image | Open, Edit, Animate | Add to cut, Use in a brief, Reuse prompt, Download, Favourite, Delete |
-| Clip | Open, Add to cut, New take | Use a frame as an image, Reuse prompt, Download, Favourite, Delete |
-| Music, sound | Play, Add to cut | Reuse prompt, Download, Favourite, Delete |
-| Cut | Open in Cut, Export | Duplicate, Rename, Delete |
+| Image | Open, Edit, Animate | Use in a brief, Add to cut, New take, Reuse prompt, Download, Favourite |
+| Clip | Open, Add to cut, New take | Use a frame in a brief, Reuse prompt, Download, Favourite |
+| Music, sound | Add to cut | Reuse prompt, Download, Favourite |
+| Cut | Open, Add to cut | Reuse prompt, Download, Favourite |
+
+As built (TICKET-077): the order after the primaries is the same for every kind (the piece's
+uses, then Reuse prompt, Download, Favourite); a track plays in its own row's player, so Play is
+not an action; a clip's frame goes to the brief as a reference (it is not saved as an image);
+Delete lives in the Library. Paid actions name "1 generation" the same way everywhere. Pieces
+are named by a short name from their prompt (`lib/short-name.ts`) wherever a label is drawn; the
+full prompt stays the piece's accessible name and its caption in the thread.
 
 - Paid actions (Animate, New take, the AI tools) name their cost, as the composer does.
 - **Add to cut** appends to the project's current cut, or starts one. **Use in a brief**

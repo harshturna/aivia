@@ -119,7 +119,7 @@ test.describe("as the guest", () => {
     // a phone edits on the storyboard: a shot opens its sheet
     if ((page.viewportSize()?.width ?? 0) < 1024) {
       const shots = page.locator("section", {
-        has: page.getByRole("heading", { name: /^Shots/ }),
+        has: page.getByRole("heading", { name: /^Picture/ }),
       });
       await shots.getByRole("button").first().click();
       await expect(page.getByRole("dialog")).toBeVisible();
@@ -181,12 +181,12 @@ test.describe("as the guest", () => {
     await clip.click();
     await page.getByRole("button", { name: "New take" }).click();
     await expect(
-      page.locator("[data-row=main] button[aria-label^='A second take']")
+      page.locator("[data-row=main] button[aria-label^='Second take']")
     ).toBeVisible({ timeout: 30_000 });
     expect(await axe(page)).toEqual([]);
     await page.getByRole("button", { name: /^Undo/ }).click();
     await expect(
-      page.locator("[data-row=main] button[aria-label^='A second take']")
+      page.locator("[data-row=main] button[aria-label^='Second take']")
     ).toHaveCount(0);
   });
 

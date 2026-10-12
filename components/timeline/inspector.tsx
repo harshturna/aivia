@@ -127,7 +127,7 @@ export function Inspector({
                 aria-pressed={item.style.preset === p}
                 onClick={() => set(update(doc, item.id, { preset: p }))}
                 className={cn(
-                  "h-7 rounded-full px-2.5 text-[12.5px] font-medium",
+                  "h-7 rounded-full px-2.5 text-[12px] font-medium",
                   item.style.preset === p
                     ? "bg-surface-3 text-fg"
                     : "text-fg-2 hover:text-fg"
@@ -232,9 +232,9 @@ function TakeRow({ url, take }: { url: string; take: TakeUI }) {
         >
           {busy && state.url === url ? "Making a new take…" : "New take"}
         </button>
-        <span className="text-[12px] text-mute">Uses 1 generation</span>
+        <span className="text-[12px] text-mute">1 generation</span>
       </div>
-      <div aria-live="polite" className="text-[12.5px] text-fg-2">
+      <div aria-live="polite" className="text-[12px] text-fg-2">
         {state.at === "failed" && state.url === url && (
           <p role="alert">{state.message}</p>
         )}

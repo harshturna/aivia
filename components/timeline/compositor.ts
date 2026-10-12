@@ -1,3 +1,4 @@
+import { withAlpha } from "@/lib/color";
 import type { Layer } from "@/lib/timeline/layout";
 
 /**
@@ -22,8 +23,9 @@ export type Resolved =
 export function readTheme(): Theme {
   const css = getComputedStyle(document.documentElement);
   return {
-    bg: css.getPropertyValue("--color-bg").trim() || "#0e0e0d",
-    fg: css.getPropertyValue("--color-fg").trim() || "#f1ecdc",
+    // the tokens always exist where a cut is drawn (the app and its export)
+    bg: css.getPropertyValue("--color-bg").trim(),
+    fg: css.getPropertyValue("--color-fg").trim(),
     family: css.getPropertyValue("--font-cormorant").trim() || "Georgia, serif",
   };
 }
@@ -72,7 +74,7 @@ function words(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = theme.fg;
-  ctx.shadowColor = "rgba(0,0,0,0.55)";
+  ctx.shadowColor = withAlpha(theme.bg, 0.55);
   ctx.shadowBlur = titleSize(h) * 0.6;
   const lines = wrap(ctx, text, w * 0.78);
   const lh = size * 1.15;
@@ -82,10 +84,15 @@ function words(
   ctx.shadowBlur = 0;
 }
 
-function scrim(ctx: CanvasRenderingContext2D, w: number, h: number) {
+function scrim(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  theme: Theme
+) {
   const g = ctx.createLinearGradient(0, h * 0.55, 0, h);
-  g.addColorStop(0, "rgba(0,0,0,0)");
-  g.addColorStop(1, "rgba(0,0,0,0.65)");
+  g.addColorStop(0, withAlpha(theme.bg, 0));
+  g.addColorStop(1, withAlpha(theme.bg, 0.65));
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 }
@@ -112,12 +119,12 @@ export function drawFrame(
         .picture;
       if (picture) drawCover(ctx, picture, w, h, r.layer.zoom);
       if (r.layer.item.text && !card) {
-        scrim(ctx, w, h);
+        scrim(ctx, w, h, theme);
         words(ctx, r.layer.item.text, "caption", h * 0.84, w, h, theme);
       }
     } else {
       const { item } = r.layer;
-      if (item.style.scrim) scrim(ctx, w, h);
+      if (item.style.scrim) scrim(ctx, w, h, theme);
       words(
         ctx,
         item.text,

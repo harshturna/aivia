@@ -390,7 +390,7 @@ function Sources({ results }: { results: SearchResult[] }) {
             <img
               src={`https://www.google.com/s2/favicons?domain=${host}&sz=32`}
               alt=""
-              className="size-3.5 rounded-sm"
+              className="size-3.5 rounded-chip"
             />
             <span className="truncate">{host}</span>
           </a>

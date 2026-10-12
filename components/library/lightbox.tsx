@@ -4,7 +4,7 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  MessageSquare,
+  FolderOpen,
   Trash2,
   X,
 } from "lucide-react";
@@ -370,7 +370,7 @@ export function Lightbox({
         {asset.sessionId && (
           <Button asChild variant="secondary" size="sm" className="w-fit">
             <Link href={`/p/${asset.sessionId}`}>
-              <MessageSquare /> Open the project
+              <FolderOpen /> Open project
             </Link>
           </Button>
         )}

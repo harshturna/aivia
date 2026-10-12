@@ -1,3 +1,4 @@
+import { withAlpha } from "@/lib/color";
 import { turned } from "@/lib/image-edit/geometry";
 import { adjustMatrix, applyMatrix } from "@/lib/image-edit/matrix";
 import type { ImageEdit, TextBox } from "@/lib/image-edit/schema";
@@ -6,7 +7,7 @@ import type { ImageEdit, TextBox } from "@/lib/image-edit/schema";
  * The one way an edit becomes pixels (TICKET-067), for the stage and for Save alike: the base
  * turned and flipped, cropped, put through the colour matrix, then given its words.
  */
-export type Fonts = { display: string; body: string };
+export type Fonts = { display: string; body: string; shade: string };
 
 export function readFonts(): Fonts {
   const css = getComputedStyle(document.documentElement);
@@ -14,6 +15,8 @@ export function readFonts(): Fonts {
     display:
       css.getPropertyValue("--font-cormorant").trim() || "Georgia, serif",
     body: css.getPropertyValue("--font-host").trim() || "system-ui, sans-serif",
+    // the words' soft shadow, from the ground colour (TICKET-077)
+    shade: withAlpha(css.getPropertyValue("--color-bg"), 0.35),
   };
 }
 
@@ -124,7 +127,7 @@ export function renderEdit(
       if (box.text.trim()) {
         ctx.save();
         // a soft shadow keeps light words readable on a light picture
-        ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
+        ctx.shadowColor = fonts.shade;
         ctx.shadowBlur = px * 0.18;
         ctx.fillStyle = box.color;
         lines.forEach((line, i) => {

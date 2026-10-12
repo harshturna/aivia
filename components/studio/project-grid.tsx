@@ -1,6 +1,5 @@
 "use client";
 
-import { Music } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LOCAL_CHANGED, listLocalSessions } from "@/lib/guest-local";
@@ -96,16 +95,36 @@ function Tile({
         className={cn("object-cover", className)}
       />
     );
+  // a track as a waveform, not a grey box that reads as a missing picture (TICKET-077)
   return (
     <div
+      aria-hidden
       className={cn(
-        "grid place-items-center bg-surface-2 text-mute",
+        "flex items-center justify-center gap-[3px] bg-surface-2 px-3",
         className
       )}
     >
-      <Music className="size-5" />
+      {peaks(piece.url).map((h, i) => (
+        <span
+          // biome-ignore lint/suspicious/noArrayIndexKey: a fixed row of bars
+          key={i}
+          className="w-[3px] shrink-0 rounded-full bg-sun/70"
+          style={{ height: `${h}%` }}
+        />
+      ))}
     </div>
   );
+}
+
+/** Bar heights for a track, the same every time for the same address. */
+function peaks(url: string) {
+  let n = 0;
+  for (const ch of url) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
+  return Array.from({ length: 18 }, (_, i) => {
+    n = (n * 1103515245 + 12345) >>> 0;
+    const wave = Math.sin((i / 17) * Math.PI);
+    return Math.round(18 + wave * 40 + (n % 30));
+  });
 }
 
 function Card({ project }: { project: ProjectCardData }) {
@@ -132,11 +151,12 @@ function Card({ project }: { project: ProjectCardData }) {
           {count >= 2 && <Tile piece={b} className="size-full" />}
           {count >= 3 && <Tile piece={c} className="size-full" />}
         </div>
-        <div className="mt-2.5 truncate text-[13.5px] font-medium leading-5 group-hover:text-fg">
+        <div className="mt-2.5 truncate text-[13px] font-medium leading-5 group-hover:text-fg">
           {projectTitle(project.title)}
         </div>
-        <div className="text-[12.5px] leading-5 text-mute">
-          <Ago iso={project.updatedAt} />
+        <div className="text-[12px] leading-5 text-mute">
+          {/* an example is not something anyone updated */}
+          {project.pinned ? "Example" : <Ago iso={project.updatedAt} />}
         </div>
       </Link>
     </li>

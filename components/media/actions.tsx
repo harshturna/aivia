@@ -173,15 +173,15 @@ export function actionsFor(item: MediaItem, h: MediaHandlers): MediaAction[] {
         run: (video) => h.frameToBrief?.(item, video),
       },
       take(true),
-      { ...download, primary: !toCut },
       reuse,
+      { ...download, primary: !toCut },
       fav
     );
   } else {
     list.push(
       toCut ? { ...toCut, primary: true } : false,
-      { ...download, primary: !toCut },
       reuse,
+      { ...download, primary: !toCut },
       fav
     );
   }
@@ -225,9 +225,7 @@ export function MediaMenu({
           >
             <a.icon />
             <span className="flex-1">{a.label}</span>
-            {a.cost && (
-              <span className="text-[11.5px] text-mute">{a.cost}</span>
-            )}
+            {a.cost && <span className="text-[12px] text-mute">{a.cost}</span>}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -310,7 +308,7 @@ export function ActionButtons({
         >
           <a.icon />
           {a.label}
-          {a.cost && <span className="text-[11.5px] text-mute">{a.cost}</span>}
+          {a.cost && <span className="text-[12px] text-mute">{a.cost}</span>}
         </button>
       ))}
     </div>

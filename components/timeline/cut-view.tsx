@@ -35,6 +35,7 @@ import {
   saveLocalSession,
 } from "@/lib/guest-local";
 import { type MediaItem, mediaByBrief, withVersions } from "@/lib/media";
+import { shortName } from "@/lib/short-name";
 import { uploadMedia } from "@/lib/storage";
 import {
   addAudio,
@@ -622,14 +623,14 @@ export function CutView({
       if (item.type === "text") return item.text;
       const media = doc?.media[item.media];
       const prompt = media ? prompts.get(media.url) : undefined;
-      return (
-        prompt ||
-        (item.type === "video"
+      const kind =
+        item.type === "video"
           ? "Clip"
           : item.type === "image"
             ? "Still"
-            : "Sound")
-      );
+            : "Sound";
+      // what a person would call it, not the brief a model was given (TICKET-077)
+      return prompt ? shortName(prompt, kind) : kind;
     };
   }, [groups, doc]);
 
@@ -698,6 +699,17 @@ export function CutView({
     [messages, take, runTake, proModal.onOpen]
   );
 
+  // the tray says which pieces are already in the cut
+  const inCut = useMemo(
+    () =>
+      new Map(
+        Object.values(doc?.media ?? {}).map(
+          (m) => [m.url, "In the cut"] as const
+        )
+      ),
+    [doc?.media]
+  );
+
   const handlers = useMemo<MediaHandlers>(
     () => ({
       addToCut: (item) => void addPiece(item),
@@ -729,7 +741,7 @@ export function CutView({
             }
           >
             <span
-              className={`whitespace-nowrap text-[12.5px] text-mute ${
+              className={`whitespace-nowrap text-[12px] text-mute ${
                 status === "conflict" || status === "error"
                   ? "inline"
                   : take.at === "working"
@@ -802,7 +814,7 @@ export function CutView({
                       {starting ? "Laying it out…" : "Start a cut"}
                     </Button>
                     {!groups.length && (
-                      <p className="mt-3 text-[12.5px] text-mute">
+                      <p className="mt-3 text-[12px] text-mute">
                         Make something in this project first.
                       </p>
                     )}
@@ -990,6 +1002,7 @@ export function CutView({
         >
           <MediaTray
             groups={groups}
+            marks={inCut}
             // adding is deliberate here: a drag onto the timeline, or Add to cut in "⋯"
             onOpen={() => {}}
             hint="Drag a piece onto the timeline, or choose Add to cut in its menu."
@@ -1032,7 +1045,7 @@ export function CutView({
                       className="tabular mt-2 text-[13px] text-fg-2"
                       aria-live="polite"
                     >
-                      Making the film, {Math.round(exporting.progress * 100)}%
+                      Making the cut, {Math.round(exporting.progress * 100)}%
                     </p>
                     <Button
                       variant="secondary"
@@ -1046,7 +1059,7 @@ export function CutView({
                 )}
                 {exporting.at === "failed" && (
                   <>
-                    <p role="alert" className="mt-3 text-[13.5px] text-fg-2">
+                    <p role="alert" className="mt-3 text-[13px] text-fg-2">
                       {exporting.message}
                     </p>
                     <Button
@@ -1090,15 +1103,15 @@ export function CutView({
                           }
                         >
                           {exporting.kept === "yes"
-                            ? "In the project"
+                            ? "Saved to the project"
                             : exporting.kept === "keeping"
-                              ? "Keeping…"
-                              : "Keep in project"}
+                              ? "Saving…"
+                              : "Save to the project"}
                         </Button>
                       )}
                       {exporting.kept === "failed" && (
                         <span role="alert" className="text-[13px] text-fg-2">
-                          It was not kept. Try again.
+                          It was not saved. Try again.
                         </span>
                       )}
                       <Button
